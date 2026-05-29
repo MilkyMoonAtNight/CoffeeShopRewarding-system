@@ -1,0 +1,42 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="auth-section">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="/images/logo.png" alt="Con Leche" />
+      </div>
+      <h1 class="auth-title">Join the Pack</h1>
+      <p class="auth-sub">Create your account and get your unique QR battlepass code.</p>
+
+      <% if (error) { %>
+      <div class="auth-error"><%= error %></div>
+      <% } %>
+
+      <form action="/register" method="POST" class="auth-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" required placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="8+ characters" minlength="8" />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="••••••••" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="/login">Sign in →</a></p>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,130 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Events</h1>
+  <p class="admin-page-sub">Manage truck locations, run club, painting classes and more</p>
+</div>
+
+<% if (msg) { %><div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div><% } %>
+
+<div class="admin-two-col">
+
+  <!-- Add event -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Add New Event</h3>
+    <form action="/admin/events/add" method="POST" class="auth-form">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" required placeholder="e.g. Saturday Run Club" />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select name="type" class="scan-input">
+          <option value="truck_location">🚐 Truck Location</option>
+          <option value="run_club">🏃 Run Club</option>
+          <option value="painting">🎨 Painting Class</option>
+          <option value="pop_up">⭐ Pop-Up</option>
+          <option value="special">🎉 Special Event</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date & Time</label>
+        <input type="datetime-local" name="date" required />
+      </div>
+      <div class="form-group">
+        <label>Location Name</label>
+        <input type="text" name="location" placeholder="e.g. Zoo Lake, Johannesburg" />
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" name="address" placeholder="Street address" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="What's happening…" style="width:100%;padding:0.75rem;border:1.5px solid rgba(44,44,44,0.15);border-radius:var(--radius);font-family:var(--font-body);resize:vertical;"></textarea>
+      </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem;">
+        <input type="checkbox" name="recurring" id="recurring" style="width:auto;" />
+        <label for="recurring" style="margin:0;">Recurring weekly</label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Add Event</button>
+    </form>
+  </div>
+
+  <!-- Event list -->
+  <div>
+    <% if (events.length === 0) { %>
+      <div class="admin-card"><p class="admin-empty">No events yet.</p></div>
+    <% } else { %>
+      <% events.forEach(event => { %>
+      <div class="admin-card" style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+          <div>
+            <span class="admin-badge" style="margin-bottom:0.5rem;display:inline-block;">
+              <%= event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐' %>
+              <%= event.type.replace('_',' ') %>
+            </span>
+            <h4 style="font-family:var(--font-nimbus);font-size:1rem;"><%= event.title %></h4>
+            <p style="font-size:0.8rem;color:rgba(44,44,44,0.5);margin-top:0.25rem;">
+              <%= event.date.toLocaleDateString('en-ZA', { weekday:'short', day:'numeric', month:'short', year:'numeric' }) %>
+              <% if (event.location) { %> · <%= event.location %><% } %>
+            </p>
+            <% if (event.description) { %><p style="font-size:0.82rem;color:rgba(44,44,44,0.6);margin-top:0.35rem;"><%= event.description %></p><% } %>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+            <button onclick="toggleEdit('<%= event._id %>')" class="admin-toggle-btn">Edit</button>
+            <form action="/admin/events/delete/<%= event._id %>" method="POST" onsubmit="return confirm('Delete this event?')">
+              <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;width:100%;">Delete</button>
+            </form>
+          </div>
+        </div>
+        <!-- Inline edit form -->
+        <div id="edit-<%= event._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
+          <form action="/admin/events/edit/<%= event._id %>" method="POST" class="auth-form">
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" name="title" value="<%= event.title %>" required />
+            </div>
+            <div class="form-group">
+              <label>Type</label>
+              <select name="type" class="scan-input">
+                <option value="truck_location" <%= event.type==='truck_location'?'selected':'' %>>🚐 Truck Location</option>
+                <option value="run_club" <%= event.type==='run_club'?'selected':'' %>>🏃 Run Club</option>
+                <option value="painting" <%= event.type==='painting'?'selected':'' %>>🎨 Painting Class</option>
+                <option value="pop_up" <%= event.type==='pop_up'?'selected':'' %>>⭐ Pop-Up</option>
+                <option value="special" <%= event.type==='special'?'selected':'' %>>🎉 Special Event</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date & Time</label>
+              <input type="datetime-local" name="date" value="<%= event.date.toISOString().slice(0,16) %>" required />
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" name="location" value="<%= event.location || '' %>" />
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" name="address" value="<%= event.address || '' %>" />
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea name="description" rows="2" style="width:100%;padding:0.75rem;border:1.5px solid rgba(44,44,44,0.15);border-radius:var(--radius);font-family:var(--font-body);"><%= event.description || '' %></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function toggleEdit(id) {
+  const el = document.getElementById('edit-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<%- include('./layout-bottom') %>

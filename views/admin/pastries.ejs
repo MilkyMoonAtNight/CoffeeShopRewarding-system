@@ -1,0 +1,128 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Pastries</h1>
+  <p class="admin-page-sub">Add, edit, remove or toggle availability of pastries</p>
+</div>
+
+<% if (msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<div class="admin-two-col">
+
+  <!-- Add pastry -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Add New Pastry</h3>
+    <form action="/admin/pastries/add" method="POST" class="auth-form">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" required placeholder="e.g. Almond Croissant" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" name="description" placeholder="Short description…" />
+      </div>
+      <div class="form-group">
+        <label>Price (R)</label>
+        <input type="number" name="price" required placeholder="e.g. 42" min="0" step="0.50" />
+      </div>
+      <div class="form-group">
+        <label>Image filename</label>
+        <input type="text" name="image" placeholder="e.g. croissant.jpg" />
+        <span class="form-hint">Place image in <code>public/images/pastries/</code> then enter filename here</span>
+      </div>
+      <div class="form-group">
+        <label>Display Order</label>
+        <input type="number" name="order" placeholder="1" min="1" value="99" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Add Pastry</button>
+    </form>
+  </div>
+
+  <!-- Pastry list -->
+  <div>
+    <% if (pastries.length === 0) { %>
+      <div class="admin-card"><p class="admin-empty">No pastries yet — add one to get started.</p></div>
+    <% } else { %>
+      <% pastries.forEach(pastry => { %>
+      <div class="admin-card admin-drink-row <%= !pastry.available ? 'drink-unavailable' : '' %>">
+        <div style="display:flex;gap:1rem;align-items:flex-start;">
+          <% if (pastry.image) { %>
+          <img src="<%= pastry.image.startsWith('/') ? pastry.image : '/images/pastries/' + pastry.image %>"
+               alt="<%= pastry.name %>"
+               style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
+          <% } else { %>
+          <div style="width:64px;height:64px;background:var(--cream-dark);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🥐</div>
+          <% } %>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+              <div>
+                <strong style="font-size:0.95rem;"><%= pastry.name %></strong>
+                <% if (!pastry.available) { %><span style="font-size:0.7rem;background:rgba(200,50,50,0.1);color:#c83232;padding:0.1rem 0.5rem;border-radius:50px;margin-left:0.4rem;">Unavailable</span><% } %>
+                <p style="font-size:0.78rem;color:rgba(44,44,44,0.5);margin-top:0.15rem;"><%= pastry.description %></p>
+                <p style="font-size:0.88rem;font-weight:600;color:var(--maroon);margin-top:0.2rem;">R<%= pastry.price %></p>
+              </div>
+              <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                <form action="/admin/pastries/toggle/<%= pastry._id %>" method="POST">
+                  <button type="submit" class="admin-toggle-btn"><%= pastry.available ? 'Hide' : 'Show' %></button>
+                </form>
+                <button onclick="togglePastryEdit('<%= pastry._id %>')" class="admin-toggle-btn">Edit</button>
+                <form action="/admin/pastries/delete/<%= pastry._id %>" method="POST" onsubmit="return confirm('Delete <%= pastry.name %>?')">
+                  <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline edit -->
+        <div id="pedit-<%= pastry._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
+          <form action="/admin/pastries/edit/<%= pastry._id %>" method="POST" class="auth-form">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Name</label>
+                <input type="text" name="name" value="<%= pastry.name %>" required class="scan-input" />
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Description</label>
+                <input type="text" name="description" value="<%= pastry.description || '' %>" class="scan-input" />
+              </div>
+              <div class="form-group">
+                <label>Price (R)</label>
+                <input type="number" name="price" value="<%= pastry.price %>" required class="scan-input" min="0" step="0.50" />
+              </div>
+              <div class="form-group">
+                <label>Order</label>
+                <input type="number" name="order" value="<%= pastry.order %>" class="scan-input" />
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Image filename</label>
+                <input type="text" name="image" value="<%= pastry.image || '' %>" class="scan-input" placeholder="e.g. croissant.jpg" />
+              </div>
+              <div class="form-group">
+                <label>Available</label>
+                <select name="available" class="scan-input">
+                  <option value="true"  <%= pastry.available ? 'selected' : '' %>>Yes</option>
+                  <option value="false" <%= !pastry.available ? 'selected' : '' %>>No</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save Changes</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+function togglePastryEdit(id) {
+  const el = document.getElementById('pedit-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<%- include('./layout-bottom') %>

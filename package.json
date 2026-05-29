@@ -1,0 +1,25 @@
+{
+  "name": "con-leche",
+  "version": "1.0.0",
+  "description": "Con Leche Coffee & Pastries - Cat-friendly specialty coffee",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.9",
+    "express": "^4.22.2",
+    "express-session": "^1.17.3",
+    "mongoose": "^8.24.0",
+    "multer": "^1.4.5-lts.1",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

@@ -1,0 +1,52 @@
+<%- include('../partials/head') %>
+<div class="admin-layout">
+
+  <!-- Top navbar -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-header-brand">
+        <img src="/images/logo.png" alt="Con Leche" class="admin-header-logo" />
+        <span class="admin-header-name">Con Leche <span class="admin-header-sub">Admin</span></span>
+      </div>
+      <div class="admin-header-right">
+        <span class="admin-header-user"><%= admin.name %> · <em><%= admin.role %></em></span>
+        <button class="admin-nav-toggle" id="adminNavToggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible nav -->
+    <nav class="admin-nav-drawer" id="adminNavDrawer">
+      <a href="/admin/dashboard" class="admin-nav-item <%= title.includes('Dashboard') ? 'active' : '' %>">
+        <span class="admin-nav-icon">⬛</span> Dashboard
+      </a>
+      <a href="/admin/scan" class="admin-nav-item <%= title.includes('Scan') ? 'active' : '' %>">
+        <span class="admin-nav-icon">📷</span> Scan QR
+      </a>
+      <% if (admin.role === 'owner' || admin.role === 'manager') { %>
+      <a href="/admin/events" class="admin-nav-item <%= title.includes('Events') ? 'active' : '' %>">
+        <span class="admin-nav-icon">📅</span> Events
+      </a>
+      <a href="/admin/drinks" class="admin-nav-item <%= title.includes('Drinks') ? 'active' : '' %>">
+        <span class="admin-nav-icon">☕</span> Drinks
+      </a>
+      <a href="/admin/pastries" class="admin-nav-item <%= title.includes('Pastries') ? 'active' : '' %>">
+        <span class="admin-nav-icon">🥐</span> Pastries
+      </a>
+      <a href="/admin/users" class="admin-nav-item <%= title.includes('Members') ? 'active' : '' %>">
+        <span class="admin-nav-icon">🐱</span> Members
+      </a>
+      <% } %>
+      <% if (admin.role === 'owner') { %>
+      <a href="/admin/staff" class="admin-nav-item <%= title.includes('Staff') ? 'active' : '' %>">
+        <span class="admin-nav-icon">👥</span> Staff
+      </a>
+      <% } %>
+      <a href="/admin/logout" class="admin-nav-item admin-nav-logout">
+        <span class="admin-nav-icon">→</span> Sign Out
+      </a>
+    </nav>
+  </header>
+
+  <main class="admin-main">

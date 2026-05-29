@@ -1,0 +1,72 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Staff</h1>
+  <p class="admin-page-sub">Manage admin accounts and roles</p>
+</div>
+
+<% if (locals.query && query.success) { %>
+<div class="admin-alert admin-alert-success"><%= query.success %></div>
+<% } %>
+<% if (locals.query && query.error) { %>
+<div class="admin-alert admin-alert-error"><%= query.error %></div>
+<% } %>
+
+<div class="admin-two-col">
+  <!-- Staff list -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Current Staff</h3>
+    <div class="admin-list">
+      <% staff.forEach(member => { %>
+      <div class="admin-list-item <%= !member.active ? 'admin-list-item-inactive' : '' %>">
+        <div>
+          <span class="admin-list-name"><%= member.name %></span>
+          <span class="admin-list-sub"><%= member.email %></span>
+        </div>
+        <div class="admin-list-right">
+          <span class="admin-role-badge admin-role-<%= member.role %>"><%= member.role %></span>
+          <% if (member._id.toString() !== admin._id.toString()) { %>
+          <form action="/admin/staff/toggle/<%= member._id %>" method="POST" style="display:inline;">
+            <button type="submit" class="admin-toggle-btn">
+              <%= member.active ? 'Deactivate' : 'Activate' %>
+            </button>
+          </form>
+          <% } else { %>
+            <span style="font-size:0.7rem; color:rgba(44,44,44,0.3)">You</span>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Add staff -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Add Staff Member</h3>
+    <form action="/admin/staff/add" method="POST" class="auth-form">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" required placeholder="Jane Smith" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="jane@conleche.co.za" />
+      </div>
+      <div class="form-group">
+        <label>Temporary Password</label>
+        <input type="text" name="password" required placeholder="They should change this" minlength="8" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select name="role" class="scan-input">
+          <option value="barista">Barista — scan QR only</option>
+          <option value="manager">Manager — scan + menu + events + stats</option>
+          <option value="owner">Owner — full access</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Add Staff Member</button>
+    </form>
+  </div>
+</div>
+
+<%- include('./layout-bottom') %>

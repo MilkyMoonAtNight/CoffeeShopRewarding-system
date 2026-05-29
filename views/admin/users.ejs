@@ -1,0 +1,48 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Members</h1>
+  <p class="admin-page-sub"><%= users.length %> registered battlepass members</p>
+</div>
+
+<div class="admin-card">
+  <% if (users.length === 0) { %>
+    <p class="admin-empty">No members yet — share the registration link to get people signed up.</p>
+  <% } else { %>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Tier</th>
+          <th>Drinks</th>
+          <th>Rewards</th>
+          <th>Joined</th>
+          <th>Last Visit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(user => { %>
+        <tr>
+          <td class="admin-td-name"><%= user.name %></td>
+          <td class="admin-td-sub"><%= user.email %></td>
+          <td>
+            <span class="admin-badge">
+              <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
+              <%= user.tier %>
+            </span>
+          </td>
+          <td class="admin-td-num"><%= user.totalDrinks %></td>
+          <td class="admin-td-num"><%= user.rewards.length %></td>
+          <td class="admin-td-sub"><%= user.createdAt.toLocaleDateString('en-ZA') %></td>
+          <td class="admin-td-sub"><%= user.lastVisit ? user.lastVisit.toLocaleDateString('en-ZA') : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<%- include('./layout-bottom') %>

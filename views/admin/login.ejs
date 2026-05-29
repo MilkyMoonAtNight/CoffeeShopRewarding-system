@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+
+<main>
+  <section class="auth-section" style="background: var(--black);">
+    <div class="auth-card" style="background: #1a1a1a; border: 1px solid rgba(88,18,23,0.2);">
+      <div class="auth-logo">
+        <img src="/images/logo.png" alt="Con Leche" style="filter: brightness(0) invert(1);" />
+      </div>
+      <h1 class="auth-title" style="color: var(--cream); font-family: var(--font-nimbus);">Staff Login</h1>
+      <p class="auth-sub" style="color: rgba(253,246,237,0.4);">Con Leche admin portal</p>
+
+      <% if (error) { %>
+      <div class="auth-error"><%= error %></div>
+      <% } %>
+
+      <form action="/admin/login" method="POST" class="auth-form">
+        <div class="form-group">
+          <label style="color: rgba(253,246,237,0.6);">Email</label>
+          <input type="email" name="email" required placeholder="staff@conleche.co.za"
+            style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--cream);" />
+        </div>
+        <div class="form-group">
+          <label style="color: rgba(253,246,237,0.6);">Password</label>
+          <input type="password" name="password" required placeholder="••••••••"
+            style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--cream);" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+      </form>
+
+      <p style="text-align:center; margin-top:1rem;">
+        <a href="/" style="color: rgba(253,246,237,0.3); font-size:0.8rem;">← Back to site</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+</body></html>

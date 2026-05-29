@@ -1,0 +1,135 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-grain"></div>
+    </div>
+    <div class="hero-content">
+      <p class="hero-eyebrow">Pretoria's Pet-Friendly Coffee</p>
+      <h1 class="hero-title">Con Leche</h1>
+      <p class="hero-subtitle">Coffee isn't just one thing<br/>neither are you.</p>
+      <div class="hero-actions">
+        <a href="/drinks" class="btn btn-primary">Explore the Menu</a>
+        <a href="/register" class="btn btn-outline">Join the Battlepass</a>
+      </div>
+    </div>
+    <div class="hero-paw">
+      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="130" rx="40" ry="45" fill="currentColor" opacity="0.08"/>
+        <ellipse cx="60" cy="80" rx="18" ry="22" fill="currentColor" opacity="0.08"/>
+        <ellipse cx="140" cy="80" rx="18" ry="22" fill="currentColor" opacity="0.08"/>
+        <ellipse cx="80" cy="55" rx="14" ry="18" fill="currentColor" opacity="0.08"/>
+        <ellipse cx="120" cy="55" rx="14" ry="18" fill="currentColor" opacity="0.08"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Intro strip -->
+  <section class="strip-section">
+    <div class="strip-inner">
+      <span>Specialty Coffee</span><span class="strip-dot">✦</span>
+      <span>Fresh Pastries Daily</span><span class="strip-dot">✦</span>
+      <span>Cat-Friendly Space</span><span class="strip-dot">✦</span>
+      <span>Mobile Truck</span><span class="strip-dot">✦</span>
+      <span>Battlepass Rewards</span><span class="strip-dot">✦</span>
+      <span>Community Driven</span><span class="strip-dot">✦</span>
+      <span>Specialty Coffee</span><span class="strip-dot">✦</span>
+      <span>Fresh Pastries Daily</span><span class="strip-dot">✦</span>
+      <span>Cat-Friendly Space</span><span class="strip-dot">✦</span>
+      <span>Mobile Truck</span><span class="strip-dot">✦</span>
+      <span>Battlepass Rewards</span><span class="strip-dot">✦</span>
+      <span>Community Driven</span><span class="strip-dot">✦</span>
+    </div>
+  </section>
+
+  <!-- Battlepass teaser -->
+  <section class="section battlepass-teaser">
+    <div class="container grid-2">
+      <div class="bp-text">
+        <p class="section-eyebrow">Loyalty Reimagined</p>
+        <h2 class="section-title">The Con Leche<br/><em>Battlepass</em></h2>
+        <p class="section-body">Every drink you buy earns you a scan. Collect them, level up your tier, and unlock real rewards — vouchers, free drinks, merch, and more. Your unique QR code goes everywhere you go.</p>
+        <div class="milestone-pills">
+          <span class="pill pill-voucher">Drinks ending in 5 → Random voucher in store</span>
+          <span class="pill pill-drink">Every 10th drink → Free drink (9 lives 🐾)</span>
+          <span class="pill pill-merch">50 drinks → Free Cake & Cappuccino</span>
+          <span class="pill pill-merch">100 drinks → Con Leche branded cap 🧢</span>
+        </div>
+        <a href="/register" class="btn btn-primary">Get Your QR Code</a>
+      </div>
+      <div class="bp-visual">
+        <div class="bp-card-preview">
+          <div class="bp-card-inner">
+            <div class="bp-card-logo">
+              <img src="/images/logo.png" alt="Con Leche" />
+            </div>
+            <p class="bp-card-name">Your Name Here</p>
+            <div class="bp-card-qr-placeholder">
+              <div class="qr-grid"></div>
+            </div>
+            <div class="bp-card-tier">
+              <span class="tier-badge">🐱 Kitten Tier</span>
+              <span class="bp-card-drinks">0 drinks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu preview -->
+  <section class="section section-dark menu-preview">
+    <div class="container">
+      <p class="section-eyebrow light">On the Menu</p>
+      <h2 class="section-title light">Made with care,<br/><em>served with love.</em></h2>
+      <div class="menu-grid">
+        <a href="/drinks" class="menu-card">
+          <div class="menu-card-icon">☕</div>
+          <h3>Drinks</h3>
+          <p>Espresso classics, specialty lattes, cold drinks and more — crafted fresh every time.</p>
+          <span class="menu-card-link">See the menu →</span>
+        </a>
+        <a href="/pastries" class="menu-card">
+          <div class="menu-card-icon">🥐</div>
+          <h3>Pastries</h3>
+          <p>Butter croissants, pain au chocolat, almond danishes — baked fresh and gone by noon.</p>
+          <span class="menu-card-link">See the menu →</span>
+        </a>
+        <a href="/events" class="menu-card">
+          <div class="menu-card-icon">📍</div>
+          <h3>Find Us</h3>
+          <p>Our mobile truck travels the city. Check upcoming locations, markets, and weekend stops.</p>
+          <span class="menu-card-link">See events →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upcoming events -->
+  <% if (upcomingEvents && upcomingEvents.length > 0) { %>
+  <section class="section events-home">
+    <div class="container">
+      <p class="section-eyebrow">What's On</p>
+      <h2 class="section-title">Coming Up</h2>
+      <div class="events-row">
+        <% upcomingEvents.forEach(event => { %>
+        <div class="event-card-small">
+          <div class="event-type-badge event-<%= event.type %>">
+            <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : '⭐ Event' %>
+          </div>
+          <h3 class="event-card-title"><%= event.title %></h3>
+          <p class="event-card-date"><%= event.date.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'long' }) %></p>
+          <p class="event-card-location"><%= event.location %></p>
+        </div>
+        <% }) %>
+      </div>
+      <a href="/events" class="btn btn-outline">See All Events</a>
+    </div>
+  </section>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

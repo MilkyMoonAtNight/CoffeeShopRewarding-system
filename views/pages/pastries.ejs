@@ -1,0 +1,39 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="page-hero page-hero-short">
+    <div class="container">
+      <p class="section-eyebrow">Baked Fresh Daily</p>
+      <h1 class="page-title">Pastries</h1>
+      <p class="page-subtitle">Gone by noon. Worth waking up for.</p>
+    </div>
+  </section>
+
+  <section class="section pastries-section">
+    <div class="container">
+      <div class="pastries-grid">
+        <% pastries.forEach((pastry, i) => { %>
+        <div class="pastry-card <%= i === 0 ? 'pastry-card-wide' : '' %>">
+          <div class="pastry-img-wrap">
+            <img src="<%= pastry.image %>" alt="<%= pastry.name %>" class="pastry-img" loading="lazy" />
+            <div class="pastry-overlay"></div>
+          </div>
+          <div class="pastry-info">
+            <h3 class="pastry-name"><%= pastry.name %></h3>
+            <p class="pastry-desc"><%= pastry.description %></p>
+            <span class="pastry-price"><%= pastry.price %></span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+
+      <div class="pastry-note">
+        <p>🥐 Our pastries are baked fresh each morning in limited quantities. Early bird gets the croissant.</p>
+        <p>Battlepass members earn a <strong>10% pastry voucher</strong> at drinks 10, 20, 40, 60, 70 and 90.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

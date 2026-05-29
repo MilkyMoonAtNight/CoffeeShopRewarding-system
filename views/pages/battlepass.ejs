@@ -1,0 +1,220 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+<section class="bp-page">
+  <div class="bp-container">
+
+    <!-- QR CARD -->
+      <div class="bp-qr-card">
+        <div class="bp-tier-chip">
+          <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
+          <%= user.tier %>
+        </div>
+        <h2 class="bp-name"><%= user.name %></h2>
+        <p class="bp-email"><%= user.email %></p>
+        <div class="bp-qr-box">
+          <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
+        </div>
+        <p class="bp-qr-hint">Show this to your barista when ordering</p>
+      </div>
+
+    <!-- STATS ROW -->
+    <div class="bp-stats-row">
+      <div class="bp-stat-box">
+        <span class="bp-stat-num"><%= user.totalDrinks %></span>
+        <span class="bp-stat-lbl">drinks</span>
+      </div>
+      <div class="bp-stat-box">
+        <span class="bp-stat-num"><%= claimableItems.length %></span>
+        <span class="bp-stat-lbl">to claim</span>
+      </div>
+      <div class="bp-stat-box">
+        <span class="bp-stat-num"><%= activeVouchers.length %></span>
+        <span class="bp-stat-lbl">vouchers</span>
+      </div>
+    </div>
+
+    <!-- 9 LIVES -->
+    <div class="bp-section-card">
+      <p class="bp-section-label">9 Lives — every 10th drink is free 🐾</p>
+      <% const livesUsed = user.totalDrinks % 10; %>
+      <div class="lives-row">
+        <% for (let i = 1; i <= 9; i++) { %>
+        <div class="life-dot <%= i <= livesUsed ? 'life-used' : 'life-empty' %>">
+          <span><%= i <= livesUsed ? '🐾' : '' %></span>
+        </div>
+        <% } %>
+        <div class="life-dot life-free">
+          <span>☕</span>
+        </div>
+      </div>
+      <p class="lives-count"><%= livesUsed %> / 9 — <%= 10 - livesUsed %> drinks to go</p>
+    </div>
+
+    <!-- PROGRESS TO NEXT REWARD -->
+    <% if (next) { %>
+    <div class="bp-section-card">
+      <p class="bp-section-label">Next Reward</p>
+      <div class="bp-next-reward-row">
+        <span class="bp-next-icon">
+          <%= next.type === 'free_drink' ? '☕' : next.type === 'special' ? '✨' : next.type === 'merch' ? '🎁' : next.type === 'store_voucher' ? '💳' : '🎫' %>
+        </span>
+        <div class="bp-next-info">
+          <p class="bp-next-desc"><%= next.description %></p>
+          <p class="bp-next-count"><%= drinksToNext %> drink<%= drinksToNext !== 1 ? 's' : '' %> away</p>
+        </div>
+      </div>
+      <% const pct = Math.min(100, Math.max(0, progressPct)); %>
+      <div class="bp-prog-track">
+        <div class="bp-prog-fill" data-pct="<%= pct %>"></div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- UPCOMING MILESTONES -->
+    <% if (upcomingMilestones.length > 0) { %>
+    <div class="bp-section-card">
+      <p class="bp-section-label">Coming Up</p>
+      <div class="bp-ms-list">
+        <% upcomingMilestones.forEach((m, i) => { %>
+        <div class="bp-ms-item <%= i === 0 ? 'bp-ms-next' : '' %>">
+          <span class="bp-ms-icon">
+            <%= m.type === 'free_drink' ? '☕' : m.type === 'special' ? '✨' : m.type === 'merch' ? '🎁' : m.type === 'store_voucher' ? '💳' : '🎫' %>
+          </span>
+          <div class="bp-ms-body">
+            <p class="bp-ms-desc"><%= m.description %></p>
+            <p class="bp-ms-num">Drink #<%= m.drinkNumber %><% if (m.expires) { %> · 7-day voucher<% } %></p>
+          </div>
+          <% if (i === 0) { %><span class="bp-ms-badge">Next</span><% } %>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- CLAIMABLE REWARDS -->
+    <% if (claimableItems.length > 0) { %>
+    <div class="bp-section-card">
+      <p class="bp-section-label">🎁 Ready to Claim</p>
+      <p class="bp-section-hint">Tap Claim and show the code to your barista.</p>
+      <div class="bp-claim-list">
+        <% claimableItems.forEach(reward => { %>
+        <div class="bp-claim-item" data-reward-id="<%= reward._id %>">
+          <span class="bp-claim-icon">
+            <%= reward.type === 'free_drink' ? '☕' : reward.type === 'special' ? '✨' : reward.type === 'merch' ? '🎁' : '💳' %>
+          </span>
+          <div class="bp-claim-body">
+            <p class="bp-claim-title"><%= reward.description %></p>
+            <p class="bp-claim-earned">Earned at drink #<%= reward.drinkNumber %></p>
+          </div>
+          <div class="bp-claim-action">
+            <% const codeAge = reward.claimCodeGeneratedAt ? (new Date() - new Date(reward.claimCodeGeneratedAt)) / 1000 / 60 : 99; %>
+            <% if (reward.claimCode && codeAge < 10) { %>
+              <div class="bp-code-display">
+                <span class="bp-code"><%= reward.claimCode %></span>
+                <span class="bp-code-hint">Show barista</span>
+              </div>
+            <% } else { %>
+              <button class="btn btn-primary claim-btn" data-id="<%= reward._id %>">Claim</button>
+            <% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- ACTIVE VOUCHERS -->
+    <% if (activeVouchers.length > 0) { %>
+    <div class="bp-section-card">
+      <p class="bp-section-label">🎫 Active Vouchers</p>
+      <p class="bp-section-hint">Show these at the counter — auto-applied to your order.</p>
+      <div class="bp-voucher-list">
+        <% activeVouchers.forEach(v => { %>
+        <% const daysLeft = v.expiresAt ? Math.max(0, Math.ceil((new Date(v.expiresAt) - new Date()) / (1000*60*60*24))) : null; %>
+        <div class="bp-voucher-item <%= daysLeft !== null && daysLeft <= 1 ? 'voucher-urgent' : '' %>">
+          <span class="bp-voucher-icon">🎫</span>
+          <div class="bp-voucher-body">
+            <p class="bp-voucher-desc"><%= v.description %></p>
+            <p class="bp-voucher-sub">Earned at drink #<%= v.drinkNumber %></p>
+          </div>
+          <% if (daysLeft !== null) { %>
+          <div class="bp-days-left">
+            <span class="bp-days-num"><%= daysLeft %></span>
+            <span class="bp-days-lbl">day<%= daysLeft !== 1 ? 's' : '' %></span>
+          </div>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- HISTORY -->
+    <% if (claimedItems.length > 0 || expiredVouchers.length > 0) { %>
+    <div class="bp-section-card bp-history-card">
+      <p class="bp-section-label">History</p>
+      <div class="bp-voucher-list">
+        <% claimedItems.forEach(r => { %>
+        <div class="bp-voucher-item bp-item-faded">
+          <span class="bp-voucher-icon">✓</span>
+          <div class="bp-voucher-body">
+            <p class="bp-voucher-desc"><%= r.description %></p>
+            <p class="bp-voucher-sub">Claimed <%= r.claimedAt ? new Date(r.claimedAt).toLocaleDateString('en-ZA') : '' %></p>
+          </div>
+        </div>
+        <% }) %>
+        <% expiredVouchers.forEach(v => { %>
+        <div class="bp-voucher-item bp-item-faded">
+          <span class="bp-voucher-icon">⌛</span>
+          <div class="bp-voucher-body">
+            <p class="bp-voucher-desc"><%= v.description %></p>
+            <p class="bp-voucher-sub">Expired <%= new Date(v.expiresAt).toLocaleDateString('en-ZA') %></p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+  </div>
+</section>
+</main>
+
+<script>
+// Set progress bar width via JS to avoid EJS-in-style issue
+document.querySelectorAll('.bp-prog-fill').forEach(el => {
+  el.style.width = el.dataset.pct + '%';
+});
+
+// Claim buttons
+document.querySelectorAll('.claim-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = btn.dataset.id;
+    btn.textContent = '…';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/battlepass/claim/${id}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        const action = btn.closest('.bp-claim-action');
+        action.innerHTML = `
+          <div class="bp-code-display">
+            <span class="bp-code">${data.code}</span>
+            <span class="bp-code-hint">Show barista</span>
+          </div>`;
+      } else {
+        btn.textContent = 'Claim';
+        btn.disabled = false;
+        alert(data.message);
+      }
+    } catch (e) {
+      btn.textContent = 'Claim';
+      btn.disabled = false;
+    }
+  });
+});
+</script>
+
+<%- include('../partials/footer') %>

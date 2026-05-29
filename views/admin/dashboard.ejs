@@ -1,0 +1,81 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Dashboard</h1>
+  <p class="admin-page-sub">Welcome back, <%= admin.name %></p>
+</div>
+
+<!-- Stats -->
+<div class="admin-stats-grid-new">
+  <div class="admin-stat-card">
+    <span class="admin-stat-icon">🐱</span>
+    <div>
+      <span class="admin-stat-number"><%= stats.totalUsers %></span>
+      <span class="admin-stat-label">Registered Members</span>
+    </div>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-icon">☕</span>
+    <div>
+      <span class="admin-stat-number"><%= stats.totalScans %></span>
+      <span class="admin-stat-label">Total Drinks Served</span>
+    </div>
+  </div>
+  <div class="admin-stat-card admin-stat-cta admin-stat-scan" onclick="window.location='/admin/scan'">
+    <span class="admin-stat-icon">📷</span>
+    <div>
+      <span class="admin-stat-number">Scan</span>
+      <span class="admin-stat-label">Record a drink now</span>
+    </div>
+  </div>
+</div>
+
+<div class="admin-two-col-dash">
+  <!-- Recent signups -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Recent Members</h3>
+    <% if (recentUsers.length === 0) { %>
+      <p class="admin-empty">No members yet.</p>
+    <% } else { %>
+    <div class="admin-list">
+      <% recentUsers.forEach(user => { %>
+      <div class="admin-list-item">
+        <div>
+          <span class="admin-list-name"><%= user.name %></span>
+          <span class="admin-list-sub"><%= user.email %></span>
+        </div>
+        <div class="admin-list-right">
+          <span class="admin-badge tier-badge-sm"><%= user.tier %></span>
+          <span class="admin-list-sub"><%= user.totalDrinks %> drinks</span>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <a href="/admin/users" class="admin-card-link">View all members →</a>
+    <% } %>
+  </div>
+
+  <!-- Upcoming events -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Upcoming Events</h3>
+    <% if (upcomingEvents.length === 0) { %>
+      <p class="admin-empty">No upcoming events.</p>
+    <% } else { %>
+    <div class="admin-list">
+      <% upcomingEvents.forEach(event => { %>
+      <div class="admin-list-item">
+        <div>
+          <span class="admin-list-name"><%= event.title %></span>
+          <span class="admin-list-sub"><%= event.location %></span>
+        </div>
+        <span class="admin-list-sub"><%= event.date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+</div>
+
+<%- include('./layout-bottom') %>

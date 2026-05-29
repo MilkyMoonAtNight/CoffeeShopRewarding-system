@@ -1,0 +1,22 @@
+  </main>
+</div>
+
+<script>
+const toggle = document.getElementById('adminNavToggle');
+const drawer = document.getElementById('adminNavDrawer');
+if (toggle && drawer) {
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('open');
+    drawer.classList.toggle('open');
+  });
+  // Close drawer when a nav link is clicked (mobile)
+  drawer.querySelectorAll('.admin-nav-item').forEach(link => {
+    link.addEventListener('click', () => {
+      toggle.classList.remove('open');
+      drawer.classList.remove('open');
+    });
+  });
+}
+</script>
+<script src="/js/main.js"></script>
+</body></html>

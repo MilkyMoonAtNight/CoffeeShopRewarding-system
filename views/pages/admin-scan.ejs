@@ -1,0 +1,61 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="section">
+    <div class="container" style="max-width: 600px;">
+      <h1 class="section-title">Admin — Scan QR Code</h1>
+      <p>Enter the customer's QR token and the drink they ordered to record their battlepass stamp.</p>
+
+      <div class="auth-card" style="margin-top: 2rem;">
+        <div class="form-group">
+          <label for="qrCode">QR Code Token</label>
+          <input type="text" id="qrCode" placeholder="Paste QR token here..." class="scan-input" />
+        </div>
+        <div class="form-group">
+          <label for="drinkName">Drink Ordered</label>
+          <input type="text" id="drinkName" placeholder="e.g. Flat White" value="Flat White" class="scan-input" />
+        </div>
+        <button id="scanBtn" class="btn btn-primary btn-full">Record Drink ✓</button>
+        <div id="scanResult" class="scan-result" style="display:none;"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+document.getElementById('scanBtn').addEventListener('click', async () => {
+  const qrCode = document.getElementById('qrCode').value.trim();
+  const drinkName = document.getElementById('drinkName').value.trim();
+  const resultEl = document.getElementById('scanResult');
+
+  if (!qrCode) { alert('Please enter a QR code'); return; }
+
+  const res = await fetch('/battlepass/scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qrCode, drinkName })
+  });
+  const data = await res.json();
+  resultEl.style.display = 'block';
+
+  if (data.success) {
+    let html = `<div class="scan-success">
+      <strong>✓ Recorded!</strong><br/>
+      Customer: ${data.user.name}<br/>
+      Total drinks: ${data.user.totalDrinks}<br/>
+      Tier: ${data.user.tier}
+    `;
+    if (data.newRewards && data.newRewards.length > 0) {
+      html += `<br/><br/><strong>🎁 New reward unlocked:</strong><br/>`;
+      data.newRewards.forEach(r => { html += `• ${r.description}<br/>`; });
+    }
+    html += '</div>';
+    resultEl.innerHTML = html;
+  } else {
+    resultEl.innerHTML = `<div class="scan-error">✗ ${data.message}</div>`;
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>

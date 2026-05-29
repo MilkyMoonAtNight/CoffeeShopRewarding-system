@@ -1,0 +1,121 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="page-hero page-hero-short section-dark">
+    <div class="container">
+      <p class="section-eyebrow light">What We Pour</p>
+      <h1 class="page-title light">The Drinks</h1>
+    </div>
+  </section>
+
+  <!-- Tab nav -->
+  <div class="drinks-tabs-wrap">
+    <div class="drinks-tabs">
+      <button class="drinks-tab active" data-tab="hot">☕ Hot Drinks</button>
+      <button class="drinks-tab" data-tab="cold">🧊 Cold Drinks</button>
+    </div>
+  </div>
+
+  <section class="section drinks-section">
+    <div class="container">
+
+      <!-- HOT DRINKS -->
+      <div class="drinks-panel" id="tab-hot">
+        <div class="drinks-size-legend">
+          <span>Regular — 250ml</span>
+          <span class="legend-sep">·</span>
+          <span>Large — 350ml</span>
+        </div>
+        <div class="drink-grid">
+          <% hot.forEach(drink => { %>
+          <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+            <div class="drink-card-top">
+              <span class="drink-name"><%= drink.name %></span>
+              <div class="drink-prices">
+                <% if (drink.prices.regular) { %>
+                  <span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span>
+                <% } %>
+                <% if (drink.prices.large) { %>
+                  <span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span>
+                <% } %>
+              </div>
+            </div>
+            <% if (drink.flavours && drink.flavours.length > 0) { %>
+            <div class="drink-flavours">
+              <span class="flavours-label">Flavours:</span>
+              <span class="flavours-list"><%= drink.flavours.join(' · ') %></span>
+            </div>
+            <% } %>
+            <% if (drink.isSpecial) { %>
+              <span class="drink-special-tag">✦ Special</span>
+            <% } %>
+          </div>
+          <% }) %>
+        </div>
+        <% if (!hot.length) { %>
+          <p class="drinks-empty">Menu coming soon — ask our barista!</p>
+        <% } %>
+      </div>
+
+      <!-- COLD DRINKS -->
+      <div class="drinks-panel hidden" id="tab-cold">
+        <div class="drinks-size-legend">
+          <span>Regular — 350ml</span>
+          <span class="legend-sep">·</span>
+          <span>Large — 500ml</span>
+        </div>
+        <div class="drink-grid">
+          <% cold.forEach(drink => { %>
+          <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+            <div class="drink-card-top">
+              <span class="drink-name"><%= drink.name %></span>
+              <div class="drink-prices">
+                <% if (drink.prices.regular) { %>
+                  <span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span>
+                <% } %>
+                <% if (drink.prices.large) { %>
+                  <span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span>
+                <% } %>
+              </div>
+            </div>
+            <% if (drink.flavours && drink.flavours.length > 0) { %>
+            <div class="drink-flavours">
+              <span class="flavours-label">Flavours:</span>
+              <span class="flavours-list"><%= drink.flavours.join(' · ') %></span>
+            </div>
+            <% } %>
+            <% if (drink.isSpecial) { %>
+              <span class="drink-special-tag">✦ Special</span>
+            <% } %>
+          </div>
+          <% }) %>
+        </div>
+        <% if (!cold.length) { %>
+          <p class="drinks-empty">Menu coming soon — ask our barista!</p>
+        <% } %>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section-cta section-dark">
+    <div class="container text-center">
+      <p>Every drink you buy earns you a scan on your battlepass.</p>
+      <a href="/register" class="btn btn-outline-light">Get Your QR Code →</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  document.querySelectorAll('.drinks-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.drinks-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.drinks-panel').forEach(p => p.classList.add('hidden'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

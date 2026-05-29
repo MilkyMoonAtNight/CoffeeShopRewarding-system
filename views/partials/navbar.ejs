@@ -1,0 +1,25 @@
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <img src="/images/logo.png" alt="Con Leche" class="logo-img" />
+      <span class="logo-text">Con Leche</span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/" class="nav-link">Home</a></li>
+      <li><a href="/about" class="nav-link">Our Story</a></li>
+      <li><a href="/drinks" class="nav-link">Drinks</a></li>
+      <li><a href="/pastries" class="nav-link">Pastries</a></li>
+      <li><a href="/events" class="nav-link">Events</a></li>
+      <% if (locals.session && session.userId) { %>
+        <li><a href="/battlepass" class="nav-link nav-cta">My Battlepass</a></li>
+        <li><a href="/logout" class="nav-link">Sign Out</a></li>
+      <% } else { %>
+        <li><a href="/login" class="nav-link">Sign In</a></li>
+        <li><a href="/register" class="nav-link nav-cta">Join the Pack</a></li>
+      <% } %>
+    </ul>
+  </div>
+</nav>

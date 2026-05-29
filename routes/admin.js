@@ -1,0 +1,290 @@
+const express = require('express');
+const router = express.Router();
+const Admin   = require('../models/Admin');
+const User    = require('../models/User');
+const Event   = require('../models/Event');
+const Drink   = require('../models/Drink');
+const Pastry  = require('../models/Pastry');
+
+// ── MIDDLEWARE ────────────────────────────────────────────────────
+async function requireAdmin(req, res, next) {
+  if (!req.session.adminId) return res.redirect('/admin/login');
+  const admin = await Admin.findById(req.session.adminId);
+  if (!admin || !admin.active) return res.redirect('/admin/login');
+  req.admin = admin;
+  next();
+}
+
+async function requireRole(req, res, next, roles) {
+  if (!req.session.adminId) return res.redirect('/admin/login');
+  const admin = await Admin.findById(req.session.adminId);
+  if (!admin || !admin.active) return res.redirect('/admin/login');
+  if (!roles.includes(admin.role)) {
+    return res.status(403).render('admin/error', {
+      title: 'Access Denied',
+      message: `This page requires: ${roles.join(' or ')}`
+    });
+  }
+  req.admin = admin;
+  next();
+}
+
+const ownerManager = (req, res, next) => requireRole(req, res, next, ['owner', 'manager']);
+const ownerOnly    = (req, res, next) => requireRole(req, res, next, ['owner']);
+
+// ── ONE-TIME SETUP ─────────────────────────────────────────────
+router.get('/setup', async (req, res) => {
+  try {
+    const count = await Admin.countDocuments();
+    if (count > 0) return res.send('Setup already done.');
+    await new Admin({ name: 'JuanMartin', email: 'juanmartin@conleche.co.za', password: 'admin', role: 'owner' }).save();
+    await new Admin({ name: 'IwanGroen',  email: 'iwangroen@conleche.co.za',  password: 'admin', role: 'barista' }).save();
+    await new Admin({ name: 'Manager',    email: 'manager@conleche.co.za',     password: 'admin', role: 'manager' }).save();
+    res.send('<h2>✓ Done</h2><a href="/admin/login">Login →</a>');
+  } catch (err) { res.send('Error: ' + err.message); }
+});
+
+// ── AUTH ──────────────────────────────────────────────────────────
+router.get('/login', (req, res) => {
+  if (req.session.adminId) return res.redirect('/admin/dashboard');
+  res.render('admin/login', { title: 'Staff Login — Con Leche', error: null });
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const admin = await Admin.findOne({ email, active: true });
+    if (!admin || !(await admin.comparePassword(password))) {
+      return res.render('admin/login', { title: 'Staff Login', error: 'Invalid credentials' });
+    }
+    admin.lastLogin = new Date();
+    await admin.save();
+    req.session.adminId   = admin._id;
+    req.session.adminName = admin.name;
+    req.session.adminRole = admin.role;
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    res.render('admin/login', { title: 'Staff Login', error: 'Something went wrong.' });
+  }
+});
+
+router.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/admin/login'));
+});
+
+// ── DASHBOARD ─────────────────────────────────────────────────────
+router.get('/dashboard', requireAdmin, async (req, res) => {
+  const totalUsers  = await User.countDocuments();
+  const scanResult  = await User.aggregate([{ $group: { _id: null, total: { $sum: '$totalDrinks' } } }]);
+  const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5);
+  const upcomingEvents = await Event.find({ date: { $gte: new Date() } }).sort({ date: 1 }).limit(4);
+  res.render('admin/dashboard', {
+    title: 'Dashboard — Con Leche Admin',
+    admin: req.admin,
+    stats: { totalUsers, totalScans: scanResult[0]?.total || 0 },
+    recentUsers,
+    upcomingEvents
+  });
+});
+
+// ── QR SCAN ───────────────────────────────────────────────────────
+router.get('/scan', requireAdmin, (req, res) => {
+  res.render('admin/scan', { title: 'Scan QR — Con Leche', admin: req.admin, result: null });
+});
+
+router.post('/scan', requireAdmin, async (req, res) => {
+  const { panel, qrCode, rewardId, claimCode } = req.body;
+  let result = { panel };
+  try {
+if (panel === 'record') {
+      const user = await User.findOne({ qrCode });
+      if (!user) {
+        result = { panel, success: false, message: 'QR code not found — is the customer registered?' };
+      } else {
+        const qty = Math.min(20, Math.max(1, parseInt(req.body.quantity) || 1));
+        let newReward = null;
+        for (let i = 0; i < qty; i++) {
+          const reward = user.recordDrink('Drink');
+          if (reward) newReward = reward;
+        }
+        await user.save();
+        result = { panel, success: true, user, newReward, qty };
+      }
+    } else if (panel === 'confirm') {
+      const user = await User.findOne({ qrCode });
+      if (!user) {
+        result = { panel, success: false, message: 'Customer not found' };
+      } else {
+        const confirmed = user.confirmClaim(rewardId, claimCode);
+        if (!confirmed.ok) {
+          result = { panel, success: false, message: confirmed.reason };
+        } else {
+          await user.save();
+          result = { panel, success: true, rewardDesc: confirmed.reward.description };
+        }
+      }
+    }
+  } catch (err) {
+    result = { panel, success: false, message: err.message };
+  }
+  res.render('admin/scan', { title: 'Scan QR — Con Leche', admin: req.admin, result });
+});
+
+// Camera scan API
+router.post('/scan-api', requireAdmin, async (req, res) => {
+  try {
+    const { qrCode } = req.body;
+    const user = await User.findOne({ qrCode });
+    if (!user) return res.json({ success: false, message: 'QR code not found' });
+    const newReward = user.recordDrink('Drink');
+    await user.save();
+    res.json({ success: true, user: { name: user.name, totalDrinks: user.totalDrinks, tier: user.tier }, newReward });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ── EVENTS ────────────────────────────────────────────────────────
+router.get('/events', ownerManager, async (req, res) => {
+  const events = await Event.find().sort({ date: -1 });
+  res.render('admin/events', { title: 'Events — Con Leche Admin', admin: req.admin, events, msg: req.query.msg || null });
+});
+
+router.post('/events/add', ownerManager, async (req, res) => {
+  try {
+    const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
+    await new Event({ title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay }).save();
+    res.redirect('/admin/events?msg=Event+added');
+  } catch (err) { res.redirect('/admin/events?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/events/edit/:id', ownerManager, async (req, res) => {
+  try {
+    const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
+    await Event.findByIdAndUpdate(req.params.id, { title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay });
+    res.redirect('/admin/events?msg=Event+updated');
+  } catch (err) { res.redirect('/admin/events?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/events/delete/:id', ownerManager, async (req, res) => {
+  await Event.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/events?msg=Event+deleted');
+});
+
+// ── DRINKS ────────────────────────────────────────────────────────
+router.get('/drinks', ownerManager, async (req, res) => {
+  const drinks = await Drink.find().sort({ category: 1, order: 1 });
+  res.render('admin/drinks', { title: 'Drinks — Con Leche Admin', admin: req.admin, drinks, msg: req.query.msg || null });
+});
+
+router.post('/drinks/add', ownerManager, async (req, res) => {
+  try {
+    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order } = req.body;
+    const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
+    await new Drink({
+      name, category, subcategory,
+      prices: { regular: priceRegular || null, large: priceLarge || null },
+      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
+      flavours: flavourList, isSpecial: !!isSpecial, order: order || 99, available: true
+    }).save();
+    res.redirect('/admin/drinks?msg=Drink+added');
+  } catch (err) { res.redirect('/admin/drinks?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/drinks/edit/:id', ownerManager, async (req, res) => {
+  try {
+    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order } = req.body;
+    const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
+    await Drink.findByIdAndUpdate(req.params.id, {
+      name, category, subcategory,
+      prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null },
+      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
+      flavours: flavourList, isSpecial: !!isSpecial,
+      available: available !== 'false', order: Number(order) || 99, updatedAt: new Date()
+    });
+    res.redirect('/admin/drinks?msg=Drink+updated');
+  } catch (err) { res.redirect('/admin/drinks?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/drinks/delete/:id', ownerManager, async (req, res) => {
+  await Drink.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/drinks?msg=Drink+deleted');
+});
+
+router.post('/drinks/toggle/:id', ownerManager, async (req, res) => {
+  const drink = await Drink.findById(req.params.id);
+  if (drink) { drink.available = !drink.available; await drink.save(); }
+  res.redirect('/admin/drinks?msg=Updated');
+});
+
+// ── PASTRIES ──────────────────────────────────────────────────────
+router.get('/pastries', ownerManager, async (req, res) => {
+  const pastries = await Pastry.find().sort({ order: 1 });
+  res.render('admin/pastries', { title: 'Pastries — Con Leche Admin', admin: req.admin, pastries, msg: req.query.msg || null });
+});
+
+router.post('/pastries/add', ownerManager, async (req, res) => {
+  try {
+    const { name, description, price, image, order } = req.body;
+    await new Pastry({ name, description, price: Number(price), image: image || null, order: order || 99, available: true }).save();
+    res.redirect('/admin/pastries?msg=Pastry+added');
+  } catch (err) { res.redirect('/admin/pastries?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/pastries/edit/:id', ownerManager, async (req, res) => {
+  try {
+    const { name, description, price, image, available, order } = req.body;
+    await Pastry.findByIdAndUpdate(req.params.id, {
+      name, description, price: Number(price),
+      image: image || null,
+      available: available !== 'false',
+      order: Number(order) || 99,
+      updatedAt: new Date()
+    });
+    res.redirect('/admin/pastries?msg=Pastry+updated');
+  } catch (err) { res.redirect('/admin/pastries?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/pastries/delete/:id', ownerManager, async (req, res) => {
+  await Pastry.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/pastries?msg=Pastry+deleted');
+});
+
+router.post('/pastries/toggle/:id', ownerManager, async (req, res) => {
+  const pastry = await Pastry.findById(req.params.id);
+  if (pastry) { pastry.available = !pastry.available; await pastry.save(); }
+  res.redirect('/admin/pastries?msg=Updated');
+});
+
+// ── MEMBERS ───────────────────────────────────────────────────────
+router.get('/users', ownerManager, async (req, res) => {
+  const users = await User.find().sort({ createdAt: -1 });
+  res.render('admin/users', { title: 'Members — Con Leche Admin', admin: req.admin, users });
+});
+
+// ── STAFF ─────────────────────────────────────────────────────────
+router.get('/staff', ownerOnly, async (req, res) => {
+  const staff = await Admin.find().sort({ role: 1, name: 1 });
+  res.render('admin/staff', { title: 'Staff — Con Leche Admin', admin: req.admin, staff });
+});
+
+router.post('/staff/add', ownerOnly, async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    const exists = await Admin.findOne({ email });
+    if (exists) return res.redirect('/admin/staff?error=Email+already+exists');
+    await new Admin({ name, email, password, role }).save();
+    res.redirect('/admin/staff?success=Staff+member+added');
+  } catch (err) { res.redirect('/admin/staff?error=' + encodeURIComponent(err.message)); }
+});
+
+router.post('/staff/toggle/:id', ownerOnly, async (req, res) => {
+  const staff = await Admin.findById(req.params.id);
+  if (staff && staff._id.toString() !== req.session.adminId.toString()) {
+    staff.active = !staff.active;
+    await staff.save();
+  }
+  res.redirect('/admin/staff');
+});
+
+module.exports = router;
