@@ -5,6 +5,7 @@ const User    = require('../models/User');
 const Event   = require('../models/Event');
 const Drink   = require('../models/Drink');
 const Pastry  = require('../models/Pastry');
+const CheckIn = require('../models/CheckIn');
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────
 async function requireAdmin(req, res, next) {
@@ -62,6 +63,14 @@ router.post('/login', async (req, res) => {
     req.session.adminId   = admin._id;
     req.session.adminName = admin.name;
     req.session.adminRole = admin.role;
+
+    // If they came from NFC tap, send them back to check-in
+    const token = req.session.checkinToken || req.query.checkin;
+    if (token && req.query.checkin) {
+      req.session.checkinToken = null;
+      return res.redirect(`/admin/checkin?token=${process.env.NFC_TOKEN}`);
+    }
+
     res.redirect('/admin/dashboard');
   } catch (err) {
     res.render('admin/login', { title: 'Staff Login', error: 'Something went wrong.' });
@@ -96,7 +105,7 @@ router.post('/scan', requireAdmin, async (req, res) => {
   const { panel, qrCode, rewardId, claimCode } = req.body;
   let result = { panel };
   try {
-if (panel === 'record') {
+    if (panel === 'record') {
       const user = await User.findOne({ qrCode });
       if (!user) {
         result = { panel, success: false, message: 'QR code not found — is the customer registered?' };
@@ -262,10 +271,154 @@ router.get('/users', ownerManager, async (req, res) => {
   res.render('admin/users', { title: 'Members — Con Leche Admin', admin: req.admin, users });
 });
 
+// ── NFC CHECK-IN ──────────────────────────────────────────────────
+// This URL goes on your NFC tag — staff tap it to check in
+router.get('/checkin', async (req, res) => {
+  const { token } = req.query;
+
+  // Validate NFC token
+  if (token !== process.env.NFC_TOKEN) {
+    return res.render('admin/checkin', {
+      title: 'Check In — Con Leche',
+      state: 'invalid',
+      admin: null,
+      message: 'Invalid check-in link. Use the NFC tag in the shop.'
+    });
+  }
+
+  // Not logged in — redirect to login then back
+  if (!req.session.adminId) {
+    req.session.checkinToken = token;
+    return res.redirect('/admin/login?checkin=1');
+  }
+
+  const admin = await Admin.findById(req.session.adminId);
+  if (!admin || !admin.active) return res.redirect('/admin/login?checkin=1');
+
+  // Check if already checked in today
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const alreadyCheckedIn = await CheckIn.findOne({
+    adminId: admin._id,
+    checkedInAt: { $gte: startOfDay }
+  });
+
+  if (alreadyCheckedIn) {
+    return res.render('admin/checkin', {
+      title: 'Check In — Con Leche',
+      state: 'already',
+      admin,
+      message: `You already checked in today at ${alreadyCheckedIn.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+    });
+  }
+
+  // Record check-in
+  await new CheckIn({
+    adminId: admin._id,
+    name: admin.name,
+    role: admin.role,
+    method: 'nfc'
+  }).save();
+
+  res.render('admin/checkin', {
+    title: 'Check In — Con Leche',
+    state: 'success',
+    admin,
+    message: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+  });
+});
+
+// ── PIN CHECK-IN (fallback for non-NFC phones) ────────────────────
+router.get('/checkin-pin', async (req, res) => {
+  if (!req.session.adminId) return res.redirect('/admin/login');
+  const admin = await Admin.findById(req.session.adminId);
+  if (!admin || !admin.active) return res.redirect('/admin/login');
+  res.render('admin/checkin-pin', { title: 'PIN Check In — Con Leche', admin, error: null, success: null });
+});
+
+router.post('/checkin-pin', async (req, res) => {
+  if (!req.session.adminId) return res.redirect('/admin/login');
+  const admin = await Admin.findById(req.session.adminId);
+  if (!admin || !admin.active) return res.redirect('/admin/login');
+
+  const crypto = require('crypto');
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyPin = crypto.createHash('md5')
+    .update(today + (process.env.NFC_TOKEN || 'conleche'))
+    .digest('hex')
+    .slice(0, 4)
+    .toUpperCase();
+
+  if (req.body.pin?.toUpperCase().trim() !== dailyPin) {
+    return res.render('admin/checkin-pin', {
+      title: 'PIN Check In — Con Leche',
+      admin, error: 'Wrong PIN — ask your manager for today\'s PIN.', success: null
+    });
+  }
+
+  // Check already checked in today
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const already = await CheckIn.findOne({ adminId: admin._id, checkedInAt: { $gte: startOfDay } });
+  if (already) {
+    return res.render('admin/checkin-pin', {
+      title: 'PIN Check In — Con Leche', admin, error: null,
+      success: `Already checked in today at ${already.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+    });
+  }
+
+  await new CheckIn({ adminId: admin._id, name: admin.name, role: admin.role, method: 'manual' }).save();
+  res.render('admin/checkin-pin', {
+    title: 'PIN Check In — Con Leche', admin, error: null,
+    success: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+  });
+});
+
 // ── STAFF ─────────────────────────────────────────────────────────
 router.get('/staff', ownerOnly, async (req, res) => {
   const staff = await Admin.find().sort({ role: 1, name: 1 });
-  res.render('admin/staff', { title: 'Staff — Con Leche Admin', admin: req.admin, staff });
+
+  // Today's check-ins
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const todayCheckIns = await CheckIn.find({ checkedInAt: { $gte: startOfDay } }).sort({ checkedInAt: -1 });
+
+  // Last 7 days grouped by date
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+  const recentCheckIns = await CheckIn.find({ checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
+
+  // Group by date string
+  const grouped = {};
+  recentCheckIns.forEach(c => {
+    const dateKey = c.checkedInAt.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(c);
+  });
+
+  // Generate daily PIN (changes every day based on date + secret)
+  const crypto = require('crypto');
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyPin = crypto.createHash('md5')
+    .update(today + (process.env.NFC_TOKEN || 'conleche'))
+    .digest('hex')
+    .slice(0, 4)
+    .toUpperCase();
+
+  const nfcUrl = `${req.protocol}://${req.get('host')}/admin/checkin?token=${process.env.NFC_TOKEN}`;
+  const pinUrl = `${req.protocol}://${req.get('host')}/admin/checkin-pin`;
+
+  res.render('admin/staff', {
+    title: 'Staff — Con Leche Admin',
+    admin: req.admin,
+    staff,
+    todayCheckIns,
+    grouped,
+    nfcUrl,
+    pinUrl,
+    dailyPin,
+    query: req.query
+  });
 });
 
 router.post('/staff/add', ownerOnly, async (req, res) => {

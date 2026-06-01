@@ -1235,12 +1235,27 @@ ul { list-style: none; }
 .drink-special-tag { font-size: 0.7rem; color: var(--maroon); font-weight: 600; letter-spacing: 0.08em; }
 .drinks-empty { color: rgba(44,44,44,0.4); font-style: italic; margin-top: 2rem; }
 
-.qty-selector { display: flex; align-items: center; gap: 0; border: 1.5px solid rgba(44,44,44,0.15); border-radius: var(--radius); overflow: hidden; }
-.qty-btn { background: rgba(44,44,44,0.06); border: none; width: 44px; height: 44px; font-size: 1.2rem; cursor: pointer; font-family: var(--font-body); transition: background var(--transition); flex-shrink: 0; }
-.qty-btn:hover { background: var(--maroon); color: var(--cream); }
-.qty-input { border: none; text-align: center; font-size: 1.1rem; font-weight: 600; width: 100%; padding: 0.6rem; background: var(--white); font-family: var(--font-body); }
-
 @media (min-width: 600px) {
   .bp-qr-img { width: 200px; height: 200px; }
   .bp-container { padding: 1.5rem 1.5rem 4rem; }
 }
+
+/* ── Quantity selector ── */
+.qty-selector { display: flex; align-items: center; border: 1.5px solid rgba(44,44,44,0.15); border-radius: var(--radius); overflow: hidden; }
+.qty-btn { background: rgba(44,44,44,0.06); border: none; width: 44px; height: 44px; font-size: 1.2rem; cursor: pointer; font-family: var(--font-body); transition: background var(--transition); flex-shrink: 0; }
+.qty-btn:hover { background: var(--maroon); color: var(--cream); }
+.qty-input { border: none; text-align: center; font-size: 1.1rem; font-weight: 600; width: 100%; padding: 0.6rem; background: var(--white); font-family: var(--font-body); }
+
+/* ── Attendance dashboard ── */
+.attendance-day { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(44,44,44,0.07); }
+.attendance-day:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.attendance-date { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(44,44,44,0.4); font-weight: 600; margin-bottom: 0.6rem; }
+.attendance-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.attendance-chip {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: rgba(88,18,23,0.06); border: 1px solid rgba(88,18,23,0.12);
+  border-radius: 50px; padding: 0.3rem 0.75rem;
+}
+.attendance-name { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); }
+.attendance-time { font-size: 0.72rem; color: rgba(44,44,44,0.45); }
+.attendance-method { font-size: 0.75rem; }

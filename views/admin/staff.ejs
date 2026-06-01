@@ -2,15 +2,83 @@
 
 <div class="admin-page-header">
   <h1 class="admin-page-title">Staff</h1>
-  <p class="admin-page-sub">Manage admin accounts and roles</p>
+  <p class="admin-page-sub">Manage accounts, check-ins and attendance</p>
 </div>
 
-<% if (locals.query && query.success) { %>
-<div class="admin-alert admin-alert-success"><%= query.success %></div>
-<% } %>
-<% if (locals.query && query.error) { %>
-<div class="admin-alert admin-alert-error"><%= query.error %></div>
-<% } %>
+<% if (query && query.success) { %><div class="admin-alert admin-alert-success"><%= query.success %></div><% } %>
+<% if (query && query.error) { %><div class="admin-alert admin-alert-error"><%= query.error %></div><% } %>
+
+<!-- Today's check-ins -->
+<div class="admin-card" style="margin-bottom:1rem;">
+  <h3 class="admin-card-title">☀️ Today's Check-ins</h3>
+  <% if (todayCheckIns.length === 0) { %>
+    <p class="admin-empty">No check-ins yet today.</p>
+  <% } else { %>
+  <div class="admin-list">
+    <% todayCheckIns.forEach(c => { %>
+    <div class="admin-list-item">
+      <div>
+        <span class="admin-list-name"><%= c.name %></span>
+        <span class="admin-list-sub"><%= c.role %></span>
+      </div>
+      <div class="admin-list-right">
+        <span style="font-size:0.88rem;font-weight:700;color:var(--maroon);">
+          <%= c.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %>
+        </span>
+        <span class="admin-list-sub"><%= c.method === 'nfc' ? '📱 NFC' : '🔢 PIN' %></span>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+</div>
+
+<!-- Check-in methods -->
+<div class="admin-two-col" style="margin-bottom:1rem;">
+  <!-- NFC -->
+  <div class="admin-card" style="background:var(--black);border-color:rgba(88,18,23,0.2);">
+    <h3 class="admin-card-title" style="color:var(--cream);">📱 NFC Tag URL</h3>
+    <p style="color:rgba(253,246,237,0.45);font-size:0.82rem;margin-bottom:0.75rem;">Program into your NFC tag using <strong style="color:var(--cream);">NFC Tools</strong> app.</p>
+    <div style="background:rgba(255,255,255,0.05);border-radius:var(--radius);padding:0.6rem 0.75rem;word-break:break-all;margin-bottom:0.75rem;">
+      <code style="color:var(--maroon-light);font-size:0.72rem;"><%= nfcUrl %></code>
+    </div>
+    <p style="color:rgba(253,246,237,0.25);font-size:0.7rem;">Keep this URL private.</p>
+  </div>
+
+  <!-- Daily PIN -->
+  <div class="admin-card" style="background:var(--black);border-color:rgba(88,18,23,0.2);">
+    <h3 class="admin-card-title" style="color:var(--cream);">🔢 Today's PIN</h3>
+    <p style="color:rgba(253,246,237,0.45);font-size:0.82rem;margin-bottom:0.75rem;">For staff without NFC. Resets at midnight automatically.</p>
+    <div style="text-align:center;margin:0.5rem 0 0.75rem;">
+      <span style="font-family:var(--font-nimbus);font-size:3rem;color:var(--maroon-light);letter-spacing:0.3em;"><%= dailyPin %></span>
+    </div>
+    <p style="color:rgba(253,246,237,0.25);font-size:0.7rem;">Share verbally — never over text. Check-in at: <a href="<%= pinUrl %>" style="color:var(--maroon-light);">/admin/checkin-pin</a></p>
+  </div>
+</div>
+
+<!-- 7-day attendance dashboard -->
+<div class="admin-card" style="margin-bottom:1rem;">
+  <h3 class="admin-card-title">📅 Last 7 Days — Attendance</h3>
+  <% const dates = Object.keys(grouped); %>
+  <% if (dates.length === 0) { %>
+    <p class="admin-empty">No check-ins in the last 7 days.</p>
+  <% } else { %>
+    <% dates.forEach(date => { %>
+    <div class="attendance-day">
+      <p class="attendance-date"><%= date %></p>
+      <div class="attendance-chips">
+        <% grouped[date].forEach(c => { %>
+        <div class="attendance-chip">
+          <span class="attendance-name"><%= c.name %></span>
+          <span class="attendance-time"><%= c.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %></span>
+          <span class="attendance-method"><%= c.method === 'nfc' ? '📱' : '🔢' %></span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% }) %>
+  <% } %>
+</div>
 
 <div class="admin-two-col">
   <!-- Staff list -->
@@ -27,12 +95,10 @@
           <span class="admin-role-badge admin-role-<%= member.role %>"><%= member.role %></span>
           <% if (member._id.toString() !== admin._id.toString()) { %>
           <form action="/admin/staff/toggle/<%= member._id %>" method="POST" style="display:inline;">
-            <button type="submit" class="admin-toggle-btn">
-              <%= member.active ? 'Deactivate' : 'Activate' %>
-            </button>
+            <button type="submit" class="admin-toggle-btn"><%= member.active ? 'Deactivate' : 'Activate' %></button>
           </form>
           <% } else { %>
-            <span style="font-size:0.7rem; color:rgba(44,44,44,0.3)">You</span>
+            <span style="font-size:0.7rem;color:rgba(44,44,44,0.3);">You</span>
           <% } %>
         </div>
       </div>
