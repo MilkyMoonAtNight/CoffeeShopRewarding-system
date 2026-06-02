@@ -6,27 +6,35 @@
     <img src="/images/logo.png" alt="Con Leche" style="width:64px;margin:0 auto 1.5rem;" />
 
     <% if (state === 'success') { %>
-      <div style="background:rgba(91,158,110,0.1);border:1px solid rgba(91,158,110,0.3);border-radius:var(--radius-lg);padding:2.5rem 2rem;">
-        <div style="font-size:3rem;margin-bottom:1rem;">✓</div>
-        <h2 style="font-family:var(--font-nimbus);color:var(--cream);font-size:1.8rem;margin-bottom:0.75rem;">Checked In!</h2>
-        <p style="color:rgba(253,246,237,0.6);font-size:0.95rem;"><%= message %></p>
-        <p style="color:rgba(253,246,237,0.3);font-size:0.78rem;margin-top:0.5rem;">134 Braam Pretorius Street, Pretoria</p>
-        <a href="/admin/dashboard" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex;">Go to Dashboard →</a>
+      <div class="nfc-card nfc-card-in">
+        <div class="nfc-icon">☕</div>
+        <h2 class="nfc-title">Checked In!</h2>
+        <p class="nfc-msg"><%= message %></p>
+        <p class="nfc-sub">Tap the tag again when you leave to check out.</p>
+        <a href="/admin/dashboard" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex;">Dashboard →</a>
+      </div>
+
+    <% } else if (state === 'checkout') { %>
+      <div class="nfc-card nfc-card-out">
+        <div class="nfc-icon">🐾</div>
+        <h2 class="nfc-title">Checked Out!</h2>
+        <p class="nfc-msg"><%= message %></p>
+        <a href="/admin/dashboard" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex;">Dashboard →</a>
       </div>
 
     <% } else if (state === 'already') { %>
-      <div style="background:rgba(88,18,23,0.15);border:1px solid rgba(88,18,23,0.3);border-radius:var(--radius-lg);padding:2.5rem 2rem;">
-        <div style="font-size:3rem;margin-bottom:1rem;">🐱</div>
-        <h2 style="font-family:var(--font-nimbus);color:var(--cream);font-size:1.8rem;margin-bottom:0.75rem;">Already In!</h2>
-        <p style="color:rgba(253,246,237,0.6);font-size:0.95rem;"><%= message %></p>
+      <div class="nfc-card nfc-card-done">
+        <div class="nfc-icon">✓</div>
+        <h2 class="nfc-title">All Done Today</h2>
+        <p class="nfc-msg"><%= message %></p>
         <a href="/admin/dashboard" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex;">Dashboard →</a>
       </div>
 
     <% } else { %>
-      <div style="background:rgba(200,50,50,0.1);border:1px solid rgba(200,50,50,0.2);border-radius:var(--radius-lg);padding:2.5rem 2rem;">
-        <div style="font-size:3rem;margin-bottom:1rem;">✗</div>
-        <h2 style="font-family:var(--font-nimbus);color:var(--cream);font-size:1.8rem;margin-bottom:0.75rem;">Invalid Link</h2>
-        <p style="color:rgba(253,246,237,0.5);font-size:0.9rem;"><%= message %></p>
+      <div class="nfc-card nfc-card-err">
+        <div class="nfc-icon">✗</div>
+        <h2 class="nfc-title">Invalid Link</h2>
+        <p class="nfc-msg"><%= message %></p>
       </div>
     <% } %>
 

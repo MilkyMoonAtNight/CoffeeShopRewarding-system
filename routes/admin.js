@@ -271,22 +271,18 @@ router.get('/users', ownerManager, async (req, res) => {
   res.render('admin/users', { title: 'Members — Con Leche Admin', admin: req.admin, users });
 });
 
-// ── NFC CHECK-IN ──────────────────────────────────────────────────
-// This URL goes on your NFC tag — staff tap it to check in
+// ── NFC CHECK-IN / CHECK-OUT ──────────────────────────────────────
 router.get('/checkin', async (req, res) => {
   const { token } = req.query;
 
-  // Validate NFC token
   if (token !== process.env.NFC_TOKEN) {
     return res.render('admin/checkin', {
       title: 'Check In — Con Leche',
-      state: 'invalid',
-      admin: null,
+      state: 'invalid', admin: null,
       message: 'Invalid check-in link. Use the NFC tag in the shop.'
     });
   }
 
-  // Not logged in — redirect to login then back
   if (!req.session.adminId) {
     req.session.checkinToken = token;
     return res.redirect('/admin/login?checkin=1');
@@ -295,52 +291,63 @@ router.get('/checkin', async (req, res) => {
   const admin = await Admin.findById(req.session.adminId);
   if (!admin || !admin.active) return res.redirect('/admin/login?checkin=1');
 
-  // Check if already checked in today
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const alreadyCheckedIn = await CheckIn.findOne({
-    adminId: admin._id,
-    checkedInAt: { $gte: startOfDay }
-  });
+  const existing = await CheckIn.findOne({ adminId: admin._id, checkedInAt: { $gte: startOfDay } });
 
-  if (alreadyCheckedIn) {
+  // No check-in yet → check in
+  if (!existing) {
+    await new CheckIn({ adminId: admin._id, name: admin.name, role: admin.role, method: 'nfc' }).save();
     return res.render('admin/checkin', {
-      title: 'Check In — Con Leche',
-      state: 'already',
-      admin,
-      message: `You already checked in today at ${alreadyCheckedIn.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+      title: 'Check In — Con Leche', state: 'success', admin,
+      message: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`,
+      action: 'checkin'
     });
   }
 
-  // Record check-in
-  await new CheckIn({
-    adminId: admin._id,
-    name: admin.name,
-    role: admin.role,
-    method: 'nfc'
-  }).save();
+  // Checked in but not checked out → check out
+  if (!existing.checkedOutAt) {
+    existing.checkedOutAt = new Date();
+    await existing.save();
+    const mins = Math.round((existing.checkedOutAt - existing.checkedInAt) / 1000 / 60);
+    const hrs  = Math.floor(mins / 60);
+    const rem  = mins % 60;
+    const duration = hrs > 0 ? `${hrs}h ${rem}m` : `${mins}m`;
+    return res.render('admin/checkin', {
+      title: 'Check Out — Con Leche', state: 'checkout', admin,
+      message: `See you, ${admin.name}! Checked out at ${existing.checkedOutAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}. You were in for ${duration}.`,
+      action: 'checkout'
+    });
+  }
 
-  res.render('admin/checkin', {
-    title: 'Check In — Con Leche',
-    state: 'success',
-    admin,
-    message: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+  // Already both checked in and out today
+  return res.render('admin/checkin', {
+    title: 'Check In — Con Leche', state: 'already', admin,
+    message: `You already checked in and out today.`,
+    action: 'done'
   });
 });
 
 // ── PIN CHECK-IN (fallback for non-NFC phones) ────────────────────
-router.get('/checkin-pin', async (req, res) => {
-  if (!req.session.adminId) return res.redirect('/admin/login');
-  const admin = await Admin.findById(req.session.adminId);
-  if (!admin || !admin.active) return res.redirect('/admin/login');
-  res.render('admin/checkin-pin', { title: 'PIN Check In — Con Leche', admin, error: null, success: null });
+router.get('/checkin-pin', requireAdmin, async (req, res) => {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const myCheckIns = await CheckIn.find({
+    adminId: req.admin._id,
+    checkedInAt: { $gte: sevenDaysAgo }
+  }).sort({ checkedInAt: -1 });
+
+  res.render('admin/checkin-pin', {
+    title: 'PIN Check In — Con Leche',
+    admin: req.admin,
+    error: null,
+    success: null,
+    action: null,
+    myCheckIns
+  });
 });
 
-router.post('/checkin-pin', async (req, res) => {
-  if (!req.session.adminId) return res.redirect('/admin/login');
-  const admin = await Admin.findById(req.session.adminId);
-  if (!admin || !admin.active) return res.redirect('/admin/login');
-
+router.post('/checkin-pin', requireAdmin, async (req, res) => {
+  const admin = req.admin;
   const crypto = require('crypto');
   const today = new Date().toISOString().slice(0, 10);
   const dailyPin = crypto.createHash('md5')
@@ -349,28 +356,55 @@ router.post('/checkin-pin', async (req, res) => {
     .slice(0, 4)
     .toUpperCase();
 
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   if (req.body.pin?.toUpperCase().trim() !== dailyPin) {
+    const myCheckIns = await CheckIn.find({ adminId: admin._id, checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
     return res.render('admin/checkin-pin', {
       title: 'PIN Check In — Con Leche',
-      admin, error: 'Wrong PIN — ask your manager for today\'s PIN.', success: null
+      admin, error: "Wrong PIN — ask your manager for today's PIN.",
+      success: null, myCheckIns, action: null
     });
   }
 
-  // Check already checked in today
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const already = await CheckIn.findOne({ adminId: admin._id, checkedInAt: { $gte: startOfDay } });
-  if (already) {
+  const existing = await CheckIn.findOne({ adminId: admin._id, checkedInAt: { $gte: startOfDay } });
+  const myCheckIns = await CheckIn.find({ adminId: admin._id, checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
+
+  // No check-in yet → check in
+  if (!existing) {
+    await new CheckIn({ adminId: admin._id, name: admin.name, role: admin.role, method: 'manual' }).save();
+    const fresh = await CheckIn.find({ adminId: admin._id, checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
     return res.render('admin/checkin-pin', {
       title: 'PIN Check In — Con Leche', admin, error: null,
-      success: `Already checked in today at ${already.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+      success: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`,
+      myCheckIns: fresh, action: 'checkin'
     });
   }
 
-  await new CheckIn({ adminId: admin._id, name: admin.name, role: admin.role, method: 'manual' }).save();
-  res.render('admin/checkin-pin', {
+  // Checked in, not out → check out
+  if (!existing.checkedOutAt) {
+    existing.checkedOutAt = new Date();
+    await existing.save();
+    const mins = Math.round((existing.checkedOutAt - existing.checkedInAt) / 1000 / 60);
+    const hrs  = Math.floor(mins / 60);
+    const rem  = mins % 60;
+    const duration = hrs > 0 ? `${hrs}h ${rem}m` : `${mins}m`;
+    const fresh = await CheckIn.find({ adminId: admin._id, checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
+    return res.render('admin/checkin-pin', {
+      title: 'PIN Check Out — Con Leche', admin, error: null,
+      success: `See you, ${admin.name}! Checked out at ${existing.checkedOutAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}. You were in for ${duration}.`,
+      myCheckIns: fresh, action: 'checkout'
+    });
+  }
+
+  // Both done
+  const fresh = await CheckIn.find({ adminId: admin._id, checkedInAt: { $gte: sevenDaysAgo } }).sort({ checkedInAt: -1 });
+  return res.render('admin/checkin-pin', {
     title: 'PIN Check In — Con Leche', admin, error: null,
-    success: `Welcome in, ${admin.name}! Checked in at ${new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}.`
+    success: `You've already checked in and out today.`,
+    myCheckIns: fresh, action: 'done'
   });
 });
 

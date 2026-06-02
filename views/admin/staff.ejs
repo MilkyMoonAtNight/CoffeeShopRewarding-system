@@ -68,9 +68,22 @@
       <p class="attendance-date"><%= date %></p>
       <div class="attendance-chips">
         <% grouped[date].forEach(c => { %>
+        <%
+          let dur = '';
+          if (c.checkedOutAt) {
+            const mins = Math.round((new Date(c.checkedOutAt) - new Date(c.checkedInAt)) / 1000 / 60);
+            const hrs = Math.floor(mins / 60);
+            const rem = mins % 60;
+            dur = hrs > 0 ? hrs + 'h ' + rem + 'm' : mins + 'm';
+          }
+        %>
         <div class="attendance-chip">
           <span class="attendance-name"><%= c.name %></span>
-          <span class="attendance-time"><%= c.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %></span>
+          <span class="attendance-time">
+            <%= c.checkedInAt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %>
+            <% if (c.checkedOutAt) { %>→ <%= new Date(c.checkedOutAt).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %><% } else { %><span style="opacity:0.4">→ ?</span><% } %>
+          </span>
+          <% if (dur) { %><span class="attendance-dur"><%= dur %></span><% } %>
           <span class="attendance-method"><%= c.method === 'nfc' ? '📱' : '🔢' %></span>
         </div>
         <% }) %>

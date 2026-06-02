@@ -1258,4 +1258,69 @@ ul { list-style: none; }
 }
 .attendance-name { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); }
 .attendance-time { font-size: 0.72rem; color: rgba(44,44,44,0.45); }
+.attendance-dur { font-size: 0.68rem; font-weight: 600; color: var(--maroon); background: rgba(88,18,23,0.07); padding: 0.1rem 0.4rem; border-radius: 50px; }
 .attendance-method { font-size: 0.75rem; }
+
+/* ── Check-in page ── */
+.pin-input {
+  width: 100%; text-align: center;
+  font-size: 2rem; letter-spacing: 0.5em; font-weight: 700;
+  padding: 0.9rem 1rem;
+  border: 2px solid rgba(88,18,23,0.2);
+  border-radius: var(--radius); background: var(--cream);
+  font-family: var(--font-body);
+  transition: border-color var(--transition);
+}
+.pin-input:focus { outline: none; border-color: var(--maroon); }
+
+.checkin-success-card {
+  background: rgba(91,158,110,0.08);
+  border: 1.5px solid rgba(91,158,110,0.25);
+  border-radius: var(--radius-lg);
+  padding: 2rem; text-align: center;
+  margin-bottom: 1rem;
+}
+.checkin-success-icon { font-size: 2.5rem; color: #3a6e4a; font-weight: 700; margin-bottom: 0.5rem; }
+.checkin-success-title { font-family: var(--font-nimbus); font-size: 1.4rem; margin-bottom: 0.4rem; }
+.checkin-success-msg { font-size: 0.9rem; color: rgba(44,44,44,0.6); }
+
+.checkin-table-wrap { overflow-x: auto; }
+.checkin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.checkin-table th {
+  text-align: left; padding: 0.5rem 0.75rem;
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: rgba(44,44,44,0.4); border-bottom: 2px solid rgba(44,44,44,0.08);
+}
+.checkin-table td { padding: 0.75rem; border-bottom: 1px solid rgba(44,44,44,0.05); vertical-align: middle; }
+.checkin-table tr:last-child td { border-bottom: none; }
+.checkin-table tbody tr:hover { background: rgba(88,18,23,0.03); }
+.checkin-td-day { font-weight: 600; color: var(--charcoal); }
+.checkin-td-date { color: rgba(44,44,44,0.5); font-size: 0.82rem; }
+.checkin-td-time { font-weight: 700; color: var(--maroon); font-family: var(--font-nimbus); font-size: 1rem; }
+.checkin-badge {
+  background: rgba(88,18,23,0.07); color: var(--maroon);
+  padding: 0.2rem 0.6rem; border-radius: 50px;
+  font-size: 0.72rem; font-weight: 500; white-space: nowrap;
+}
+
+/* ── NFC checkin page ── */
+.nfc-card {
+  border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+  border: 1px solid;
+}
+.nfc-card-in  { background: rgba(91,158,110,0.08);  border-color: rgba(91,158,110,0.25); }
+.nfc-card-out { background: rgba(88,18,23,0.1);      border-color: rgba(88,18,23,0.25); }
+.nfc-card-done{ background: rgba(44,44,44,0.06);     border-color: rgba(44,44,44,0.15); }
+.nfc-card-err { background: rgba(200,50,50,0.08);    border-color: rgba(200,50,50,0.2); }
+.nfc-icon  { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.nfc-title { font-family: var(--font-nimbus); font-size: 1.8rem; color: var(--cream); margin-bottom: 0.6rem; }
+.nfc-msg   { color: rgba(253,246,237,0.65); font-size: 0.92rem; line-height: 1.6; }
+.nfc-sub   { color: rgba(253,246,237,0.3); font-size: 0.78rem; margin-top: 0.5rem; }
+
+/* Check-out success variant */
+.checkin-success-out {
+  background: rgba(88,18,23,0.06);
+  border-color: rgba(88,18,23,0.2);
+}
+.checkin-success-out .checkin-success-icon { color: var(--maroon); }
+
