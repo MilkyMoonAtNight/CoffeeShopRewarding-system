@@ -41,14 +41,13 @@ app.use((req, res) => {
   res.status(404).send('<h2>404 — Page not found</h2><a href="/">Go home</a>');
 });
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://iwangroenewald14_db_user:ConLecheCoffeeShop@cluster0.vri5avz.mongodb.net/conleche')
-  .then(() => {
-    console.log('✓ Connected to MongoDB');
-    app.listen(PORT, () => console.log(`✓ Con Leche running at http://localhost:${PORT}`));
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    app.listen(PORT, () => console.log(`⚠ Running WITHOUT MongoDB at http://localhost:${PORT}`));
-  });
+// Start server immediately — don't wait for MongoDB
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✓ Con Leche running on port ${PORT}`);
+});
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://...')
+  .then(() => console.log('✓ Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err.message));
 
 module.exports = app;
