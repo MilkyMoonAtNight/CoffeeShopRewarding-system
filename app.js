@@ -36,7 +36,7 @@ app.use((req, res) => {
   res.status(404).send('<h2>404 — Page not found</h2><a href="/">Go home</a>');
 });
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://iwangroenewald14_db_user:ConLecheCoffeeShop@cluster0.vri5avz.mongodb.net/conleche')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✓ Connected to MongoDB');
     app.listen(PORT, () => console.log(`✓ Con Leche running at http://localhost:${PORT}`));
