@@ -15,14 +15,16 @@
       <div class="pastries-grid">
         <% pastries.forEach((pastry, i) => { %>
         <div class="pastry-card <%= i === 0 ? 'pastry-card-wide' : '' %>">
-          <div class="pastry-img-wrap">
-            <img src="<%= pastry.image %>" alt="<%= pastry.name %>" class="pastry-img" loading="lazy" />
-            <div class="pastry-overlay"></div>
-          </div>
-          <div class="pastry-info">
-            <h3 class="pastry-name"><%= pastry.name %></h3>
-            <p class="pastry-desc"><%= pastry.description %></p>
-            <span class="pastry-price"><%= pastry.price %></span>
+          <div class="pastry-card-front">
+            <div class="pastry-img-wrap">
+              <img src="<%= pastry.image %>" alt="<%= pastry.name %>" class="pastry-img" loading="lazy" />
+              <div class="pastry-overlay"></div>
+            </div>
+            <div class="pastry-info">
+              <h3 class="pastry-name"><%= pastry.name %></h3>
+              <p class="pastry-desc"><%= pastry.description %></p>
+              <span class="pastry-price">R<%= pastry.price %></span>
+            </div>
           </div>
         </div>
         <% }) %>
