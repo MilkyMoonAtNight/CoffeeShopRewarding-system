@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const path = require('path');
 
 const app = express();
@@ -18,11 +17,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'conleche_secret',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 app.use((req, res, next) => {
@@ -41,13 +36,14 @@ app.use((req, res) => {
   res.status(404).send('<h2>404 — Page not found</h2><a href="/">Go home</a>');
 });
 
-// Start server immediately — don't wait for MongoDB
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✓ Con Leche running on port ${PORT}`);
-});
-
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://...')
-  .then(() => console.log('✓ Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err.message));
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://iwangroenewald14_db_user:ConLecheCoffeeShop@cluster0.vri5avz.mongodb.net/conleche')
+  .then(() => {
+    console.log('✓ Connected to MongoDB');
+    app.listen(PORT, () => console.log(`✓ Con Leche running at http://localhost:${PORT}`));
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    app.listen(PORT, () => console.log(`⚠ Running WITHOUT MongoDB at http://localhost:${PORT}`));
+  });
 
 module.exports = app;
