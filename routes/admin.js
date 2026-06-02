@@ -188,13 +188,14 @@ router.get('/drinks', ownerManager, async (req, res) => {
 
 router.post('/drinks/add', ownerManager, async (req, res) => {
   try {
-    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order } = req.body;
+    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     await new Drink({
       name, category, subcategory,
       prices: { regular: priceRegular || null, large: priceLarge || null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
-      flavours: flavourList, isSpecial: !!isSpecial, order: order || 99, available: true
+      flavours: flavourList, isSpecial: !!isSpecial, order: order || 99,
+      image: image || null, available: true
     }).save();
     res.redirect('/admin/drinks?msg=Drink+added');
   } catch (err) { res.redirect('/admin/drinks?msg=Error:+' + encodeURIComponent(err.message)); }
@@ -202,13 +203,14 @@ router.post('/drinks/add', ownerManager, async (req, res) => {
 
 router.post('/drinks/edit/:id', ownerManager, async (req, res) => {
   try {
-    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order } = req.body;
+    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     await Drink.findByIdAndUpdate(req.params.id, {
       name, category, subcategory,
       prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
       flavours: flavourList, isSpecial: !!isSpecial,
+      image: image || null,
       available: available !== 'false', order: Number(order) || 99, updatedAt: new Date()
     });
     res.redirect('/admin/drinks?msg=Drink+updated');
@@ -341,7 +343,6 @@ router.get('/checkin-pin', requireAdmin, async (req, res) => {
     admin: req.admin,
     error: null,
     success: null,
-    action: null,
     myCheckIns
   });
 });

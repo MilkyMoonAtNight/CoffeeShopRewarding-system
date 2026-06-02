@@ -24,9 +24,11 @@
       <a href="/admin/scan" class="admin-nav-item <%= title.includes('Scan') ? 'active' : '' %>">
         <span class="admin-nav-icon">📷</span> Scan QR
       </a>
+      <% if (admin.role !== 'owner') { %>
       <a href="/admin/checkin-pin" class="admin-nav-item <%= title.includes('PIN Check') ? 'active' : '' %>">
         <span class="admin-nav-icon">🕐</span> Check In
       </a>
+      <% } %>
       <% if (admin.role === 'owner' || admin.role === 'manager') { %>
       <a href="/admin/events" class="admin-nav-item <%= title.includes('Events') ? 'active' : '' %>">
         <span class="admin-nav-icon">📅</span> Events

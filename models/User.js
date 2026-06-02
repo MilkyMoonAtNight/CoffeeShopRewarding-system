@@ -31,6 +31,8 @@ const userSchema = new mongoose.Schema({
   scanHistory: [scanHistorySchema],
   rewards:    [rewardSchema],
   tier:       { type: String, enum: ['Kitten', 'Cat', 'Tom Cat', 'Panther'], default: 'Kitten' },
+  resetToken:      { type: String, default: null },
+  resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now }
 });
 

@@ -30,6 +30,16 @@
         <div class="drink-grid">
           <% hot.forEach(drink => { %>
           <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+            <div class="drink-img-wrap">
+              <% if (drink.image) { %>
+                <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
+              <% } else { %>
+                <div class="drink-img-placeholder">
+                  <span><%= drink.subcategory === 'chocolate' ? '🍫' : drink.subcategory === 'tea' ? '🍵' : '☕' %></span>
+                  <span><%= drink.name %></span>
+                </div>
+              <% } %>
+            </div>
             <div class="drink-card-top">
               <span class="drink-name"><%= drink.name %></span>
               <div class="drink-prices">
@@ -68,6 +78,16 @@
         <div class="drink-grid">
           <% cold.forEach(drink => { %>
           <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+            <div class="drink-img-wrap">
+              <% if (drink.image) { %>
+                <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
+              <% } else { %>
+                <div class="drink-img-placeholder">
+                  <span><%= drink.subcategory === 'frozen' ? '🍦' : drink.subcategory === 'tea' ? '🍵' : '🧊' %></span>
+                  <span><%= drink.name %></span>
+                </div>
+              <% } %>
+            </div>
             <div class="drink-card-top">
               <span class="drink-name"><%= drink.name %></span>
               <div class="drink-prices">

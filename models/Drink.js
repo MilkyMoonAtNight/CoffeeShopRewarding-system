@@ -21,6 +21,7 @@ const drinkSchema = new mongoose.Schema({
     large:   { type: String, default: null }
   },
   flavours: [{ type: String, trim: true }],  // if drink has flavour variants
+  image:     { type: String, default: null }, // filename in public/images/drinks/
   available: { type: Boolean, default: true },
   isSpecial: { type: Boolean, default: false }, // e.g. latte of the month
   order: { type: Number, default: 0 },          // display order
