@@ -9,7 +9,6 @@
     </div>
   </section>
 
-  <!-- Tab nav -->
   <div class="drinks-tabs-wrap">
     <div class="drinks-tabs">
       <button class="drinks-tab active" data-tab="hot">☕ Hot Drinks</button>
@@ -23,13 +22,17 @@
       <!-- HOT DRINKS -->
       <div class="drinks-panel" id="tab-hot">
         <div class="drinks-size-legend">
-          <span>Regular — 250ml</span>
-          <span class="legend-sep">·</span>
-          <span>Large — 350ml</span>
+          <span>Regular — 250ml</span><span class="legend-sep">·</span><span>Large — 350ml</span>
         </div>
         <div class="drink-grid">
           <% hot.forEach(drink => { %>
-          <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+          <%
+            const latteFlavours = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+            const isLatte = drink.name && drink.name.toLowerCase().includes('latte');
+            const displayFlavours = isLatte ? latteFlavours : (drink.flavours && drink.flavours.length ? drink.flavours : []);
+            const slug = encodeURIComponent(drink.name);
+          %>
+          <a href="/drinks/<%= slug %>" class="drink-card drink-card-link <%= drink.isSpecial ? 'drink-card-special' : '' %>">
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap">
                 <% if (drink.image) { %>
@@ -44,36 +47,44 @@
               <div class="drink-card-top">
                 <span class="drink-name"><%= drink.name %></span>
                 <div class="drink-prices">
-                  <% if (drink.prices.regular) { %>
-                    <span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span>
-                  <% } %>
-                  <% if (drink.prices.large) { %>
-                    <span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span>
-                  <% } %>
+                  <% if (drink.prices && drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
+                  <% if (drink.prices && drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
                 </div>
               </div>
-              <% if (drink.isSpecial) { %>
-                <span class="drink-special-tag">✦ Special</span>
+              <% if (displayFlavours.length) { %>
+              <div class="drink-flavours">
+                <span class="flavours-label">Flavours</span>
+                <span class="flavours-list"><%= displayFlavours.slice(0,4).join(' · ') %><%= displayFlavours.length > 4 ? '…' : '' %></span>
+              </div>
               <% } %>
+              <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
+              <span class="drink-tap-hint">Tap for details →</span>
             </div>
-          </div>
+          </a>
           <% }) %>
         </div>
-        <% if (!hot.length) { %>
-          <p class="drinks-empty">Menu coming soon — ask our barista!</p>
-        <% } %>
+        <% if (!hot.length) { %><p class="drinks-empty">Menu coming soon — ask our barista!</p><% } %>
       </div>
 
       <!-- COLD DRINKS -->
       <div class="drinks-panel hidden" id="tab-cold">
         <div class="drinks-size-legend">
-          <span>Regular — 350ml</span>
-          <span class="legend-sep">·</span>
-          <span>Large — 500ml</span>
+          <span>Regular — 350ml</span><span class="legend-sep">·</span><span>Large — 500ml</span>
         </div>
         <div class="drink-grid">
           <% cold.forEach(drink => { %>
-          <div class="drink-card <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+          <%
+            const latteFlavoursC = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+            const freezoFlavours = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
+            const frozenYogurtFlavours = [...latteFlavoursC,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+            const dn = drink.name ? drink.name.toLowerCase() : '';
+            const coldFlavours = dn.includes('frozen yogurt')||dn.includes('froyo') ? frozenYogurtFlavours
+                                : dn.includes('freezo') ? freezoFlavours
+                                : dn.includes('latte')  ? latteFlavoursC
+                                : (drink.flavours && drink.flavours.length ? drink.flavours : []);
+            const slug = encodeURIComponent(drink.name);
+          %>
+          <a href="/drinks/<%= slug %>" class="drink-card drink-card-link <%= drink.isSpecial ? 'drink-card-special' : '' %>">
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap">
                 <% if (drink.image) { %>
@@ -88,30 +99,23 @@
               <div class="drink-card-top">
                 <span class="drink-name"><%= drink.name %></span>
                 <div class="drink-prices">
-                  <% if (drink.prices.regular) { %>
-                    <span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span>
-                  <% } %>
-                  <% if (drink.prices.large) { %>
-                    <span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span>
-                  <% } %>
+                  <% if (drink.prices && drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
+                  <% if (drink.prices && drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
                 </div>
               </div>
-              <% if (drink.flavours && drink.flavours.length > 0) { %>
+              <% if (coldFlavours.length) { %>
               <div class="drink-flavours">
-                <span class="flavours-label">Flavours:</span>
-                <span class="flavours-list"><%= drink.flavours.join(' · ') %></span>
+                <span class="flavours-label">Flavours</span>
+                <span class="flavours-list"><%= coldFlavours.slice(0,4).join(' · ') %><%= coldFlavours.length > 4 ? '…' : '' %></span>
               </div>
               <% } %>
-              <% if (drink.isSpecial) { %>
-                <span class="drink-special-tag">✦ Special</span>
-              <% } %>
+              <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
+              <span class="drink-tap-hint">Tap for details →</span>
             </div>
-          </div>
+          </a>
           <% }) %>
         </div>
-        <% if (!cold.length) { %>
-          <p class="drinks-empty">Menu coming soon — ask our barista!</p>
-        <% } %>
+        <% if (!cold.length) { %><p class="drinks-empty">Menu coming soon — ask our barista!</p><% } %>
       </div>
 
     </div>

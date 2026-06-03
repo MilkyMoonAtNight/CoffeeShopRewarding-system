@@ -14,7 +14,7 @@
   <!-- Add pastry -->
   <div class="admin-card">
     <h3 class="admin-card-title">Add New Pastry</h3>
-    <form action="/admin/pastries/add" method="POST" class="auth-form">
+    <form action="/admin/pastries/add" method="POST" enctype="multipart/form-data" class="auth-form">
       <div class="form-group">
         <label>Name</label>
         <input type="text" name="name" required placeholder="e.g. Almond Croissant" />
@@ -27,11 +27,23 @@
         <label>Price (R)</label>
         <input type="number" name="price" required placeholder="e.g. 42" min="0" step="0.50" />
       </div>
+
+      <!-- Photo upload -->
       <div class="form-group">
-        <label>Image filename</label>
-        <input type="text" name="image" placeholder="e.g. croissant.jpg" />
-        <span class="form-hint">Place image in <code>public/images/pastries/</code> then enter filename here</span>
+        <label>Photo</label>
+        <div class="upload-zone" id="pastryUploadZone" onclick="document.getElementById('pastryImageFile').click()">
+          <div class="upload-zone-inner" id="pastryUploadInner">
+            <span class="upload-icon">📷</span>
+            <span class="upload-label">Tap to upload photo</span>
+            <span class="upload-hint">JPG, PNG or WebP · max 5MB</span>
+          </div>
+        </div>
+        <input type="file" id="pastryImageFile" name="imageFile" accept="image/*" style="display:none;"
+               onchange="previewUpload(this,'pastryUploadInner','pastryUploadZone')" />
+        <span class="form-hint">Or enter a filename if already uploaded:</span>
+        <input type="text" name="image" placeholder="e.g. croissant.jpg" style="margin-top:0.35rem;" />
       </div>
+
       <div class="form-group">
         <label>Display Order</label>
         <input type="number" name="order" placeholder="1" min="1" value="99" />
@@ -46,29 +58,28 @@
       <div class="admin-card"><p class="admin-empty">No pastries yet — add one to get started.</p></div>
     <% } else { %>
       <% pastries.forEach(pastry => { %>
-      <div class="admin-card admin-drink-row <%= !pastry.available ? 'drink-unavailable' : '' %>">
-        <div style="display:flex;gap:1rem;align-items:flex-start;">
-          <% if (pastry.image) { %>
-          <img src="<%= pastry.image.startsWith('/') ? pastry.image : '/images/pastries/' + pastry.image %>"
-               alt="<%= pastry.name %>"
-               style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
+      <div class="admin-card admin-drink-row <%= !pastry.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
+        <div style="display:flex;gap:1rem;align-items:center;">
+          <% const pImg = pastry.image ? (pastry.image.startsWith('/') ? pastry.image : '/images/pastries/' + pastry.image) : null; %>
+          <% if (pImg) { %>
+          <img src="<%= pImg %>" alt="<%= pastry.name %>"
+               style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
           <% } else { %>
-          <div style="width:64px;height:64px;background:var(--cream-dark);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🥐</div>
+          <div style="width:52px;height:52px;background:var(--cream-dark);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🥐</div>
           <% } %>
-          <div style="flex:1;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
               <div>
-                <strong style="font-size:0.95rem;"><%= pastry.name %></strong>
-                <% if (!pastry.available) { %><span style="font-size:0.7rem;background:rgba(200,50,50,0.1);color:#c83232;padding:0.1rem 0.5rem;border-radius:50px;margin-left:0.4rem;">Unavailable</span><% } %>
-                <p style="font-size:0.78rem;color:rgba(44,44,44,0.5);margin-top:0.15rem;"><%= pastry.description %></p>
-                <p style="font-size:0.88rem;font-weight:600;color:var(--maroon);margin-top:0.2rem;">R<%= pastry.price %></p>
+                <strong style="font-size:0.92rem;"><%= pastry.name %></strong>
+                <% if (!pastry.available) { %><span class="admin-item-tag tag-off" style="margin-left:0.3rem;">Off</span><% } %>
+                <p style="font-size:0.75rem;color:rgba(44,44,44,0.45);margin-top:0.1rem;"><%= pastry.description %> · R<%= pastry.price %></p>
               </div>
               <div style="display:flex;gap:0.4rem;flex-shrink:0;">
-                <form action="/admin/pastries/toggle/<%= pastry._id %>" method="POST">
+                <form action="/admin/pastries/toggle/<%= pastry._id %>" method="POST" style="display:inline;">
                   <button type="submit" class="admin-toggle-btn"><%= pastry.available ? 'Hide' : 'Show' %></button>
                 </form>
-                <button onclick="togglePastryEdit('<%= pastry._id %>')" class="admin-toggle-btn">Edit</button>
-                <form action="/admin/pastries/delete/<%= pastry._id %>" method="POST" onsubmit="return confirm('Delete <%= pastry.name %>?')">
+                <button onclick="toggleEdit('pedit-<%= pastry._id %>')" class="admin-toggle-btn">Edit</button>
+                <form action="/admin/pastries/delete/<%= pastry._id %>" method="POST" onsubmit="return confirm('Delete <%= pastry.name %>?')" style="display:inline;">
                   <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
                 </form>
               </div>
@@ -78,7 +89,7 @@
 
         <!-- Inline edit -->
         <div id="pedit-<%= pastry._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
-          <form action="/admin/pastries/edit/<%= pastry._id %>" method="POST" class="auth-form">
+          <form action="/admin/pastries/edit/<%= pastry._id %>" method="POST" enctype="multipart/form-data">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
               <div class="form-group" style="grid-column:span 2;">
                 <label>Name</label>
@@ -97,18 +108,26 @@
                 <input type="number" name="order" value="<%= pastry.order %>" class="scan-input" />
               </div>
               <div class="form-group" style="grid-column:span 2;">
-                <label>Image filename</label>
-                <input type="text" name="image" value="<%= pastry.image || '' %>" class="scan-input" placeholder="e.g. croissant.jpg" />
+                <label>Replace photo</label>
+                <div class="upload-zone upload-zone-sm" id="pez-<%= pastry._id %>"
+                     onclick="document.getElementById('pef-<%= pastry._id %>').click()">
+                  <div class="upload-zone-inner" id="pei-<%= pastry._id %>">
+                    <span class="upload-icon" style="font-size:1.2rem;">📷</span>
+                    <span class="upload-label" style="font-size:0.78rem;">Tap to choose new photo</span>
+                  </div>
+                </div>
+                <input type="file" id="pef-<%= pastry._id %>" name="imageFile" accept="image/*" style="display:none;"
+                       onchange="previewUpload(this,'pei-<%= pastry._id %>','pez-<%= pastry._id %>')" />
               </div>
               <div class="form-group">
                 <label>Available</label>
                 <select name="available" class="scan-input">
-                  <option value="true"  <%= pastry.available ? 'selected' : '' %>>Yes</option>
-                  <option value="false" <%= !pastry.available ? 'selected' : '' %>>No</option>
+                  <option value="true"  <%= pastry.available?'selected':'' %>>Yes</option>
+                  <option value="false" <%= !pastry.available?'selected':'' %>>No</option>
                 </select>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;">Save Changes</button>
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;width:100%;">Save Changes</button>
           </form>
         </div>
       </div>
@@ -119,9 +138,18 @@
 </div>
 
 <script>
-function togglePastryEdit(id) {
-  const el = document.getElementById('pedit-' + id);
+function toggleEdit(id) {
+  const el = document.getElementById(id);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function previewUpload(input, innerId, zoneId) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(innerId).innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    document.getElementById(zoneId).style.border = '2px solid var(--maroon)';
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 </script>
 

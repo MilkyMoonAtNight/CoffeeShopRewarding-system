@@ -1,0 +1,152 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="page-hero page-hero-short section-dark">
+    <div class="container">
+      <p class="section-eyebrow light">Almost there</p>
+      <h1 class="page-title light">Confirm Your Order</h1>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container confirm-layout">
+
+      <div class="confirm-items-col">
+        <h2 class="confirm-section-title">Your items</h2>
+        <div id="confirmItems"><div class="confirm-empty">Loading cart…</div></div>
+      </div>
+
+      <div class="confirm-form-col">
+        <div class="confirm-card">
+          <h2 class="confirm-section-title">Order details</h2>
+          <div class="form-group">
+            <label>Your name</label>
+            <input type="text" id="cfName" class="confirm-input" placeholder="e.g. Lerato" />
+          </div>
+          <div class="form-group">
+            <label>Phone number</label>
+            <input type="tel" id="cfPhone" class="confirm-input" placeholder="e.g. 082 123 4567" />
+          </div>
+          <div class="form-group">
+            <label>Collection method</label>
+            <div class="alt-pills" style="margin-top:0.5rem;" id="colPills">
+              <button class="alt-pill active" data-val="Walk-up at truck">Walk-up at truck</button>
+              <button class="alt-pill" data-val="Pre-order (ready on arrival)">Pre-order</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Special instructions <span style="opacity:0.4;font-weight:400;">(optional)</span></label>
+            <textarea class="modal-notes" id="cfNotes" placeholder="Allergies, timing, anything else…" rows="3"></textarea>
+          </div>
+          <div class="confirm-total-box">
+            <span>Order total</span>
+            <span class="confirm-total-num" id="cfTotal">R0</span>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" id="placeOrderBtn">Place Order →</button>
+          <p class="confirm-disclaimer">Payment at collection. No online payment required.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<!-- Success overlay -->
+<div class="modal-overlay" id="successOverlay">
+  <div class="modal-sheet" style="max-width:440px;border-radius:var(--radius-lg);text-align:center;">
+    <div class="modal-body" style="padding-top:2rem;">
+      <div style="font-size:3.5rem;margin-bottom:1rem;">🐾</div>
+      <h2 style="font-family:var(--font-nimbus);font-size:1.8rem;margin-bottom:0.75rem;">Order placed!</h2>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">We've got your order, <strong id="successName"></strong>.</p>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:1rem;">Show up, say your name, and your coffee will be ready.</p>
+      <p style="font-size:0.82rem;color:rgba(44,44,44,0.4);">Order <strong id="successRef"></strong></p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
+        <a href="/battlepass" class="btn btn-primary">View my rewards</a>
+        <a href="/" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);">Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+const cart = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
+let colMethod = 'Walk-up at truck';
+
+// Collection pills
+document.querySelectorAll('#colPills .alt-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    colMethod = btn.dataset.val;
+    document.querySelectorAll('#colPills .alt-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+function renderConfirm() {
+  const el = document.getElementById('confirmItems');
+  if (!cart.length) {
+    el.innerHTML = '<div class="confirm-empty">Your cart is empty. <a href="/order" style="color:var(--maroon);">Add items →</a></div>';
+    document.getElementById('cfTotal').textContent = 'R0';
+    document.getElementById('placeOrderBtn').disabled = true;
+    return;
+  }
+  const total = cart.reduce((s,i) => s+i.price, 0);
+  document.getElementById('cfTotal').textContent = `R${total}`;
+  el.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">${item.image?`<img src="${item.image}" alt="${item.name}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
+      <div class="cart-item-body">
+        <p class="cart-item-name">${item.name}</p>
+        <div class="cart-item-opts">
+          ${item.size?`<span class="cart-opt-pill">${item.size} · ${item.ml}</span>`:''}
+          ${item.flavour?`<span class="cart-opt-pill">${item.flavour}</span>`:''}
+          ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${item.milk}</span>`:''}
+          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${item.sugar}</span>`:''}
+        </div>
+        ${item.notes?`<p class="cart-item-note">"${item.notes}"</p>`:''}
+      </div>
+      <span class="cart-item-price">R${item.price}</span>
+    </div>`).join('');
+}
+
+document.getElementById('placeOrderBtn').addEventListener('click', async () => {
+  const name = document.getElementById('cfName').value.trim();
+  const phone = document.getElementById('cfPhone').value.trim();
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!cart.length) { alert('Your cart is empty.'); return; }
+
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true; btn.textContent = 'Placing order…';
+
+  try {
+    const res = await fetch('/order/place', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, phone,
+        collection: colMethod,
+        notes: document.getElementById('cfNotes').value.trim(),
+        items: cart,
+        total: cart.reduce((s,i) => s+i.price, 0)
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.removeItem('cl_cart');
+      document.getElementById('successName').textContent = name;
+      document.getElementById('successRef').textContent = data.ref;
+      document.getElementById('successOverlay').classList.add('open');
+    } else {
+      alert(data.error || 'Something went wrong. Please try again.');
+      btn.disabled = false; btn.textContent = 'Place Order →';
+    }
+  } catch(e) {
+    alert('Network error. Please check your connection.');
+    btn.disabled = false; btn.textContent = 'Place Order →';
+  }
+});
+
+renderConfirm();
+</script>

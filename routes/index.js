@@ -43,6 +43,51 @@ router.get('/drinks', async (req, res) => {
   res.render('pages/drinks', { title: 'Drinks — Con Leche', hot, cold });
 });
 
+const LATTE_FLAVOURS      = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+const FREEZO_FLAVOURS     = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
+const FROZENYOG_FLAVOURS  = [...LATTE_FLAVOURS,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+const FILLER = {
+  espresso: { cal:'~80 kcal',  protein:'1g', caff:'~150mg' },
+  specialty:{ cal:'~180 kcal', protein:'5g', caff:'~95mg'  },
+  chocolate:{ cal:'~240 kcal', protein:'7g', caff:'~30mg'  },
+  tea:      { cal:'~20 kcal',  protein:'0g', caff:'~40mg'  },
+  freezo:   { cal:'~310 kcal', protein:'4g', caff:'~60mg'  },
+  iced:     { cal:'~140 kcal', protein:'5g', caff:'~95mg'  },
+  frozen:   { cal:'~280 kcal', protein:'6g', caff:'~50mg'  },
+  other:    { cal:'~120 kcal', protein:'4g', caff:'~80mg'  },
+};
+
+router.get('/drinks/:name', async (req, res) => {
+  const name = decodeURIComponent(req.params.name);
+  let drink = await Drink.findOne({ name, available: true }).catch(() => null);
+
+  // Fallback: case-insensitive search
+  if (!drink) {
+    drink = await Drink.findOne({ name: new RegExp(`^${name}$`, 'i'), available: true }).catch(() => null);
+  }
+  if (!drink) return res.redirect('/drinks');
+
+  const d = drink.toObject();
+  const dn = d.name.toLowerCase();
+
+  // Build flavour list
+  if (dn.includes('frozen yogurt') || dn.includes('froyo')) d.flavours = FROZENYOG_FLAVOURS;
+  else if (dn.includes('freezo'))  d.flavours = FREEZO_FLAVOURS;
+  else if (dn.includes('latte'))   d.flavours = LATTE_FLAVOURS;
+  else if (!d.flavours || !d.flavours.length) d.flavours = [];
+
+  // Build size objects
+  d.sizes = [
+    d.prices && d.prices.regular ? { label:'Regular', ml: d.category==='hot' ? '250ml' : '350ml', price: d.prices.regular } : null,
+    d.prices && d.prices.large   ? { label:'Large',   ml: d.category==='hot' ? '350ml' : '500ml', price: d.prices.large   } : null,
+  ].filter(Boolean);
+
+  const info = FILLER[d.subcategory] || FILLER.other;
+  const loggedIn = !!(req.session && req.session.userId);
+
+  res.render('pages/drink-detail', { title: `${d.name} — Con Leche`, drink: d, info, loggedIn });
+});
+
 router.get('/events', async (req, res) => {
   const events = await Event.find({ date: { $gte: new Date() } }).sort({ date: 1 }).catch(() => []);
   res.render('pages/events', { title: 'Events & Calendar — Con Leche', events });

@@ -12,8 +12,8 @@
       <h1 class="hero-title">Con Leche</h1>
       <p class="hero-subtitle">Coffee isn't just one thing<br/>neither are you.</p>
       <div class="hero-actions">
-        <a href="/drinks" class="btn btn-primary">Explore the Menu</a>
-        <a href="/register" class="btn btn-outline">Unlock Pase de Café</a>
+        <a href="/register" class="btn btn-primary">Get Your QR Code</a>
+        <a href="/drinks" class="hero-secondary-link">Explore the Menu →</a>
       </div>
     </div>
     <div class="hero-paw">
@@ -108,12 +108,12 @@
     </div>
   </section>
 
-  <!-- Upcoming events -->
-  <% if (upcomingEvents && upcomingEvents.length > 0) { %>
+  <!-- Upcoming events — always shown -->
   <section class="section events-home">
     <div class="container">
       <p class="section-eyebrow">What's On</p>
       <h2 class="section-title">Coming Up</h2>
+      <% if (upcomingEvents && upcomingEvents.length > 0) { %>
       <div class="events-row">
         <% upcomingEvents.forEach(event => { %>
         <div class="event-card-small">
@@ -126,10 +126,14 @@
         </div>
         <% }) %>
       </div>
+      <% } else { %>
+      <div class="events-empty-home">
+        <p>No events posted yet — follow <strong>@conleche_coffee</strong> on Instagram for real-time truck locations and updates.</p>
+      </div>
+      <% } %>
       <a href="/events" class="btn btn-outline">See All Events</a>
     </div>
   </section>
-  <% } %>
 </main>
 
 <%- include('../partials/footer') %>

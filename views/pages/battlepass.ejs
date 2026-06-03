@@ -5,6 +5,17 @@
 <section class="bp-page">
   <div class="bp-container">
 
+    <!-- FIRST VISIT BANNER -->
+      <% if (user.totalDrinks === 0) { %>
+      <div class="bp-welcome-banner">
+        <span class="bp-welcome-icon">🐾</span>
+        <div class="bp-welcome-text">
+          <p class="bp-welcome-title">Welcome to Pase de Café!</p>
+          <p class="bp-welcome-sub">Show this QR to your barista on your next order to start earning. Your first drink starts the streak.</p>
+        </div>
+      </div>
+      <% } %>
+
     <!-- QR CARD -->
       <div class="bp-qr-card">
         <div class="bp-tier-chip">

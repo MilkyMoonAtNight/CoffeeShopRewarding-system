@@ -14,7 +14,8 @@
       <li><a href="/pastries" class="nav-link">Pastries</a></li>
       <li><a href="/events" class="nav-link">Events</a></li>
       <% if (locals.session && session.userId) { %>
-        <li><a href="/battlepass" class="nav-link nav-cta">Pase de Café</a></li>
+        <li><a href="/order" class="nav-link nav-order-link">Order</a></li>
+        <li><a href="/battlepass" class="nav-link nav-cta nav-pase">☕ Pase de Café</a></li>
         <li><a href="/logout" class="nav-link">Sign Out</a></li>
       <% } else { %>
         <li><a href="/login" class="nav-link">Sign In</a></li>

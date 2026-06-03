@@ -33,7 +33,16 @@ const userSchema = new mongoose.Schema({
   tier:       { type: String, enum: ['Kitten', 'Cat', 'Tom Cat', 'Panther'], default: 'Kitten' },
   resetToken:      { type: String, default: null },
   resetTokenExpiry:{ type: Date, default: null },
-  createdAt:  { type: Date, default: Date.now }
+  createdAt:  { type: Date, default: Date.now },
+  pastOrders: [{
+    ref:        String,
+    items:      mongoose.Schema.Types.Mixed,
+    total:      Number,
+    collection: String,
+    notes:      String,
+    status:     { type: String, default: 'pending' },
+    placedAt:   { type: Date, default: Date.now }
+  }]
 });
 
 // ── RANDOM VOUCHER POOL ──────────────────────────────────────────

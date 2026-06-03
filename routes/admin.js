@@ -1,11 +1,36 @@
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
+const path    = require('path');
+const multer  = require('multer');
 const Admin   = require('../models/Admin');
 const User    = require('../models/User');
 const Event   = require('../models/Event');
 const Drink   = require('../models/Drink');
 const Pastry  = require('../models/Pastry');
 const CheckIn = require('../models/CheckIn');
+
+// ── Multer — image uploads ────────────────────────────────────────
+function makeUploader(subfolder) {
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, path.join(__dirname, '..', 'public', 'images', subfolder));
+    },
+    filename: (req, file, cb) => {
+      const ext  = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const base = path.basename(file.originalname, path.extname(file.originalname))
+                       .replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 40);
+      cb(null, `${base}-${Date.now()}${ext}`);
+    }
+  });
+  return multer({ storage, limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (/image\/(jpeg|png|webp|gif)/.test(file.mimetype)) cb(null, true);
+      else cb(new Error('Only image files allowed'), false);
+    }
+  });
+}
+const drinkUpload  = makeUploader('drinks');
+const pastryUpload = makeUploader('pastries');
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────
 async function requireAdmin(req, res, next) {
@@ -186,31 +211,33 @@ router.get('/drinks', ownerManager, async (req, res) => {
   res.render('admin/drinks', { title: 'Drinks — Con Leche Admin', admin: req.admin, drinks, msg: req.query.msg || null });
 });
 
-router.post('/drinks/add', ownerManager, async (req, res) => {
+router.post('/drinks/add', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
     const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
+    const imageFilename = req.file ? req.file.filename : (image || null);
     await new Drink({
       name, category, subcategory,
       prices: { regular: priceRegular || null, large: priceLarge || null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
       flavours: flavourList, isSpecial: !!isSpecial, order: order || 99,
-      image: image || null, available: true
+      image: imageFilename, available: true
     }).save();
     res.redirect('/admin/drinks?msg=Drink+added');
   } catch (err) { res.redirect('/admin/drinks?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
-router.post('/drinks/edit/:id', ownerManager, async (req, res) => {
+router.post('/drinks/edit/:id', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
     const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
+    const imageFilename = req.file ? req.file.filename : (image || null);
     await Drink.findByIdAndUpdate(req.params.id, {
       name, category, subcategory,
       prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
       flavours: flavourList, isSpecial: !!isSpecial,
-      image: image || null,
+      ...(imageFilename && { image: imageFilename }),
       available: available !== 'false', order: Number(order) || 99, updatedAt: new Date()
     });
     res.redirect('/admin/drinks?msg=Drink+updated');
@@ -234,20 +261,22 @@ router.get('/pastries', ownerManager, async (req, res) => {
   res.render('admin/pastries', { title: 'Pastries — Con Leche Admin', admin: req.admin, pastries, msg: req.query.msg || null });
 });
 
-router.post('/pastries/add', ownerManager, async (req, res) => {
+router.post('/pastries/add', ownerManager, pastryUpload.single('imageFile'), async (req, res) => {
   try {
     const { name, description, price, image, order } = req.body;
-    await new Pastry({ name, description, price: Number(price), image: image || null, order: order || 99, available: true }).save();
+    const imageFilename = req.file ? req.file.filename : (image || null);
+    await new Pastry({ name, description, price: Number(price), image: imageFilename, order: order || 99, available: true }).save();
     res.redirect('/admin/pastries?msg=Pastry+added');
   } catch (err) { res.redirect('/admin/pastries?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
-router.post('/pastries/edit/:id', ownerManager, async (req, res) => {
+router.post('/pastries/edit/:id', ownerManager, pastryUpload.single('imageFile'), async (req, res) => {
   try {
     const { name, description, price, image, available, order } = req.body;
+    const imageFilename = req.file ? req.file.filename : (image || null);
     await Pastry.findByIdAndUpdate(req.params.id, {
       name, description, price: Number(price),
-      image: image || null,
+      ...(imageFilename && { image: imageFilename }),
       available: available !== 'false',
       order: Number(order) || 99,
       updatedAt: new Date()
@@ -473,6 +502,11 @@ router.post('/staff/toggle/:id', ownerOnly, async (req, res) => {
     await staff.save();
   }
   res.redirect('/admin/staff');
+});
+
+// ── ONLINE ORDERS (all admin roles can access) ────────────────────
+router.get('/orders', requireAdmin, (req, res) => {
+  res.render('admin/orders', { title: 'Online Orders — Con Leche Admin', admin: req.admin });
 });
 
 module.exports = router;

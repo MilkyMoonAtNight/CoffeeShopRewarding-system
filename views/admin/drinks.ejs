@@ -12,7 +12,7 @@
   <!-- Add drink -->
   <div class="admin-card">
     <h3 class="admin-card-title">Add New Drink</h3>
-    <form action="/admin/drinks/add" method="POST" class="auth-form">
+    <form action="/admin/drinks/add" method="POST" enctype="multipart/form-data" class="auth-form">
       <div class="form-group">
         <label>Name</label>
         <input type="text" name="name" required placeholder="e.g. Oat Latte" />
@@ -59,18 +59,31 @@
         <label>Flavours (comma separated)</label>
         <input type="text" name="flavours" placeholder="Vanilla, Caramel, Hazelnut…" />
       </div>
+
+      <!-- Image upload -->
       <div class="form-group">
-        <label>Image filename</label>
-        <input type="text" name="image" placeholder="e.g. flat-white.jpg" />
-        <span class="form-hint">Place image in <code>public/images/drinks/</code> then enter filename</span>
+        <label>Photo</label>
+        <div class="upload-zone" id="drinkUploadZone" onclick="document.getElementById('drinkImageFile').click()">
+          <div class="upload-zone-inner" id="drinkUploadInner">
+            <span class="upload-icon">📷</span>
+            <span class="upload-label">Tap to upload photo</span>
+            <span class="upload-hint">JPG, PNG or WebP · max 5MB</span>
+          </div>
+        </div>
+        <input type="file" id="drinkImageFile" name="imageFile" accept="image/*" style="display:none;" onchange="previewUpload(this,'drinkUploadInner','drinkUploadZone')" />
+        <span class="form-hint">Or enter a filename if already uploaded:</span>
+        <input type="text" name="image" placeholder="e.g. flat-white.jpg" style="margin-top:0.35rem;" />
       </div>
-      <div class="form-group" style="grid-column:span 2;">
-        <label>Display Order</label>
-        <input type="number" name="order" placeholder="1" min="1" value="99" />
-      </div>
-      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem;">
-        <input type="checkbox" name="isSpecial" id="isSpecial" style="width:auto;" />
-        <label for="isSpecial" style="margin:0;">Mark as Special (e.g. Latte of the Month)</label>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="form-group">
+          <label>Display Order</label>
+          <input type="number" name="order" placeholder="1" min="1" value="99" />
+        </div>
+        <div class="form-group" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:0.5rem;">
+          <input type="checkbox" name="isSpecial" id="isSpecial" style="width:auto;" />
+          <label for="isSpecial" style="margin:0;font-size:0.85rem;">Mark as Special</label>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary btn-full">Add Drink</button>
     </form>
@@ -79,38 +92,46 @@
   <!-- Drink list -->
   <div>
     <% ['hot','cold'].forEach(cat => { %>
-    <h3 class="drinks-cat-heading <%= cat === 'cold' ? 'drinks-cat-cold' : '' %>">
-      <%= cat === 'hot' ? '☕ Hot Drinks' : '🧊 Cold Drinks' %>
+    <h3 class="drinks-cat-heading <%= cat==='cold'?'drinks-cat-cold':'' %>">
+      <%= cat==='hot' ? '☕ Hot Drinks' : '🧊 Cold Drinks' %>
     </h3>
     <% drinks.filter(d => d.category === cat).forEach(drink => { %>
-    <div class="admin-card admin-drink-row <%= !drink.available ? 'drink-unavailable' : '' %>">
+    <div class="admin-card admin-drink-row <%= !drink.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
-        <div style="flex:1;">
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-            <strong style="font-size:0.95rem;"><%= drink.name %></strong>
-            <% if (!drink.available) { %><span style="font-size:0.7rem;background:rgba(200,50,50,0.1);color:#c83232;padding:0.1rem 0.5rem;border-radius:50px;">Unavailable</span><% } %>
-            <% if (drink.isSpecial) { %><span style="font-size:0.7rem;background:rgba(88,18,23,0.1);color:var(--maroon);padding:0.1rem 0.5rem;border-radius:50px;">Special</span><% } %>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex:1;min-width:0;">
+          <% if (drink.image) { %>
+          <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>"
+               style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
+          <% } else { %>
+          <div style="width:44px;height:44px;border-radius:8px;background:var(--cream-dark);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">☕</div>
+          <% } %>
+          <div>
+            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+              <strong style="font-size:0.92rem;"><%= drink.name %></strong>
+              <% if (!drink.available) { %><span class="admin-item-tag tag-off">Off</span><% } %>
+              <% if (drink.isSpecial) { %><span class="admin-item-tag tag-special">Special</span><% } %>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(44,44,44,0.45);margin-top:0.1rem;">
+              <% if (drink.prices.regular) { %>R<%= drink.prices.regular %> reg<% } %>
+              <% if (drink.prices.regular && drink.prices.large) { %> · <% } %>
+              <% if (drink.prices.large) { %>R<%= drink.prices.large %> lge<% } %>
+            </p>
           </div>
-          <p style="font-size:0.78rem;color:rgba(44,44,44,0.5);margin-top:0.2rem;">
-            <% if (drink.prices.regular) { %>R<%= drink.prices.regular %> reg<% } %>
-            <% if (drink.prices.regular && drink.prices.large) { %> · <% } %>
-            <% if (drink.prices.large) { %>R<%= drink.prices.large %> lge<% } %>
-            <% if (drink.flavours && drink.flavours.length) { %> · <%= drink.flavours.length %> flavours<% } %>
-          </p>
         </div>
         <div style="display:flex;gap:0.4rem;flex-shrink:0;">
-          <form action="/admin/drinks/toggle/<%= drink._id %>" method="POST">
+          <form action="/admin/drinks/toggle/<%= drink._id %>" method="POST" style="display:inline;">
             <button type="submit" class="admin-toggle-btn"><%= drink.available ? 'Hide' : 'Show' %></button>
           </form>
-          <button onclick="toggleDrinkEdit('<%= drink._id %>')" class="admin-toggle-btn">Edit</button>
-          <form action="/admin/drinks/delete/<%= drink._id %>" method="POST" onsubmit="return confirm('Delete <%= drink.name %>?')">
+          <button onclick="toggleEdit('dedit-<%= drink._id %>')" class="admin-toggle-btn">Edit</button>
+          <form action="/admin/drinks/delete/<%= drink._id %>" method="POST" onsubmit="return confirm('Delete <%= drink.name %>?')" style="display:inline;">
             <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
           </form>
         </div>
       </div>
-      <!-- Inline edit -->
+
+      <!-- Inline edit panel -->
       <div id="dedit-<%= drink._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
-        <form action="/admin/drinks/edit/<%= drink._id %>" method="POST">
+        <form action="/admin/drinks/edit/<%= drink._id %>" method="POST" enctype="multipart/form-data">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
             <div class="form-group" style="grid-column:span 2;">
               <label>Name</label>
@@ -134,7 +155,18 @@
             </div>
             <div class="form-group" style="grid-column:span 2;">
               <label>Flavours (comma separated)</label>
-              <input type="text" name="flavours" value="<%= (drink.flavours || []).join(', ') %>" class="scan-input" />
+              <input type="text" name="flavours" value="<%= (drink.flavours||[]).join(', ') %>" class="scan-input" />
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+              <label>Replace photo</label>
+              <div class="upload-zone upload-zone-sm" id="ez-<%= drink._id %>" onclick="document.getElementById('ef-<%= drink._id %>').click()">
+                <div class="upload-zone-inner" id="ei-<%= drink._id %>">
+                  <span class="upload-icon" style="font-size:1.2rem;">📷</span>
+                  <span class="upload-label" style="font-size:0.78rem;">Tap to choose new photo</span>
+                </div>
+              </div>
+              <input type="file" id="ef-<%= drink._id %>" name="imageFile" accept="image/*" style="display:none;"
+                     onchange="previewUpload(this,'ei-<%= drink._id %>','ez-<%= drink._id %>')" />
             </div>
             <div class="form-group">
               <label>Order</label>
@@ -143,15 +175,15 @@
             <div class="form-group">
               <label>Available</label>
               <select name="available" class="scan-input">
-                <option value="true" <%= drink.available ? 'selected' : '' %>>Yes</option>
-                <option value="false" <%= !drink.available ? 'selected' : '' %>>No</option>
+                <option value="true" <%= drink.available?'selected':'' %>>Yes</option>
+                <option value="false" <%= !drink.available?'selected':'' %>>No</option>
               </select>
             </div>
             <input type="hidden" name="category" value="<%= drink.category %>" />
             <input type="hidden" name="subcategory" value="<%= drink.subcategory %>" />
             <input type="hidden" name="isSpecial" value="<%= drink.isSpecial %>" />
           </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:0.5rem;">Save Changes</button>
+          <button type="submit" class="btn btn-primary" style="margin-top:0.5rem;width:100%;">Save Changes</button>
         </form>
       </div>
     </div>
@@ -161,9 +193,21 @@
 </div>
 
 <script>
-function toggleDrinkEdit(id) {
-  const el = document.getElementById('dedit-' + id);
+function toggleEdit(id) {
+  const el = document.getElementById(id);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function previewUpload(input, innerId, zoneId) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const inner = document.getElementById(innerId);
+    const zone  = document.getElementById(zoneId);
+    inner.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    zone.style.border = '2px solid var(--maroon)';
+  };
+  reader.readAsDataURL(file);
 }
 </script>
 

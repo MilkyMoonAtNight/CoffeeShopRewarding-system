@@ -1,0 +1,171 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Online Orders</h1>
+  <p class="admin-page-sub">Live incoming orders — tap an order to view details and update status</p>
+</div>
+
+<div class="orders-filter-row">
+  <button class="order-filter-btn active" data-filter="all">All</button>
+  <button class="order-filter-btn" data-filter="pending">Pending</button>
+  <button class="order-filter-btn" data-filter="preparing">Preparing</button>
+  <button class="order-filter-btn" data-filter="ready">Ready</button>
+  <button class="order-filter-btn" data-filter="done">Done</button>
+  <button class="order-filter-btn" id="refreshBtn" style="margin-left:auto;">↻ Refresh</button>
+</div>
+
+<div id="ordersWrap"><div class="admin-empty" style="padding:2rem 0;">Loading orders…</div></div>
+
+<!-- Order detail modal -->
+<div class="modal-overlay" id="orderDetailOverlay">
+  <div class="modal-sheet admin-order-modal">
+    <button class="modal-close" id="odClose">✕</button>
+    <div class="modal-body">
+      <div class="order-detail-header">
+        <div>
+          <h2 class="modal-title" id="odTitle"></h2>
+          <p class="modal-subtitle" id="odMeta"></p>
+        </div>
+        <span class="order-status-badge" id="odStatusBadge"></span>
+      </div>
+      <div class="od-section-label">Items</div>
+      <div id="odItems"></div>
+      <div class="od-total-row"><span>Total</span><span id="odTotal"></span></div>
+      <div class="od-section-label">Collection</div>
+      <p id="odCollection" style="font-size:0.9rem;margin-bottom:0.25rem;"></p>
+      <p id="odNotes" class="cart-item-note" style="margin-bottom:1rem;"></p>
+      <div class="od-section-label">Update status</div>
+      <div class="od-status-btns" id="odStatusBtns"></div>
+    </div>
+  </div>
+</div>
+
+<%- include('./layout-bottom') %>
+
+<script>
+const STATUS_LABELS = { pending:'Pending', preparing:'Preparing', ready:'Ready for pickup', done:'Done' };
+const STATUS_NEXT   = { pending:['preparing','done'], preparing:['ready','done'], ready:['done'], done:[] };
+const STATUS_COLORS = { pending:'#EF9F27', preparing:'#1D9E75', ready:'rgb(88,18,23)', done:'rgba(44,44,44,0.3)' };
+
+let orders = [];
+let currentFilter = 'all';
+let currentOrder  = null;
+
+// Filter buttons
+document.querySelectorAll('.order-filter-btn[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.order-filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrders();
+  });
+});
+document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+
+// Modal close
+document.getElementById('odClose').addEventListener('click', () => {
+  document.getElementById('orderDetailOverlay').classList.remove('open');
+});
+document.getElementById('orderDetailOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+async function loadOrders() {
+  try {
+    const res = await fetch('/order/admin-feed');
+    const data = await res.json();
+    if (data.ok) { orders = data.orders; renderOrders(); }
+  } catch(e) {
+    document.getElementById('ordersWrap').innerHTML = '<div class="admin-empty">Could not load orders.</div>';
+  }
+}
+
+function renderOrders() {
+  const wrap = document.getElementById('ordersWrap');
+  const visible = currentFilter === 'all' ? orders : orders.filter(o => o.status === currentFilter);
+  if (!visible.length) {
+    wrap.innerHTML = `<div class="admin-empty" style="padding:2rem 0;">No ${currentFilter==='all'?'':currentFilter+' '}orders yet.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="orders-list">${visible.map((o,i) => {
+    const time = new Date(o.placedAt).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+    const date = new Date(o.placedAt).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+    return `<div class="order-row" data-idx="${orders.indexOf(o)}">
+      <div class="order-row-left">
+        <span class="order-ref">${o.ref}</span>
+        <span class="order-time">${date} · ${time}</span>
+      </div>
+      <div class="order-row-mid">
+        <p class="order-customer">${o.userName}</p>
+        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${o.collection}</p>
+      </div>
+      <div class="order-row-right">
+        <span class="order-total-pill">R${o.total}</span>
+        <span class="order-status-dot" style="background:${STATUS_COLORS[o.status]||'#888'}"></span>
+        <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||o.status}</span>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+
+  document.querySelectorAll('.order-row').forEach(row => {
+    row.addEventListener('click', () => openOrderDetail(parseInt(row.dataset.idx)));
+  });
+}
+
+function openOrderDetail(idx) {
+  currentOrder = orders[idx];
+  const o = currentOrder;
+  document.getElementById('odTitle').textContent = o.userName;
+  document.getElementById('odMeta').textContent = `${o.ref} · ${new Date(o.placedAt).toLocaleString('en-ZA')}${o.userEmail?' · '+o.userEmail:''}`;
+  const badge = document.getElementById('odStatusBadge');
+  badge.textContent = STATUS_LABELS[o.status] || o.status;
+  badge.style.background = STATUS_COLORS[o.status] || '#888';
+
+  document.getElementById('odItems').innerHTML = o.items.map(item => `
+    <div class="od-item">
+      <div class="od-item-img">${item.image?`<img src="${item.image}" alt="${item.name}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
+      <div class="od-item-body">
+        <p class="od-item-name">${item.name}</p>
+        <div class="cart-item-opts">
+          ${item.size?`<span class="cart-opt-pill">${item.size} · ${item.ml}</span>`:''}
+          ${item.flavour?`<span class="cart-opt-pill">${item.flavour}</span>`:''}
+          ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${item.milk}</span>`:''}
+          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${item.sugar}</span>`:''}
+        </div>
+        ${item.notes?`<p class="cart-item-note">"${item.notes}"</p>`:''}
+      </div>
+      <span class="cart-item-price">R${item.price}</span>
+    </div>`).join('');
+
+  document.getElementById('odTotal').textContent = `R${o.total}`;
+  document.getElementById('odCollection').textContent = o.collection || '—';
+  document.getElementById('odNotes').textContent = o.notes ? `"${o.notes}"` : '';
+
+  const nexts = STATUS_NEXT[o.status] || [];
+  document.getElementById('odStatusBtns').innerHTML = nexts.length
+    ? nexts.map(s => `<button class="od-status-btn" data-status="${s}" style="border-color:${STATUS_COLORS[s]};color:${STATUS_COLORS[s]};">${STATUS_LABELS[s]}</button>`).join('')
+    : '<p style="font-size:0.85rem;opacity:0.4;">Order complete</p>';
+
+  document.querySelectorAll('.od-status-btn').forEach(btn => {
+    btn.addEventListener('click', () => updateStatus(btn.dataset.status));
+  });
+
+  document.getElementById('orderDetailOverlay').classList.add('open');
+}
+
+async function updateStatus(newStatus) {
+  const o = currentOrder;
+  try {
+    await fetch(`/order/status/${o.userId}/${o.ref}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status: newStatus })
+    });
+    o.status = newStatus;
+    document.getElementById('orderDetailOverlay').classList.remove('open');
+    renderOrders();
+  } catch(e) { alert('Could not update status'); }
+}
+
+loadOrders();
+setInterval(loadOrders, 20000);
+</script>

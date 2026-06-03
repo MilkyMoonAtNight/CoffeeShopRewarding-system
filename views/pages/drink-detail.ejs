@@ -1,0 +1,275 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <div class="detail-back-bar">
+    <div class="container">
+      <a href="/drinks" class="detail-back-link">← Back to drinks</a>
+    </div>
+  </div>
+
+  <section class="detail-hero <%= drink.category === 'cold' ? 'detail-hero-cold' : 'detail-hero-hot' %>">
+    <div class="container detail-hero-inner">
+
+      <!-- Image -->
+      <div class="detail-img-col">
+        <div class="detail-img-frame">
+          <% if (drink.image) { %>
+            <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" class="detail-img" />
+          <% } else { %>
+            <div class="detail-img-placeholder">
+              <span><%= drink.subcategory === 'chocolate' ? '🍫' : drink.subcategory === 'tea' ? '🍵' : drink.category === 'cold' ? '🧊' : '☕' %></span>
+            </div>
+          <% } %>
+          <% if (drink.isSpecial) { %><div class="detail-special-badge">✦ Special</div><% } %>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="detail-info-col">
+        <p class="detail-eyebrow"><%= drink.category === 'hot' ? '☕ Hot drink' : '🧊 Cold drink' %> · <%= drink.subcategory %></p>
+        <h1 class="detail-title"><%= drink.name %></h1>
+
+        <!-- Live price display -->
+        <div class="detail-live-price" id="livePrice">
+          <span class="detail-live-amount" id="livePriceAmt">
+            <% if (drink.sizes && drink.sizes.length) { %>R<%= drink.sizes[0].price %><% } %>
+          </span>
+          <span class="detail-live-extras" id="livePriceExtras"></span>
+        </div>
+
+        <!-- Size selector -->
+        <% if (drink.sizes && drink.sizes.length > 1) { %>
+        <div class="detail-section">
+          <p class="detail-section-label">Size</p>
+          <div class="size-track"><div class="size-track-fill" id="sizeFill" style="width:0%"></div></div>
+          <div class="size-btns" id="sizeBtns">
+            <% drink.sizes.forEach((s, i) => { %>
+            <button class="size-btn <%= i === 0 ? 'active' : '' %>"
+                    data-price="<%= s.price %>" data-label="<%= s.label %>" data-ml="<%= s.ml %>" data-idx="<%= i %>" data-total="<%= drink.sizes.length %>">
+              <span class="size-btn-label"><%= s.label %></span>
+              <span class="size-btn-ml"><%= s.ml %></span>
+              <span class="size-btn-price">R<%= s.price %></span>
+            </button>
+            <% }) %>
+          </div>
+        </div>
+        <% } else if (drink.sizes && drink.sizes.length === 1) { %>
+        <div class="detail-section">
+          <p class="detail-section-label">Size</p>
+          <div class="size-btns">
+            <button class="size-btn active" data-price="<%= drink.sizes[0].price %>" data-label="<%= drink.sizes[0].label %>" data-ml="<%= drink.sizes[0].ml %>" data-idx="0" data-total="1">
+              <span class="size-btn-label"><%= drink.sizes[0].label %></span>
+              <span class="size-btn-ml"><%= drink.sizes[0].ml %></span>
+              <span class="size-btn-price">R<%= drink.sizes[0].price %></span>
+            </button>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Info chips -->
+        <div class="detail-chips">
+          <div class="detail-chip"><span class="chip-icon">🔥</span><div><span class="chip-label">Calories</span><span class="chip-val"><%= info.cal %></span></div></div>
+          <div class="detail-chip"><span class="chip-icon">💪</span><div><span class="chip-label">Protein</span><span class="chip-val"><%= info.protein %></span></div></div>
+          <div class="detail-chip"><span class="chip-icon">☕</span><div><span class="chip-label">Caffeine</span><span class="chip-val"><%= info.caff %></span></div></div>
+          <div class="detail-chip"><span class="chip-icon">🥛</span><div><span class="chip-label">Milk</span><span class="chip-val" id="chipMilkVal">Full cream</span></div></div>
+        </div>
+
+        <!-- Milk alternatives — interactive, R6 extra -->
+        <div class="detail-section">
+          <p class="detail-section-label">Milk alternative <span class="detail-extra-note">Alt milks +R6</span></p>
+          <div class="detail-pills" id="milkPills">
+            <button class="detail-pill detail-pill-active" data-milk="Full cream" data-extra="0">Full cream</button>
+            <button class="detail-pill" data-milk="Oat milk"      data-extra="6">Oat milk <span class="pill-extra">+R6</span></button>
+            <button class="detail-pill" data-milk="Almond milk"   data-extra="6">Almond milk <span class="pill-extra">+R6</span></button>
+            <button class="detail-pill" data-milk="Soy milk"      data-extra="6">Soy milk <span class="pill-extra">+R6</span></button>
+            <button class="detail-pill" data-milk="Lactose free"  data-extra="6">Lactose free <span class="pill-extra">+R6</span></button>
+          </div>
+        </div>
+
+        <!-- Flavours — interactive -->
+        <% if (drink.flavours && drink.flavours.length) { %>
+        <div class="detail-section">
+          <p class="detail-section-label">Flavour</p>
+          <div class="detail-pills" id="flavourPills">
+            <% drink.flavours.forEach((f, i) => { %>
+            <button class="detail-pill <%= i === 0 ? 'detail-pill-active' : '' %>" data-flavour="<%= f %>"><%= f %></button>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Sugar -->
+        <div class="detail-section">
+          <p class="detail-section-label">Sugar</p>
+          <div class="detail-pills" id="sugarPills">
+            <button class="detail-pill detail-pill-active" data-sugar="Regular">Regular</button>
+            <button class="detail-pill" data-sugar="Less sugar">Less sugar</button>
+            <button class="detail-pill" data-sugar="No sugar">No sugar</button>
+          </div>
+        </div>
+
+        <!-- Note -->
+        <div class="detail-section">
+          <p class="detail-section-label">Special note <span style="opacity:0.4;font-weight:400;">(optional)</span></p>
+          <textarea class="modal-notes" id="detailNotes" placeholder="e.g. extra hot, no foam…" rows="2"></textarea>
+        </div>
+
+        <!-- CTA -->
+        <div class="detail-cta-row">
+          <% if (loggedIn) { %>
+            <button class="btn btn-primary" id="addToCartBtn" style="min-width:200px;">
+              Add to order — <span id="ctaPrice">R<%= drink.sizes && drink.sizes.length ? drink.sizes[0].price : '' %></span>
+            </button>
+          <% } else { %>
+            <a href="/login?next=/drinks/<%= drink._id %>" class="btn btn-primary">Sign in to order →</a>
+          <% } %>
+          <a href="/drinks" class="btn btn-outline detail-outline-btn">← Full menu</a>
+        </div>
+
+        <!-- Added confirmation -->
+        <div class="detail-added-bar" id="addedBar" style="display:none;">
+          <span>✓ Added to your order!</span>
+          <a href="/order/confirm" class="detail-added-link">Go to checkout →</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Cart FAB (visible once items in cart) -->
+<button class="cart-fab fab-hidden" id="cartFab" onclick="window.location='/order/confirm'" aria-label="Go to checkout">
+  <span class="cart-fab-icon">🛒</span>
+  <span class="cart-fab-count" id="cartCount">0</span>
+  <span class="cart-fab-total" id="cartTotal">R0</span>
+</button>
+
+<%- include('../partials/footer') %>
+
+<script>
+const DRINK = <%- JSON.stringify({
+  name:       drink.name,
+  category:   drink.category,
+  subcategory: drink.subcategory,
+  image:      drink.image ? '/images/drinks/' + drink.image : null,
+  isSpecial:  drink.isSpecial,
+  sizes:      drink.sizes,
+  flavours:   drink.flavours
+}) %>;
+
+const MILK_EXTRA = 6;
+
+// ── State ─────────────────────────────────────────────────────────
+let selSize    = DRINK.sizes && DRINK.sizes.length ? DRINK.sizes[0] : null;
+let selMilk    = 'Full cream';
+let milkExtra  = 0;
+let selFlavour = DRINK.flavours && DRINK.flavours.length ? DRINK.flavours[0] : null;
+let selSugar   = 'Regular';
+
+// ── Size slider ───────────────────────────────────────────────────
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selSize = { label: btn.dataset.label, ml: btn.dataset.ml, price: Number(btn.dataset.price) };
+    const idx   = parseInt(btn.dataset.idx);
+    const total = parseInt(btn.dataset.total);
+    const fill  = document.getElementById('sizeFill');
+    if (fill) fill.style.width = (total <= 1 ? 100 : (idx / (total - 1)) * 100) + '%';
+    updatePrice();
+  });
+});
+
+// ── Milk pills ────────────────────────────────────────────────────
+document.querySelectorAll('#milkPills .detail-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#milkPills .detail-pill').forEach(b => b.classList.remove('detail-pill-active'));
+    btn.classList.add('detail-pill-active');
+    selMilk   = btn.dataset.milk;
+    milkExtra = parseInt(btn.dataset.extra) || 0;
+    document.getElementById('chipMilkVal').textContent = selMilk;
+    updatePrice();
+  });
+});
+
+// ── Flavour pills ─────────────────────────────────────────────────
+document.querySelectorAll('#flavourPills .detail-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#flavourPills .detail-pill').forEach(b => b.classList.remove('detail-pill-active'));
+    btn.classList.add('detail-pill-active');
+    selFlavour = btn.dataset.flavour;
+  });
+});
+
+// ── Sugar pills ───────────────────────────────────────────────────
+document.querySelectorAll('#sugarPills .detail-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#sugarPills .detail-pill').forEach(b => b.classList.remove('detail-pill-active'));
+    btn.classList.add('detail-pill-active');
+    selSugar = btn.dataset.sugar;
+  });
+});
+
+// ── Price display ─────────────────────────────────────────────────
+function updatePrice() {
+  if (!selSize) return;
+  const total = selSize.price + milkExtra;
+  document.getElementById('livePriceAmt').textContent = 'R' + selSize.price;
+  document.getElementById('livePriceExtras').textContent = milkExtra > 0 ? ' +R' + milkExtra + ' milk' : '';
+  const ctaEl = document.getElementById('ctaPrice');
+  if (ctaEl) ctaEl.textContent = 'R' + total;
+}
+updatePrice();
+
+// ── Add to cart ───────────────────────────────────────────────────
+const addBtn = document.getElementById('addToCartBtn');
+if (addBtn) {
+  addBtn.addEventListener('click', () => {
+    if (!selSize) return;
+    const total = selSize.price + milkExtra;
+    const item = {
+      id:       Date.now(),
+      type:     'drink',
+      name:     DRINK.name,
+      size:     selSize.label,
+      ml:       selSize.ml,
+      price:    total,
+      milk:     selMilk,
+      flavour:  selFlavour,
+      sugar:    selSugar,
+      notes:    document.getElementById('detailNotes').value.trim(),
+      image:    DRINK.image,
+      category: DRINK.category,
+    };
+
+    const cart = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
+    cart.push(item);
+    sessionStorage.setItem('cl_cart', JSON.stringify(cart));
+
+    // Show confirmation bar
+    document.getElementById('addedBar').style.display = 'flex';
+    addBtn.textContent = '✓ Added!';
+    addBtn.disabled = true;
+    setTimeout(() => {
+      addBtn.innerHTML = 'Add another — <span id="ctaPrice">R' + total + '</span>';
+      addBtn.disabled = false;
+      updatePrice();
+    }, 2000);
+
+    updateFab(cart);
+  });
+}
+
+// ── Cart FAB ──────────────────────────────────────────────────────
+function updateFab(cart) {
+  const count = cart.length;
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotal').textContent = 'R' + total;
+  document.getElementById('cartFab').classList.toggle('fab-hidden', count === 0);
+}
+
+// Init FAB from existing cart
+updateFab(JSON.parse(sessionStorage.getItem('cl_cart') || '[]'));
+</script>

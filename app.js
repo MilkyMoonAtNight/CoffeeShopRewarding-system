@@ -31,6 +31,7 @@ app.use((req, res, next) => {
 // Routes — order matters, most specific first
 app.use('/admin',      require('./routes/admin'));
 app.use('/battlepass', require('./routes/battlepass'));
+app.use('/order',      require('./routes/order'));
 app.use('/',           require('./routes/auth'));
 app.use('/',           require('./routes/index'));
 
