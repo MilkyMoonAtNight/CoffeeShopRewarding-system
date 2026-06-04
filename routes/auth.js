@@ -149,4 +149,17 @@ router.post('/reset-password/:token', async (req, res) => {
   }
 });
 
+// ── Delete own account ────────────────────────────────────────────
+router.post('/account/delete', async (req, res) => {
+  if (!req.session.userId) return res.json({ ok: false, error: 'Not logged in' });
+  try {
+    await User.findByIdAndDelete(req.session.userId);
+    req.session.destroy(() => {
+      res.json({ ok: true });
+    });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 module.exports = router;

@@ -2518,3 +2518,175 @@ button.detail-pill.detail-pill-active {
     text-align: center;
   }
 }
+
+/* ======================================================
+   NAVBAR — MIDDLE STATE (914px → 651px)
+   Icon-only links, no hamburger, no text
+   Modern "icon rail" pattern
+   ====================================================== */
+@media (max-width: 914px) and (min-width: 651px) {
+  .nav-inner { padding: 0 1.25rem; gap: 0.5rem; }
+
+  /* Shrink logo text slightly */
+  .logo-text { font-size: 1.1rem; }
+
+  /* Each nav link becomes an icon-only pill */
+  .nav-link {
+    padding: 0.45rem 0.55rem;
+    font-size: 0;           /* hide text */
+    position: relative;
+  }
+
+  /* Show text as tooltip on hover */
+  .nav-link::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: -2.2rem; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,10,10,0.92);
+    color: var(--cream);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 9999;
+  }
+  .nav-link:hover::after { opacity: 1; }
+
+  /* Show the icon — each link needs a data-icon attr */
+  .nav-link::before {
+    content: attr(data-icon);
+    font-size: 1.1rem;
+    display: block;
+  }
+
+  /* CTAs keep a small label */
+  .nav-cta {
+    font-size: 0.72rem !important;
+    padding: 0.45rem 0.75rem !important;
+    white-space: nowrap;
+  }
+  .nav-pase {
+    font-size: 0.72rem !important;
+  }
+  .nav-order-link {
+    font-size: 0.72rem !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+
+  /* Hide nav toggle — not needed at this range */
+  .nav-toggle { display: none !important; }
+  .nav-links  { display: flex !important; }
+}
+
+/* ====== PASSWORD EYEBALL ====== */
+.pw-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.pw-wrap .pw-input {
+  flex: 1; padding-right: 2.75rem;
+}
+.pw-eye {
+  position: absolute; right: 0.6rem;
+  background: none; border: none; cursor: pointer;
+  padding: 0.35rem; color: rgba(44,44,44,0.35);
+  display: flex; align-items: center; justify-content: center;
+  transition: color var(--transition);
+  /* Hold behaviour — prevent text selection while holding */
+  user-select: none; -webkit-user-select: none;
+  touch-action: none;
+}
+.pw-eye:hover { color: rgba(44,44,44,0.7); }
+.pw-eye:active { color: var(--maroon); }
+.eye-icon { width: 18px; height: 18px; pointer-events: none; }
+/* Only one SVG visible at a time */
+.pw-eye .eye-open   { display: none; }
+.pw-eye .eye-closed { display: block; }
+.pw-eye.revealing .eye-open   { display: block; }
+.pw-eye.revealing .eye-closed { display: none; }
+
+/* ====== ADMIN CHECK-IN BUTTON ====== */
+.checkin-btn {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.35rem 0.85rem; border-radius: 50px;
+  border: 1.5px solid; cursor: pointer; font-family: var(--font-body);
+  font-size: 0.75rem; font-weight: 600;
+  transition: all 0.2s ease;
+}
+.checkin-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.checkin-in  { background: rgba(29,158,117,0.1); border-color: #1D9E75; color: #1D9E75; }
+.checkin-out { background: rgba(44,44,44,0.06);   border-color: rgba(44,44,44,0.25); color: rgba(44,44,44,0.5); }
+.checkin-in  .checkin-dot { background: #1D9E75; box-shadow: 0 0 0 3px rgba(29,158,117,0.2); }
+.checkin-out .checkin-dot { background: rgba(44,44,44,0.3); }
+.checkin-btn:hover { transform: translateY(-1px); }
+
+/* ====== BATTLEPASS — QR HINT CENTERED ====== */
+.bp-qr-hint {
+  text-align: center !important;
+  width: 100%;
+  display: block;
+}
+
+/* ====== BATTLEPASS — DANGER ZONE ====== */
+.bp-danger-zone {
+  background: var(--white);
+  border: 1.5px solid rgba(200,50,50,0.2);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+.bp-danger-label {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: #c83232; font-weight: 700; margin-bottom: 0.5rem;
+}
+.bp-danger-sub {
+  font-size: 0.82rem; color: rgba(44,44,44,0.55);
+  margin-bottom: 1rem; line-height: 1.5;
+}
+.bp-delete-btn {
+  background: none;
+  border: 1.5px solid rgba(200,50,50,0.35);
+  color: #c83232;
+  font-size: 0.82rem; font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+.bp-delete-btn:hover {
+  background: rgba(200,50,50,0.06);
+  border-color: #c83232;
+}
+
+/* ====== ADMIN USERS — STAMP CONTROLS ====== */
+.stamp-cell {
+  display: flex; align-items: center; gap: 0.5rem;
+  border-radius: var(--radius); padding: 0.2rem 0.4rem;
+  transition: background 0.3s ease;
+}
+.stamp-count {
+  font-weight: 700; font-size: 0.95rem;
+  min-width: 28px; text-align: center;
+}
+.stamp-controls { display: flex; gap: 0.25rem; }
+.stamp-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid rgba(44,44,44,0.15);
+  background: var(--white); cursor: pointer;
+  font-size: 1rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease; color: var(--charcoal);
+  line-height: 1;
+}
+.stamp-btn:hover { transform: scale(1.1); }
+.stamp-minus:hover { border-color: #c83232; color: #c83232; }
+.stamp-plus:hover  { border-color: #1D9E75; color: #1D9E75; }
+.stamp-btn:disabled { opacity: 0.4; transform: none; cursor: not-allowed; }
+
+.admin-delete-btn:hover {
+  background: rgba(200,50,50,0.06) !important;
+}

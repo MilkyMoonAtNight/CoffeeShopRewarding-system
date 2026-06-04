@@ -5,17 +5,6 @@
 <section class="bp-page">
   <div class="bp-container">
 
-    <!-- FIRST VISIT BANNER -->
-      <% if (user.totalDrinks === 0) { %>
-      <div class="bp-welcome-banner">
-        <span class="bp-welcome-icon">🐾</span>
-        <div class="bp-welcome-text">
-          <p class="bp-welcome-title">Welcome to Pase de Café!</p>
-          <p class="bp-welcome-sub">Show this QR to your barista on your next order to start earning. Your first drink starts the streak.</p>
-        </div>
-      </div>
-      <% } %>
-
     <!-- QR CARD -->
       <div class="bp-qr-card">
         <div class="bp-tier-chip">
@@ -27,7 +16,7 @@
         <div class="bp-qr-box">
           <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
         </div>
-        <p class="bp-qr-hint">Show this to your barista when ordering</p>
+        <p class="bp-qr-hint" style="text-align:center;width:100%;">Show this to your barista when ordering</p>
       </div>
 
     <!-- STATS ROW -->
@@ -189,9 +178,43 @@
     </div>
     <% } %>
 
+  </div><!-- end bp-container -->
+
+  <!-- ── Danger zone ── -->
+  <div class="bp-container" style="margin-top:0;padding-bottom:3rem;">
+    <div class="bp-danger-zone">
+      <p class="bp-danger-label">Danger zone</p>
+      <p class="bp-danger-sub">Permanently delete your Con Leche account. This removes your battlepass, all stamps, rewards, and order history. This cannot be undone.</p>
+      <button class="btn bp-delete-btn" onclick="document.getElementById('deleteAccountOverlay').classList.add('open')">
+        Delete my account
+      </button>
+    </div>
   </div>
+
 </section>
 </main>
+
+<!-- Delete account confirmation overlay -->
+<div class="modal-overlay" id="deleteAccountOverlay">
+  <div class="modal-sheet" style="max-width:420px;border-radius:var(--radius-lg);">
+    <button class="modal-close" onclick="document.getElementById('deleteAccountOverlay').classList.remove('open')">✕</button>
+    <div class="modal-body" style="padding-top:1.75rem;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">💔</div>
+      <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;">We'll miss you</h2>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">Are you sure you want to delete your account?</p>
+      <p style="color:rgba(44,44,44,0.5);font-size:0.82rem;margin-bottom:1rem;">You have <strong><%= user.totalDrinks %> stamps</strong> and <strong><%= (user.rewards||[]).filter(r=>r.status==='earned').length %> unclaimed rewards</strong>. All of this will be gone forever.</p>
+      <p style="color:rgba(44,44,44,0.45);font-size:0.78rem;margin-bottom:1.5rem;">Type <strong>DELETE</strong> to confirm.</p>
+      <input type="text" id="deleteConfirmInput" class="confirm-input"
+             placeholder="Type DELETE here" style="text-align:center;margin-bottom:1rem;letter-spacing:0.1em;" />
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button id="confirmDeleteBtn" class="btn btn-primary" style="background:#c83232;min-width:160px;" disabled
+                onclick="submitDelete()">Delete my account</button>
+        <button type="button" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);"
+                onclick="document.getElementById('deleteAccountOverlay').classList.remove('open')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 // Set progress bar width via JS to avoid EJS-in-style issue
@@ -225,6 +248,26 @@ document.querySelectorAll('.claim-btn').forEach(btn => {
       btn.disabled = false;
     }
   });
+});
+// ── Delete account ────────────────────────────────────────────────
+const deleteInput = document.getElementById('deleteConfirmInput');
+const confirmBtn  = document.getElementById('confirmDeleteBtn');
+if (deleteInput) {
+  deleteInput.addEventListener('input', () => {
+    confirmBtn.disabled = deleteInput.value.trim().toUpperCase() !== 'DELETE';
+  });
+}
+function submitDelete() {
+  if (deleteInput.value.trim().toUpperCase() !== 'DELETE') return;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Deleting…';
+  fetch('/account/delete', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => { if (d.ok) window.location = '/'; })
+    .catch(() => { confirmBtn.disabled = false; confirmBtn.textContent = 'Delete my account'; });
+}
+document.getElementById('deleteAccountOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
 });
 </script>
 

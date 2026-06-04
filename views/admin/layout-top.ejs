@@ -9,6 +9,12 @@
         <span class="admin-header-name">Con Leche <span class="admin-header-sub">Admin</span></span>
       </div>
       <div class="admin-header-right">
+        <!-- Check-in toggle -->
+        <button class="checkin-btn <%= admin.checkedIn ? 'checkin-in' : 'checkin-out' %>" id="checkinBtn"
+                title="<%= admin.checkedIn ? 'You are checked in — click to check out' : 'Click to check in for your shift' %>">
+          <span class="checkin-dot"></span>
+          <span class="checkin-label"><%= admin.checkedIn ? 'On shift' : 'Off shift' %></span>
+        </button>
         <span class="admin-header-user"><%= admin.name %> · <em><%= admin.role %></em></span>
         <button class="admin-nav-toggle" id="adminNavToggle" aria-label="Menu">
           <span></span><span></span><span></span>
@@ -21,15 +27,12 @@
       <a href="/admin/dashboard" class="admin-nav-item <%= title.includes('Dashboard') ? 'active' : '' %>">
         <span class="admin-nav-icon">⬛</span> Dashboard
       </a>
-      <a href="/admin/orders" class="admin-nav-item <%= title.includes('Orders') ? 'active' : '' %>"><span class="admin-nav-icon">📋</span> Orders</a>
+      <a href="/admin/orders" class="admin-nav-item <%= title.includes('Orders') ? 'active' : '' %>">
+        <span class="admin-nav-icon">📋</span> Orders
+      </a>
       <a href="/admin/scan" class="admin-nav-item <%= title.includes('Scan') ? 'active' : '' %>">
         <span class="admin-nav-icon">📷</span> Scan QR
       </a>
-      <% if (admin.role !== 'owner') { %>
-      <a href="/admin/checkin-pin" class="admin-nav-item <%= title.includes('PIN Check') ? 'active' : '' %>">
-        <span class="admin-nav-icon">🕐</span> Check In
-      </a>
-      <% } %>
       <% if (admin.role === 'owner' || admin.role === 'manager') { %>
       <a href="/admin/events" class="admin-nav-item <%= title.includes('Events') ? 'active' : '' %>">
         <span class="admin-nav-icon">📅</span> Events

@@ -3,12 +3,12 @@ const router  = express.Router();
 const Drink   = require('../models/Drink');
 const Pastry  = require('../models/Pastry');
 const User    = require('../models/User');
+const Admin   = require('../models/Admin');
+const { notifyStaffNewOrder, notifyCustomerStatusUpdate } = require('../utils/mailer');
 
 // ── Auth guard ────────────────────────────────────────────────────
 function requireUser(req, res, next) {
-  if (!req.session.userId) {
-    return res.redirect('/login?next=/order');
-  }
+  if (!req.session.userId) return res.redirect('/login?next=/order');
   next();
 }
 
@@ -19,7 +19,7 @@ router.get('/', requireUser, async (req, res) => {
   const cold = allDrinks.filter(d => d.category === 'cold');
 
   let pastries = await Pastry.find({ available: true }).sort({ order: 1 }).catch(() => []);
-  if (pastries.length === 0) {
+  if (!pastries.length) {
     pastries = [
       { name: 'Butter Croissant',  description: 'Flaky, golden, layered to perfection',          price: 38, image: '/images/pastries/655847140_122106598179267672_2803138726600608537_n.jpg' },
       { name: 'Chocolate Pain',    description: 'Dark chocolate wrapped in buttery pastry',       price: 42, image: '/images/pastries/656193104_122106598269267672_5884950660951476565_n.jpg' },
@@ -38,33 +38,81 @@ router.get('/', requireUser, async (req, res) => {
   res.render('pages/order', { title: 'Order — Con Leche', hot, cold, pastries, user });
 });
 
-// ── My orders (user tracking page) ────────────────────────────────
+// ── My orders ─────────────────────────────────────────────────────
 router.get('/my-orders', requireUser, async (req, res) => {
   const user = await User.findById(req.session.userId).select('pastOrders').lean();
-  const orders = (user && user.pastOrders) ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt)) : [];
+  const orders = (user && user.pastOrders)
+    ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt))
+    : [];
   res.render('pages/my-orders', { title: 'My Orders — Con Leche', orders });
 });
 
-// ── Confirm page ─────────────────────────────────────────────────
+// ── My orders — live status poll (SSE) ───────────────────────────
+// Client connects to this endpoint and gets pushed updates when status changes
+router.get('/my-orders/stream', requireUser, async (req, res) => {
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  // Send current orders immediately
+  const push = async () => {
+    const user = await User.findById(req.session.userId).select('pastOrders').lean();
+    const orders = (user && user.pastOrders)
+      ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt))
+      : [];
+    send({ orders });
+  };
+
+  await push();
+
+  // Poll every 8 seconds and push if anything changed
+  const interval = setInterval(push, 8000);
+  req.on('close', () => clearInterval(interval));
+});
+
+// ── Confirm page ──────────────────────────────────────────────────
 router.get('/confirm', requireUser, (req, res) => {
   res.render('pages/order-confirm', { title: 'Confirm Order — Con Leche' });
 });
 
-// ── Place order API ───────────────────────────────────────────────
+// ── Place order ───────────────────────────────────────────────────
 router.post('/place', requireUser, async (req, res) => {
   try {
     const { name, phone, email, collection, notes, items, total } = req.body;
     if (!items || !items.length) return res.json({ ok: false, error: 'Cart is empty' });
 
-    const ref = 'CL-' + Date.now().toString(36).toUpperCase();
-    const order = { ref, items, total: Number(total), pickupMethod: collection, notes, status: 'pending', placedAt: new Date() };
+    const ref   = 'CL-' + Date.now().toString(36).toUpperCase();
+    const order = {
+      ref, items, total: Number(total),
+      pickupMethod: collection, notes,
+      status: 'pending', placedAt: new Date(),
+    };
     if (phone) order.phone = phone;
     if (email) order.email = email;
 
-    // Save to user's past orders
-    await User.findByIdAndUpdate(req.session.userId, {
+    // Save to user
+    const user = await User.findByIdAndUpdate(req.session.userId, {
       $push: { pastOrders: { $each: [order], $position: 0 } }
-    });
+    }, { new: false }).select('name email').lean();
+
+    // Email all checked-in staff ─────────────────────────────────
+    const checkedInStaff = await Admin.find({ checkedIn: true, active: true }).select('email').lean();
+    const staffEmails    = checkedInStaff.map(s => s.email).filter(Boolean);
+
+    const orderForEmail = {
+      ...order,
+      userName:  user ? user.name  : name,
+      userEmail: user ? user.email : email,
+    };
+
+    if (staffEmails.length) {
+      notifyStaffNewOrder(orderForEmail, staffEmails).catch(err =>
+        console.error('Staff email error:', err.message)
+      );
+    }
 
     res.json({ ok: true, ref });
   } catch (err) {
@@ -73,7 +121,7 @@ router.post('/place', requireUser, async (req, res) => {
   }
 });
 
-// ── Update order status (called from admin orders page) ───────────
+// ── Update order status ───────────────────────────────────────────
 router.post('/status/:userId/:ref', async (req, res) => {
   try {
     const { status } = req.body;
@@ -81,19 +129,35 @@ router.post('/status/:userId/:ref', async (req, res) => {
       { _id: req.params.userId, 'pastOrders.ref': req.params.ref },
       { $set: { 'pastOrders.$.status': status } }
     );
+
+    // Email the customer about the status update
+    const user = await User.findOne(
+      { _id: req.params.userId, 'pastOrders.ref': req.params.ref },
+      { 'pastOrders.$': 1, email: 1 }
+    ).lean();
+
+    if (user) {
+      const order       = user.pastOrders && user.pastOrders[0];
+      const orderEmail  = (order && order.email) || user.email;
+      if (orderEmail && order) {
+        notifyCustomerStatusUpdate(order, orderEmail, status).catch(err =>
+          console.error('Customer status email error:', err.message)
+        );
+      }
+    }
+
     res.json({ ok: true });
   } catch (err) {
     res.json({ ok: false });
   }
 });
 
-// ── Get all pending orders (for admin page) ───────────────────────
+// ── Admin feed ────────────────────────────────────────────────────
 router.get('/admin-feed', async (req, res) => {
   if (!req.session.adminId) return res.json({ ok: false });
   try {
     const users = await User.find({ 'pastOrders.0': { $exists: true } })
       .select('name email pastOrders').lean();
-
     const orders = [];
     users.forEach(u => {
       u.pastOrders.forEach(o => {

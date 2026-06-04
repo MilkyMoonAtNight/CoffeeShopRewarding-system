@@ -5,9 +5,13 @@
   <p class="admin-page-sub"><%= users.length %> registered battlepass members</p>
 </div>
 
-<div class="admin-card">
+<% if (locals.msg && msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<div class="admin-card" style="padding:0;overflow:hidden;">
   <% if (users.length === 0) { %>
-    <p class="admin-empty">No members yet — share the registration link to get people signed up.</p>
+    <p class="admin-empty" style="padding:2rem;">No members yet.</p>
   <% } else { %>
   <div class="admin-table-wrap">
     <table class="admin-table">
@@ -17,14 +21,14 @@
           <th>Email</th>
           <th>Tier</th>
           <th>Drinks</th>
-          <th>Rewards</th>
           <th>Joined</th>
-          <th>Last Visit</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <% users.forEach(user => { %>
-        <tr>
+        <% const safeName = JSON.stringify(user.name) %>
+        <tr id="urow-<%= user._id %>">
           <td class="admin-td-name"><%= user.name %></td>
           <td class="admin-td-sub"><%= user.email %></td>
           <td>
@@ -33,10 +37,24 @@
               <%= user.tier %>
             </span>
           </td>
-          <td class="admin-td-num"><%= user.totalDrinks %></td>
-          <td class="admin-td-num"><%= user.rewards.length %></td>
+          <td class="admin-td-num">
+            <div class="stamp-cell" id="stamps-<%= user._id %>">
+              <span class="stamp-count"><%= user.totalDrinks %></span>
+              <div class="stamp-controls">
+                <button class="stamp-btn stamp-minus" data-id="<%= user._id %>" data-delta="-1" title="Remove 1 stamp">−</button>
+                <button class="stamp-btn stamp-plus"  data-id="<%= user._id %>" data-delta="1"  title="Add 1 stamp">+</button>
+              </div>
+            </div>
+          </td>
           <td class="admin-td-sub"><%= user.createdAt.toLocaleDateString('en-ZA') %></td>
-          <td class="admin-td-sub"><%= user.lastVisit ? user.lastVisit.toLocaleDateString('en-ZA') : '—' %></td>
+          <td>
+            <button class="admin-toggle-btn admin-delete-btn"
+              style="color:#c83232;border-color:#c83232;"
+              data-id="<%= user._id.toString() %>"
+              data-name="<%= user.name %>">
+            Delete
+          </button>
+          </td>
         </tr>
         <% }) %>
       </tbody>
@@ -45,4 +63,68 @@
   <% } %>
 </div>
 
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteUserOverlay">
+  <div class="modal-sheet" style="max-width:420px;border-radius:var(--radius-lg);">
+    <div class="modal-body" style="padding-top:1.75rem;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">⚠️</div>
+      <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;color:var(--charcoal);">Delete member?</h2>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">You are about to permanently delete <strong id="deleteUserName"></strong>.</p>
+      <p style="color:rgba(44,44,44,0.5);font-size:0.82rem;margin-bottom:1.5rem;">This removes their account, battlepass history, and all rewards. This cannot be undone.</p>
+      <form id="deleteUserForm" method="POST">
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+          <button type="submit" class="btn btn-primary" style="background:#c83232;min-width:120px;">Yes, delete</button>
+          <button type="button" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);"
+                  onclick="document.getElementById('deleteUserOverlay').classList.remove('open')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <%- include('./layout-bottom') %>
+
+<script>
+function confirmDelete(userId, userName) {
+  document.getElementById('deleteUserName').textContent = userName;
+  document.getElementById('deleteUserForm').action = `/admin/users/delete/${userId}`;
+  document.getElementById('deleteUserOverlay').classList.add('open');
+}
+
+document.getElementById('deleteUserOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    confirmDelete(btn.dataset.id, btn.dataset.name);
+  });
+});
+
+// Stamp adjustment
+document.querySelectorAll('.stamp-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id    = btn.dataset.id;
+    const delta = btn.dataset.delta;
+    btn.disabled = true;
+    try {
+      const res  = await fetch(`/admin/users/stamps/${id}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        document.querySelector(`#stamps-${id} .stamp-count`).textContent = data.totalDrinks;
+        // Flash green/red feedback
+        const cell = document.getElementById(`stamps-${id}`);
+        cell.style.transition = 'background 0.2s';
+        cell.style.background = delta > 0 ? 'rgba(29,158,117,0.12)' : 'rgba(200,50,50,0.1)';
+        setTimeout(() => cell.style.background = '', 800);
+      } else {
+        alert(data.error || 'Could not update stamps');
+      }
+    } catch(e) { alert('Network error'); }
+    btn.disabled = false;
+  });
+});
+</script>

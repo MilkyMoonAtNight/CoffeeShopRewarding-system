@@ -12,8 +12,9 @@ const adminSchema = new mongoose.Schema({
   },
   active: { type: Boolean, default: true },
   lastLogin: Date,
-  createdAt: { type: Date, default: Date.now }
-}, { suppressReservedKeysWarning: true });
+  createdAt:   { type: Date, default: Date.now },
+  checkedIn:  { type: Boolean, default: false }
+});
 
 // Role permissions helper
 adminSchema.methods.can = function (action) {

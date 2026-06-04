@@ -302,6 +302,30 @@ router.get('/users', ownerManager, async (req, res) => {
   res.render('admin/users', { title: 'Members — Con Leche Admin', admin: req.admin, users });
 });
 
+// ── Delete a member (owner + manager) ────────────────────────────
+router.post('/users/delete/:id', ownerManager, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.redirect('/admin/users?msg=Member+deleted');
+  } catch (err) {
+    res.redirect('/admin/users?msg=Error:+' + encodeURIComponent(err.message));
+  }
+});
+
+router.post('/users/stamps/:id', requireAdmin, async (req, res) => {
+  try {
+    const change = parseInt(req.body.delta);
+    if (isNaN(change)) return res.json({ ok: false, error: 'Invalid delta' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.json({ ok: false, error: 'User not found' });
+    user.totalDrinks = Math.max(0, user.totalDrinks + change);
+    await user.save();
+    res.json({ ok: true, totalDrinks: user.totalDrinks });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 // ── NFC CHECK-IN / CHECK-OUT ──────────────────────────────────────
 router.get('/checkin', async (req, res) => {
   const { token } = req.query;
@@ -507,6 +531,18 @@ router.post('/staff/toggle/:id', ownerOnly, async (req, res) => {
 // ── ONLINE ORDERS (all admin roles can access) ────────────────────
 router.get('/orders', requireAdmin, (req, res) => {
   res.render('admin/orders', { title: 'Online Orders — Con Leche Admin', admin: req.admin });
+});
+
+// ── CHECK IN / OUT toggle ─────────────────────────────────────────
+router.post('/checkin', requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.session.adminId);
+    admin.checkedIn = !admin.checkedIn;
+    await admin.save();
+    res.json({ ok: true, checkedIn: admin.checkedIn });
+  } catch (err) {
+    res.json({ ok: false });
+  }
 });
 
 module.exports = router;
