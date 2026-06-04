@@ -35,13 +35,13 @@ const userSchema = new mongoose.Schema({
   resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
   pastOrders: [{
-    ref:        String,
-    items:      mongoose.Schema.Types.Mixed,
-    total:      Number,
-    collection: String,
-    notes:      String,
-    status:     { type: String, default: 'pending' },
-    placedAt:   { type: Date, default: Date.now }
+    ref:          String,
+    items:        mongoose.Schema.Types.Mixed,
+    total:        Number,
+    pickupMethod: String,
+    notes:        String,
+    status:       { type: String, default: 'pending' },
+    placedAt:     { type: Date, default: Date.now }
   }]
 });
 

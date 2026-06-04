@@ -32,6 +32,7 @@ app.use((req, res, next) => {
 app.use('/admin',      require('./routes/admin'));
 app.use('/battlepass', require('./routes/battlepass'));
 app.use('/order',      require('./routes/order'));
+app.use('/payment',    require('./routes/payment'));
 app.use('/',           require('./routes/auth'));
 app.use('/',           require('./routes/index'));
 

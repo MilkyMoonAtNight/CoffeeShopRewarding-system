@@ -38,6 +38,13 @@ router.get('/', requireUser, async (req, res) => {
   res.render('pages/order', { title: 'Order — Con Leche', hot, cold, pastries, user });
 });
 
+// ── My orders (user tracking page) ────────────────────────────────
+router.get('/my-orders', requireUser, async (req, res) => {
+  const user = await User.findById(req.session.userId).select('pastOrders').lean();
+  const orders = (user && user.pastOrders) ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt)) : [];
+  res.render('pages/my-orders', { title: 'My Orders — Con Leche', orders });
+});
+
 // ── Confirm page ─────────────────────────────────────────────────
 router.get('/confirm', requireUser, (req, res) => {
   res.render('pages/order-confirm', { title: 'Confirm Order — Con Leche' });
@@ -46,12 +53,13 @@ router.get('/confirm', requireUser, (req, res) => {
 // ── Place order API ───────────────────────────────────────────────
 router.post('/place', requireUser, async (req, res) => {
   try {
-    const { name, phone, collection, notes, items, total } = req.body;
+    const { name, phone, email, collection, notes, items, total } = req.body;
     if (!items || !items.length) return res.json({ ok: false, error: 'Cart is empty' });
 
     const ref = 'CL-' + Date.now().toString(36).toUpperCase();
-    const order = { ref, items, total: Number(total), collection, notes, status: 'pending', placedAt: new Date() };
+    const order = { ref, items, total: Number(total), pickupMethod: collection, notes, status: 'pending', placedAt: new Date() };
     if (phone) order.phone = phone;
+    if (email) order.email = email;
 
     // Save to user's past orders
     await User.findByIdAndUpdate(req.session.userId, {

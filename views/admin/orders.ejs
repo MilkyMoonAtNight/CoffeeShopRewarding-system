@@ -97,7 +97,7 @@ function renderOrders() {
       </div>
       <div class="order-row-mid">
         <p class="order-customer">${o.userName}</p>
-        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${o.collection}</p>
+        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${o.pickupMethod}</p>
       </div>
       <div class="order-row-right">
         <span class="order-total-pill">R${o.total}</span>
@@ -138,7 +138,7 @@ function openOrderDetail(idx) {
     </div>`).join('');
 
   document.getElementById('odTotal').textContent = `R${o.total}`;
-  document.getElementById('odCollection').textContent = o.collection || '—';
+  document.getElementById('odCollection').textContent = o.pickupMethod || '—';
   document.getElementById('odNotes').textContent = o.notes ? `"${o.notes}"` : '';
 
   const nexts = STATUS_NEXT[o.status] || [];

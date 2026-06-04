@@ -19,27 +19,24 @@
   <section class="section drinks-section">
     <div class="container">
 
-      <!-- HOT DRINKS -->
+      <!-- HOT -->
       <div class="drinks-panel" id="tab-hot">
-        <div class="drinks-size-legend">
-          <span>Regular — 250ml</span><span class="legend-sep">·</span><span>Large — 350ml</span>
-        </div>
+        <div class="drinks-size-legend"><span>Regular — 250ml</span><span class="legend-sep">·</span><span>Large — 350ml</span></div>
         <div class="drink-grid">
-          <% hot.forEach(drink => { %>
+          <% hot.forEach((drink, idx) => { %>
           <%
-            const latteFlavours = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
             const isLatte = drink.name && drink.name.toLowerCase().includes('latte');
-            const displayFlavours = isLatte ? latteFlavours : (drink.flavours && drink.flavours.length ? drink.flavours : []);
-            const slug = encodeURIComponent(drink.name);
+            const dispFlavours = isLatte ? ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'] : (drink.flavours||[]);
           %>
-          <a href="/drinks/<%= slug %>" class="drink-card drink-card-link <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+          <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
+               data-drink-idx="<%= idx %>" data-drink-cat="hot">
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap">
                 <% if (drink.image) { %>
                   <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
                   <div class="drink-img-placeholder">
-                    <span><%= drink.subcategory === 'chocolate' ? '🍫' : drink.subcategory === 'tea' ? '🍵' : '☕' %></span>
+                    <span><%= drink.subcategory==='chocolate'?'🍫':drink.subcategory==='tea'?'🍵':'☕' %></span>
                     <span><%= drink.name %></span>
                   </div>
                 <% } %>
@@ -47,51 +44,46 @@
               <div class="drink-card-top">
                 <span class="drink-name"><%= drink.name %></span>
                 <div class="drink-prices">
-                  <% if (drink.prices && drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
-                  <% if (drink.prices && drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
                 </div>
               </div>
-              <% if (displayFlavours.length) { %>
+              <% if (dispFlavours.length) { %>
               <div class="drink-flavours">
                 <span class="flavours-label">Flavours</span>
-                <span class="flavours-list"><%= displayFlavours.slice(0,4).join(' · ') %><%= displayFlavours.length > 4 ? '…' : '' %></span>
+                <span class="flavours-list"><%= dispFlavours.slice(0,4).join(' · ') %><%= dispFlavours.length>4?'…':'' %></span>
               </div>
               <% } %>
               <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
-              <span class="drink-tap-hint">Tap for details →</span>
+              <span class="order-add-hint">Tap to customise →</span>
             </div>
-          </a>
+          </div>
           <% }) %>
         </div>
-        <% if (!hot.length) { %><p class="drinks-empty">Menu coming soon — ask our barista!</p><% } %>
+        <% if (!hot.length) { %><p class="drinks-empty">Menu coming soon!</p><% } %>
       </div>
 
-      <!-- COLD DRINKS -->
+      <!-- COLD -->
       <div class="drinks-panel hidden" id="tab-cold">
-        <div class="drinks-size-legend">
-          <span>Regular — 350ml</span><span class="legend-sep">·</span><span>Large — 500ml</span>
-        </div>
+        <div class="drinks-size-legend"><span>Regular — 350ml</span><span class="legend-sep">·</span><span>Large — 500ml</span></div>
         <div class="drink-grid">
-          <% cold.forEach(drink => { %>
+          <% cold.forEach((drink, idx) => { %>
           <%
-            const latteFlavoursC = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
-            const freezoFlavours = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
-            const frozenYogurtFlavours = [...latteFlavoursC,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
-            const dn = drink.name ? drink.name.toLowerCase() : '';
-            const coldFlavours = dn.includes('frozen yogurt')||dn.includes('froyo') ? frozenYogurtFlavours
-                                : dn.includes('freezo') ? freezoFlavours
-                                : dn.includes('latte')  ? latteFlavoursC
-                                : (drink.flavours && drink.flavours.length ? drink.flavours : []);
-            const slug = encodeURIComponent(drink.name);
+            const dn = (drink.name||'').toLowerCase();
+            const LATTE_F = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+            const FREEZO_F = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
+            const FY_F = [...LATTE_F,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+            const dispFlavours = dn.includes('frozen yogurt')||dn.includes('froyo') ? FY_F : dn.includes('freezo') ? FREEZO_F : dn.includes('latte') ? LATTE_F : (drink.flavours||[]);
           %>
-          <a href="/drinks/<%= slug %>" class="drink-card drink-card-link <%= drink.isSpecial ? 'drink-card-special' : '' %>">
+          <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
+               data-drink-idx="<%= idx %>" data-drink-cat="cold">
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap">
                 <% if (drink.image) { %>
                   <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
                   <div class="drink-img-placeholder">
-                    <span><%= drink.subcategory === 'frozen' ? '🍦' : drink.subcategory === 'tea' ? '🍵' : '🧊' %></span>
+                    <span><%= dn.includes('frozen')?'🍦':dn.includes('tea')?'🍵':'🧊' %></span>
                     <span><%= drink.name %></span>
                   </div>
                 <% } %>
@@ -99,45 +91,64 @@
               <div class="drink-card-top">
                 <span class="drink-name"><%= drink.name %></span>
                 <div class="drink-prices">
-                  <% if (drink.prices && drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
-                  <% if (drink.prices && drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
                 </div>
               </div>
-              <% if (coldFlavours.length) { %>
+              <% if (dispFlavours.length) { %>
               <div class="drink-flavours">
                 <span class="flavours-label">Flavours</span>
-                <span class="flavours-list"><%= coldFlavours.slice(0,4).join(' · ') %><%= coldFlavours.length > 4 ? '…' : '' %></span>
+                <span class="flavours-list"><%= dispFlavours.slice(0,4).join(' · ') %><%= dispFlavours.length>4?'…':'' %></span>
               </div>
               <% } %>
               <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
-              <span class="drink-tap-hint">Tap for details →</span>
+              <span class="order-add-hint">Tap to customise →</span>
             </div>
-          </a>
+          </div>
           <% }) %>
         </div>
-        <% if (!cold.length) { %><p class="drinks-empty">Menu coming soon — ask our barista!</p><% } %>
+        <% if (!cold.length) { %><p class="drinks-empty">Menu coming soon!</p><% } %>
       </div>
 
-    </div>
-  </section>
-
-  <section class="section-cta section-dark">
-    <div class="container text-center">
-      <p>Every drink you buy earns you a scan on your battlepass.</p>
-      <a href="/register" class="btn btn-outline-light">Get Your QR Code →</a>
     </div>
   </section>
 </main>
 
+<!-- Inject menu data for shared modal -->
 <script>
-  document.querySelectorAll('.drinks-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.drinks-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.drinks-panel').forEach(p => p.classList.add('hidden'));
-      tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
-    });
+window.CL_DATA = {
+  loggedIn: <%= !!(locals.session && session.userId) %>,
+  hot: <%- JSON.stringify(hot.map(d => ({
+    name:d.name, category:'hot', subcategory:d.subcategory, isSpecial:d.isSpecial,
+    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    sizes:[
+      d.prices&&d.prices.regular?{label:'Regular',ml:'250ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Large',  ml:'350ml',price:d.prices.large  }:null
+    ].filter(Boolean)
+  }))) %>,
+  cold: <%- JSON.stringify(cold.map(d => ({
+    name:d.name, category:'cold', subcategory:d.subcategory, isSpecial:d.isSpecial,
+    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    sizes:[
+      d.prices&&d.prices.regular?{label:'Regular',ml:'350ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Large',  ml:'500ml',price:d.prices.large  }:null
+    ].filter(Boolean)
+  }))) %>,
+  pastries: []
+};
+</script>
+
+<%- include('../partials/item-modal') %>
+
+<script>
+document.querySelectorAll('.drinks-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.drinks-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.drinks-panel').forEach(p => p.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
   });
+});
 </script>
 
 <%- include('../partials/footer') %>

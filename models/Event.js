@@ -12,6 +12,6 @@ const eventSchema = new mongoose.Schema({
   recurringDay: String, // 'saturday', 'sunday' etc
   image: String,
   createdAt: { type: Date, default: Date.now }
-});
+}, { suppressReservedKeysWarning: true });
 
 module.exports = mongoose.model('Event', eventSchema);

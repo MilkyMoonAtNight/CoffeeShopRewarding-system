@@ -1,0 +1,16 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main>
+  <section class="section" style="min-height:70vh;display:flex;align-items:center;">
+    <div class="container" style="max-width:480px;text-align:center;">
+      <div style="font-size:4rem;margin-bottom:1rem;">⚠️</div>
+      <h1 style="font-family:var(--font-nimbus);font-size:2rem;margin-bottom:0.75rem;">Payment failed</h1>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:2rem;">Something went wrong on Ozow's side. Your order is still saved — please try again or pay in store.</p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <a href="/order/confirm" class="btn btn-primary">Try again →</a>
+        <a href="/order/my-orders" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);">My orders</a>
+      </div>
+    </div>
+  </section>
+</main>
+<%- include('../partials/footer') %>

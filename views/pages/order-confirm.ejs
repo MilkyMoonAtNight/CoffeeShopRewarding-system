@@ -12,14 +12,17 @@
   <section class="section">
     <div class="container confirm-layout">
 
+      <!-- Cart summary -->
       <div class="confirm-items-col">
         <h2 class="confirm-section-title">Your items</h2>
         <div id="confirmItems"><div class="confirm-empty">Loading cart…</div></div>
       </div>
 
+      <!-- Order details -->
       <div class="confirm-form-col">
         <div class="confirm-card">
           <h2 class="confirm-section-title">Order details</h2>
+
           <div class="form-group">
             <label>Your name</label>
             <input type="text" id="cfName" class="confirm-input" placeholder="e.g. Lerato" />
@@ -29,40 +32,71 @@
             <input type="tel" id="cfPhone" class="confirm-input" placeholder="e.g. 082 123 4567" />
           </div>
           <div class="form-group">
+            <label>Email <span style="opacity:0.4;font-weight:400;">(required for online payment)</span></label>
+            <input type="email" id="cfEmail" class="confirm-input" placeholder="e.g. you@email.com" />
+          </div>
+          <div class="form-group">
             <label>Collection method</label>
-            <div class="alt-pills" style="margin-top:0.5rem;" id="colPills">
-              <button class="alt-pill active" data-val="Walk-up at truck">Walk-up at truck</button>
-              <button class="alt-pill" data-val="Pre-order (ready on arrival)">Pre-order</button>
+            <div class="opt-card-row" id="colPills" style="margin-top:0.5rem;">
+              <button class="opt-card opt-card-active" data-val="Walk-up at truck">
+                <span class="opt-card-main">Walk-up</span>
+                <span class="opt-card-sub">Pay in store</span>
+              </button>
+              <button class="opt-card" data-val="Pre-order (ready on arrival)">
+                <span class="opt-card-main">Pre-order</span>
+                <span class="opt-card-sub">Ready on arrival</span>
+              </button>
             </div>
           </div>
           <div class="form-group">
             <label>Special instructions <span style="opacity:0.4;font-weight:400;">(optional)</span></label>
-            <textarea class="modal-notes" id="cfNotes" placeholder="Allergies, timing, anything else…" rows="3"></textarea>
+            <textarea class="modal-notes" id="cfNotes" placeholder="Allergies, timing, anything else…" rows="2"></textarea>
           </div>
+
           <div class="confirm-total-box">
             <span>Order total</span>
             <span class="confirm-total-num" id="cfTotal">R0</span>
           </div>
-          <button class="btn btn-primary" style="width:100%;" id="placeOrderBtn">Place Order →</button>
-          <p class="confirm-disclaimer">Payment at collection. No online payment required.</p>
+
+          <!-- Payment options -->
+          <div class="payment-options">
+            <p class="payment-options-label">How would you like to pay?</p>
+            <div class="payment-btns">
+              <button class="btn btn-primary" id="payOnlineBtn">
+                <span class="pay-btn-icon">💳</span>
+                <div>
+                  <span class="pay-btn-main">Pay now via Ozow</span>
+                  <span class="pay-btn-sub">Instant EFT — secure redirect</span>
+                </div>
+              </button>
+              <button class="btn btn-outline pay-instore-btn" id="payInstoreBtn">
+                <span class="pay-btn-icon">🏪</span>
+                <div>
+                  <span class="pay-btn-main">Pay in store</span>
+                  <span class="pay-btn-sub">Cash or card at collection</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <p class="confirm-disclaimer">Your order will be ready for collection at the truck.</p>
         </div>
       </div>
-
     </div>
   </section>
 </main>
 
-<!-- Success overlay -->
+<!-- Success overlay (pay in store) -->
 <div class="modal-overlay" id="successOverlay">
   <div class="modal-sheet" style="max-width:440px;border-radius:var(--radius-lg);text-align:center;">
     <div class="modal-body" style="padding-top:2rem;">
       <div style="font-size:3.5rem;margin-bottom:1rem;">🐾</div>
       <h2 style="font-family:var(--font-nimbus);font-size:1.8rem;margin-bottom:0.75rem;">Order placed!</h2>
       <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">We've got your order, <strong id="successName"></strong>.</p>
-      <p style="color:rgba(44,44,44,0.6);margin-bottom:1rem;">Show up, say your name, and your coffee will be ready.</p>
+      <p style="color:rgba(44,44,44,0.6);margin-bottom:1rem;">Show up, say your name, and your coffee will be ready. Pay when you collect.</p>
       <p style="font-size:0.82rem;color:rgba(44,44,44,0.4);">Order <strong id="successRef"></strong></p>
       <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
-        <a href="/battlepass" class="btn btn-primary">View my rewards</a>
+        <a href="/order/my-orders" class="btn btn-primary">View my order →</a>
         <a href="/" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);">Back to home</a>
       </div>
     </div>
@@ -75,12 +109,12 @@
 const cart = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
 let colMethod = 'Walk-up at truck';
 
-// Collection pills
-document.querySelectorAll('#colPills .alt-pill').forEach(btn => {
+// Collection opt-cards
+document.querySelectorAll('#colPills .opt-card').forEach(btn => {
   btn.addEventListener('click', () => {
     colMethod = btn.dataset.val;
-    document.querySelectorAll('#colPills .alt-pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll('#colPills .opt-card').forEach(b => b.classList.remove('opt-card-active'));
+    btn.classList.add('opt-card-active');
   });
 });
 
@@ -89,7 +123,8 @@ function renderConfirm() {
   if (!cart.length) {
     el.innerHTML = '<div class="confirm-empty">Your cart is empty. <a href="/order" style="color:var(--maroon);">Add items →</a></div>';
     document.getElementById('cfTotal').textContent = 'R0';
-    document.getElementById('placeOrderBtn').disabled = true;
+    document.getElementById('payOnlineBtn').disabled = true;
+    document.getElementById('payInstoreBtn').disabled = true;
     return;
   }
   const total = cart.reduce((s,i) => s+i.price, 0);
@@ -111,41 +146,87 @@ function renderConfirm() {
     </div>`).join('');
 }
 
-document.getElementById('placeOrderBtn').addEventListener('click', async () => {
-  const name = document.getElementById('cfName').value.trim();
+function getFormData() {
+  const name  = document.getElementById('cfName').value.trim();
   const phone = document.getElementById('cfPhone').value.trim();
-  if (!name) { alert('Please enter your name.'); return; }
+  const email = document.getElementById('cfEmail').value.trim();
+  return { name, phone, email };
+}
+
+async function placeOrder() {
+  const { name, phone, email } = getFormData();
+  if (!name) { alert('Please enter your name.'); return null; }
+  if (!cart.length) { alert('Your cart is empty.'); return null; }
+
+  const res = await fetch('/order/place', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name, phone, email,
+      collection: colMethod,
+      notes: document.getElementById('cfNotes').value.trim(),
+      items: cart,
+      total: cart.reduce((s,i) => s+i.price, 0)
+    })
+  });
+  return await res.json();
+}
+
+// ── Pay in store ─────────────────────────────────────────────────
+document.getElementById('payInstoreBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('payInstoreBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="pay-btn-icon">⏳</span><div><span class="pay-btn-main">Placing order…</span></div>';
+
+  const data = await placeOrder();
+  if (!data || !data.ok) {
+    alert(data ? data.error : 'Something went wrong.');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="pay-btn-icon">🏪</span><div><span class="pay-btn-main">Pay in store</span><span class="pay-btn-sub">Cash or card at collection</span></div>';
+    return;
+  }
+  sessionStorage.removeItem('cl_cart');
+  document.getElementById('successName').textContent = document.getElementById('cfName').value.trim();
+  document.getElementById('successRef').textContent  = data.ref;
+  document.getElementById('successOverlay').classList.add('open');
+});
+
+// ── Pay online via Ozow ───────────────────────────────────────────
+document.getElementById('payOnlineBtn').addEventListener('click', async () => {
+  const { name, email } = getFormData();
+  if (!name)  { alert('Please enter your name.');  return; }
+  if (!email) { alert('Please enter your email — it\'s required for the Ozow payment receipt.'); return; }
   if (!cart.length) { alert('Your cart is empty.'); return; }
 
-  const btn = document.getElementById('placeOrderBtn');
-  btn.disabled = true; btn.textContent = 'Placing order…';
+  const btn = document.getElementById('payOnlineBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="pay-btn-icon">⏳</span><div><span class="pay-btn-main">Processing…</span></div>';
 
-  try {
-    const res = await fetch('/order/place', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name, phone,
-        collection: colMethod,
-        notes: document.getElementById('cfNotes').value.trim(),
-        items: cart,
-        total: cart.reduce((s,i) => s+i.price, 0)
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      sessionStorage.removeItem('cl_cart');
-      document.getElementById('successName').textContent = name;
-      document.getElementById('successRef').textContent = data.ref;
-      document.getElementById('successOverlay').classList.add('open');
-    } else {
-      alert(data.error || 'Something went wrong. Please try again.');
-      btn.disabled = false; btn.textContent = 'Place Order →';
-    }
-  } catch(e) {
-    alert('Network error. Please check your connection.');
-    btn.disabled = false; btn.textContent = 'Place Order →';
+  const data = await placeOrder();
+  if (!data || !data.ok) {
+    alert(data ? data.error : 'Something went wrong.');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="pay-btn-icon">💳</span><div><span class="pay-btn-main">Pay now via Ozow</span><span class="pay-btn-sub">Instant EFT — secure redirect</span></div>';
+    return;
   }
+
+  sessionStorage.removeItem('cl_cart');
+
+  // Post to Ozow initiate — will render self-submitting form
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/payment/initiate';
+  [
+    ['orderRef',       data.ref],
+    ['total',          cart.reduce((s,i) => s+i.price, 0)],
+    ['customerEmail',  email],
+    ['_csrf',          ''], // add CSRF token here if you use csurf
+  ].forEach(([k, v]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden'; input.name = k; input.value = v;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
 });
 
 renderConfirm();

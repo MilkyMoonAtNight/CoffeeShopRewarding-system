@@ -27,7 +27,7 @@ const drinkSchema = new mongoose.Schema({
   order: { type: Number, default: 0 },          // display order
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
-});
+}, { suppressReservedKeysWarning: true });
 
 drinkSchema.pre('save', function (next) {
   this.updatedAt = new Date();

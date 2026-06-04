@@ -1,4 +1,8 @@
-
+/* ============================================
+   CON LECHE — Main Stylesheet
+   Palette: Cream / Charcoal / Maroon / Shiny Black
+   Fonts: TAN Nimbus (headings) / Poppins SemiBold (body)
+   ============================================ */
 
 @font-face {
   font-family: 'TAN Nimbus';
@@ -2069,3 +2073,448 @@ button.detail-pill.detail-pill-active {
   font-size: 0.85rem;
 }
 .detail-added-link:hover { text-decoration: underline; }
+
+/* ====== OPT-CARD — unified selector style (detail page + order modal) ====== */
+.opt-card-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+.opt-card-row-wrap { flex-wrap: wrap; }
+
+.opt-card {
+  flex: 1;
+  min-width: 72px;
+  background: var(--white);
+  border: 1.5px solid rgba(44,44,44,0.12);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--font-body);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+.opt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(88,18,23,0.04);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: inherit;
+}
+.opt-card:hover { border-color: rgba(88,18,23,0.3); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(88,18,23,0.1); }
+.opt-card:hover::after { opacity: 1; }
+.opt-card:active { transform: translateY(0); }
+
+.opt-card-active {
+  border-color: var(--maroon) !important;
+  background: rgba(88,18,23,0.05) !important;
+  box-shadow: 0 0 0 3px rgba(88,18,23,0.08);
+}
+.opt-card-active::after { opacity: 0 !important; }
+
+.opt-card-main  { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); display: block; }
+.opt-card-sub   { font-size: 0.66rem; color: rgba(44,44,44,0.4); display: block; }
+.opt-card-price { font-size: 0.72rem; font-weight: 700; color: var(--maroon); display: block; }
+
+/* Wrap-mode cards don't stretch full width */
+.opt-card-row-wrap .opt-card { flex: 0 0 auto; min-width: 80px; }
+
+/* Remove the old track-based size slider now that opt-cards handle sizing */
+.size-track, .size-track-fill { display: none; }
+
+/* ====== MY ORDERS / ORDER TRACKING ====== */
+.myorders-empty { text-align:center; padding:4rem 1rem; }
+
+.myorder-card {
+  background: var(--white);
+  border: 1px solid rgba(44,44,44,0.08);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  transition: box-shadow var(--transition);
+}
+.myorder-card:hover { box-shadow: var(--shadow); }
+.myorder-done { opacity: 0.6; }
+
+.myorder-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 1.25rem; gap: 1rem;
+}
+.myorder-ref  { font-size: 0.75rem; font-weight: 700; color: var(--maroon); letter-spacing:0.08em; }
+.myorder-date { font-size: 0.72rem; color: rgba(44,44,44,0.4); margin-top:0.15rem; }
+.myorder-total-col { text-align:right; }
+.myorder-total { font-size: 1.1rem; font-weight: 700; color: var(--charcoal); display:block; }
+.myorder-collection { font-size: 0.72rem; color:rgba(44,44,44,0.4); }
+
+/* Progress tracker */
+.order-tracker { margin-bottom: 1rem; }
+.tracker-steps {
+  display: flex; align-items: center; margin-bottom: 0.6rem;
+}
+.tracker-step {
+  display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+  flex-shrink: 0;
+}
+.tracker-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid rgba(44,44,44,0.15);
+  background: var(--cream-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: rgba(44,44,44,0.3);
+  transition: all 0.3s ease;
+}
+.tracker-step.done .tracker-dot  { background: var(--maroon); border-color: var(--maroon); color: #fff; }
+.tracker-step.active .tracker-dot { background: #fff; border-color: var(--maroon); color: var(--maroon); box-shadow: 0 0 0 4px rgba(88,18,23,0.1); }
+.tracker-label { font-size: 0.62rem; color: rgba(44,44,44,0.4); white-space: nowrap; }
+.tracker-step.done .tracker-label  { color: var(--maroon); font-weight: 600; }
+.tracker-step.active .tracker-label { color: var(--charcoal); font-weight: 600; }
+
+.tracker-line {
+  flex: 1; height: 2px; background: rgba(44,44,44,0.1);
+  margin: 0 0.25rem; margin-bottom: 1.1rem;
+  transition: background 0.3s ease;
+}
+.tracker-line.done { background: var(--maroon); }
+
+.tracker-status-text {
+  font-size: 0.82rem; padding: 0.5rem 0;
+}
+
+/* Virtual slip */
+.slip-details { margin-top: 0.75rem; }
+.slip-summary {
+  font-size: 0.78rem; font-weight: 600; color: var(--maroon);
+  cursor: pointer; padding: 0.4rem 0; list-style: none;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.slip-summary::-webkit-details-marker { display: none; }
+.slip-summary::before { content: '🧾'; }
+
+.virtual-slip {
+  background: var(--cream);
+  border: 1px dashed rgba(44,44,44,0.2);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+.slip-header {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem; padding-bottom: 0.75rem;
+  border-bottom: 1px dashed rgba(44,44,44,0.15);
+}
+.slip-logo { width: 36px; height: 36px; object-fit: contain; }
+.slip-ref  { font-weight: 700; font-size: 0.9rem; color: var(--maroon); }
+.slip-date { font-size: 0.7rem; color: rgba(44,44,44,0.45); }
+
+.slip-items { margin-bottom: 0.75rem; }
+.slip-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.5rem; padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(44,44,44,0.06);
+}
+.slip-item:last-child { border-bottom: none; }
+.slip-item-main { flex: 1; }
+.slip-item-main strong { display:block; font-size:0.85rem; margin-bottom:0.2rem; }
+.slip-tag {
+  display: inline-block;
+  background: rgba(88,18,23,0.07); color: var(--maroon);
+  font-size: 0.65rem; padding: 0.1rem 0.45rem;
+  border-radius: 50px; margin-right: 0.25rem; margin-bottom: 0.2rem;
+  font-weight: 500;
+}
+.slip-note { font-size: 0.7rem; color:rgba(44,44,44,0.45); font-style:italic; margin-top:0.2rem; }
+.slip-item-price { font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+
+.slip-footer {
+  display: flex; justify-content: space-between;
+  font-size: 0.9rem; font-weight: 700;
+  border-top: 1px dashed rgba(44,44,44,0.2);
+  padding-top: 0.75rem; margin-bottom: 0.5rem;
+}
+.slip-collection {
+  font-size: 0.72rem; color: rgba(44,44,44,0.5);
+}
+
+/* ====== PAYMENT OPTIONS ====== */
+.payment-options { margin-top: 0.5rem; }
+.payment-options-label {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: rgba(44,44,44,0.4); font-weight: 600; margin-bottom: 0.75rem;
+}
+.payment-btns { display: flex; flex-direction: column; gap: 0.6rem; }
+.payment-btns .btn {
+  display: flex; align-items: center; gap: 0.85rem;
+  text-align: left; width: 100%; padding: 0.85rem 1.1rem;
+}
+.pay-btn-icon { font-size: 1.4rem; flex-shrink: 0; }
+.pay-btn-main { display: block; font-size: 0.9rem; font-weight: 600; }
+.pay-btn-sub  { display: block; font-size: 0.72rem; opacity: 0.6; font-weight: 400; margin-top: 0.1rem; }
+.pay-instore-btn {
+  border-color: rgba(44,44,44,0.2) !important;
+  color: var(--charcoal) !important;
+}
+.pay-instore-btn:hover { background: rgba(44,44,44,0.04) !important; }
+
+/* ======================================================
+   MOBILE & RESPONSIVE — comprehensive pass
+   Breakpoints: 768px (tablet), 480px (phone), 380px (small phone)
+   ====================================================== */
+
+/* ── Global touch targets ── */
+@media (max-width: 768px) {
+  /* Ensure tap targets are at least 44px */
+  .btn, .nav-link, .nav-cta, .opt-card,
+  .alt-pill, .detail-pill, .order-filter-btn,
+  .qty-circle, .modal-close, .cart-remove-btn {
+    min-height: 44px;
+  }
+
+  /* Container padding tighter on mobile */
+  .container { padding-left: 1.1rem; padding-right: 1.1rem; }
+
+  /* Section spacing */
+  .section { padding: 3rem 0; }
+
+  /* ── Hero ── */
+  .hero { min-height: 85vh; padding-top: 70px; }
+  .hero-content { padding: 2rem 1.25rem; max-width: 100%; }
+  .hero-title { font-size: clamp(2.8rem, 12vw, 5rem); }
+  .hero-subtitle { font-size: 1rem; }
+  .hero-actions { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .hero-secondary-link { padding: 0.5rem 0; }
+  .hero-paw { display: none; }
+
+  /* ── Drink grid — one card per row on small screens ── */
+  .drink-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .drink-card-inner-wrap { gap: 0.5rem; }
+  .drink-img-wrap { height: 130px; }
+  .drink-name { font-size: 0.85rem; }
+  .drink-price-pill { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
+
+  /* ── Tabs ── */
+  .drinks-tabs-wrap { padding: 0 1rem; }
+  .drinks-tabs { gap: 0.35rem; }
+  .drinks-tab, .order-tab {
+    font-size: 0.78rem; padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+  }
+
+  /* ── Modal sheet — full screen on mobile ── */
+  .modal-overlay { align-items: flex-end; }
+  .modal-sheet {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-img-wrap { height: 200px; }
+  .modal-body { padding: 1rem 1.1rem 1.5rem; }
+  .modal-title { font-size: 1.25rem; }
+  .modal-chips { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .modal-chip { padding: 0.5rem 0.6rem; }
+  .chip-icon { font-size: 1rem; }
+  .chip-val { font-size: 0.78rem; }
+
+  /* ── Opt-cards — wrap and shrink on mobile ── */
+  .opt-card-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .opt-card {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    padding: 0.55rem 0.6rem;
+  }
+  .opt-card-main { font-size: 0.78rem; }
+  .opt-card-sub, .opt-card-price { font-size: 0.62rem; }
+
+  /* Milk / flavour pills wrap fine already, just tighten */
+  .opt-card-row-wrap .opt-card {
+    flex: 0 0 auto;
+    min-width: 72px;
+    padding: 0.45rem 0.6rem;
+  }
+
+  /* ── Size btns ── */
+  .size-btns { gap: 0.5rem; }
+  .size-btn { padding: 0.6rem 0.4rem; }
+  .size-btn-label { font-size: 0.78rem; }
+
+  /* ── Cart sheet ── */
+  .cart-sheet { max-height: 92vh; }
+  .cart-header { padding: 1rem 1.1rem 0.75rem; }
+  .cart-items  { padding: 0.5rem 1.1rem; }
+  .cart-footer { padding: 0.75rem 1.1rem 1.25rem; }
+  .cart-item-img { width: 44px; height: 44px; font-size: 1.25rem; }
+  .cart-item-name { font-size: 0.82rem; }
+  .cart-opt-pill { font-size: 0.62rem; padding: 0.1rem 0.45rem; }
+
+  /* ── Cart FAB — position above bottom safe area ── */
+  .cart-fab { bottom: 1.25rem; right: 1.1rem; padding: 0.7rem 1.1rem; }
+  .cart-fab-total { font-size: 0.82rem; }
+
+  /* ── Toast ── */
+  .cl-toast { bottom: 5.5rem; font-size: 0.78rem; }
+
+  /* ── Confirm page ── */
+  .confirm-layout { flex-direction: column; gap: 1.5rem; }
+  .confirm-card { padding: 1.1rem; }
+  .confirm-input { font-size: 0.9rem; }
+  .payment-btns .btn { padding: 0.75rem 0.9rem; gap: 0.65rem; }
+  .pay-btn-icon { font-size: 1.1rem; }
+  .pay-btn-main { font-size: 0.82rem; }
+  .pay-btn-sub  { font-size: 0.66rem; }
+
+  /* ── Drink detail page ── */
+  .detail-back-bar { padding: 0.5rem 0; }
+  .detail-hero { padding: 2rem 0 3rem; }
+  .detail-hero-inner { flex-direction: column; gap: 1.5rem; }
+  .detail-img-col { width: 100%; }
+  .detail-img-frame { aspect-ratio: 16/9; }
+  .detail-title { font-size: clamp(1.6rem, 8vw, 2.5rem); }
+  .detail-live-amount { font-size: 1.8rem; }
+  .detail-chips { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .detail-chip { padding: 0.5rem 0.6rem; }
+  .detail-prices { gap: 0.5rem; }
+  .detail-price-card { min-width: 80px; padding: 0.6rem 0.75rem; }
+  .detail-price-amount { font-size: 1.1rem; }
+  .detail-cta-row { flex-direction: column; gap: 0.6rem; }
+  .detail-cta-row .btn { width: 100%; text-align: center; justify-content: center; }
+
+  /* ── My Orders tracking page ── */
+  .myorder-card { padding: 1rem 1.1rem; }
+  .myorder-header { flex-direction: column; gap: 0.5rem; }
+  .myorder-total-col { text-align: left; }
+  .tracker-label { font-size: 0.55rem; }
+  .tracker-dot { width: 24px; height: 24px; font-size: 0.62rem; }
+  .tracker-status-text { font-size: 0.78rem; }
+
+  /* Virtual slip */
+  .virtual-slip { padding: 1rem; }
+  .slip-item { flex-wrap: wrap; }
+
+  /* ── Page heroes ── */
+  .page-title { font-size: clamp(1.8rem, 8vw, 3rem); }
+  .page-hero { padding: 5rem 0 3rem; }
+  .page-hero-short { padding: 4.5rem 0 2rem; }
+
+  /* ── Battlepass teaser (home) ── */
+  .bp-text { order: 2; }
+  .bp-visual { order: 1; width: 100%; display:flex; justify-content:center; }
+  .bp-card-preview { max-width: 280px; }
+
+  /* ── Menu cards (home) ── */
+  .menu-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .menu-card { padding: 1.25rem; }
+
+  /* ── Events ── */
+  .events-row { flex-direction: column; gap: 0.75rem; }
+
+  /* ── About page ── */
+  .about-grid { grid-template-columns: 1fr; }
+
+  /* ── Admin orders modal ── */
+  .admin-order-modal { max-width: 100%; }
+  .order-detail-header { flex-direction: column; gap: 0.5rem; }
+  .od-status-btns { flex-wrap: wrap; }
+  .order-row { flex-wrap: wrap; gap: 0.5rem; }
+  .order-row-mid { min-width: 0; flex: 1; }
+
+  /* ── Footer ── */
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .footer-tagline { font-size: 0.85rem; }
+}
+
+/* ── Small phones (< 480px) ── */
+@media (max-width: 480px) {
+  .drink-grid { grid-template-columns: 1fr; }
+  .drink-img-wrap { height: 160px; }
+
+  .opt-card { flex: 1 1 100%; }
+  .opt-card-row-wrap .opt-card { flex: 0 0 auto; }
+
+  .modal-img-wrap { height: 160px; }
+
+  .detail-chips { grid-template-columns: 1fr 1fr; }
+
+  .tracker-steps { gap: 0; }
+  .tracker-line  { margin: 0 0.1rem; }
+
+  .footer-inner { grid-template-columns: 1fr; }
+
+  .nav-inner { padding: 0 1rem; }
+
+  /* Pastries full width */
+  .pastries-grid { grid-template-columns: 1fr !important; }
+  .pastry-card-wide { grid-column: span 1 !important; }
+}
+
+/* ── Very small phones (< 360px) ── */
+@media (max-width: 360px) {
+  .logo-text { display: none; } /* just show the icon */
+  .drink-price-pill { font-size: 0.68rem; }
+  .modal-body { padding: 0.85rem 0.9rem 1.25rem; }
+  .cart-fab { padding: 0.6rem 0.9rem; gap: 0.4rem; }
+}
+
+/* ── Landscape phone — more horizontal space ── */
+@media (max-width: 768px) and (orientation: landscape) {
+  .modal-sheet { max-height: 98vh; }
+  .modal-img-wrap { height: 120px; }
+  .hero { min-height: 100vh; }
+}
+
+/* ── Safe area insets (notch phones, home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .cart-fab {
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
+  .cart-footer, .modal-body {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Hamburger X animation ── */
+.nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.nav-toggle span { transition: transform 0.25s ease, opacity 0.2s ease; }
+
+/* ── Active nav link ── */
+.nav-link-active { color: var(--cream) !important; }
+
+/* ── Scrolled navbar ── */
+.navbar-scrolled {
+  background: rgba(10,10,10,0.98) !important;
+  border-bottom-color: rgba(201,151,74,0.25) !important;
+}
+
+/* ── Mobile nav full-width links ── */
+@media (max-width: 650px) {
+  .nav-links .nav-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: var(--radius);
+    width: 100%;
+  }
+  .nav-links .nav-cta {
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+  .nav-links .nav-pase {
+    text-align: center;
+  }
+}

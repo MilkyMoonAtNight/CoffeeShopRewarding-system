@@ -1,0 +1,366 @@
+<!-- ===== DRINK MODAL ===== -->
+<div class="modal-overlay" id="drinkModalOverlay">
+  <div class="modal-sheet">
+    <button class="modal-close" id="drinkModalClose">✕</button>
+    <div class="modal-img-wrap" id="modalImgWrap"></div>
+    <div class="modal-body">
+      <div class="modal-header-row">
+        <div>
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <p class="modal-subtitle" id="modalSubtitle"></p>
+        </div>
+        <span class="modal-price-badge" id="modalPriceBadge"></span>
+      </div>
+      <div class="modal-chips">
+        <div class="modal-chip"><span class="chip-icon">🔥</span><div><span class="chip-label">Calories</span><span class="chip-val" id="chipCal"></span></div></div>
+        <div class="modal-chip"><span class="chip-icon">🥛</span><div><span class="chip-label">Milk</span><span class="chip-val" id="chipMilk">Full cream</span></div></div>
+        <div class="modal-chip"><span class="chip-icon">💪</span><div><span class="chip-label">Protein</span><span class="chip-val" id="chipProtein"></span></div></div>
+        <div class="modal-chip"><span class="chip-icon">☕</span><div><span class="chip-label">Caffeine</span><span class="chip-val" id="chipCaff"></span></div></div>
+      </div>
+
+      <div class="modal-section-label">Size</div>
+      <div class="opt-card-row" id="modalSizeBtns"></div>
+
+      <div class="modal-section-label">Milk alternative <span class="detail-extra-note">+R6</span></div>
+      <div class="opt-card-row opt-card-row-wrap" id="modalMilkBtns">
+        <button class="opt-card opt-card-active" data-milk="Full cream" data-extra="0"><span class="opt-card-main">Full cream</span><span class="opt-card-sub">Default</span></button>
+        <button class="opt-card" data-milk="Oat milk"     data-extra="6"><span class="opt-card-main">Oat milk</span><span class="opt-card-price">+R6</span></button>
+        <button class="opt-card" data-milk="Almond milk"  data-extra="6"><span class="opt-card-main">Almond milk</span><span class="opt-card-price">+R6</span></button>
+        <button class="opt-card" data-milk="Soy milk"     data-extra="6"><span class="opt-card-main">Soy milk</span><span class="opt-card-price">+R6</span></button>
+        <button class="opt-card" data-milk="Lactose free" data-extra="6"><span class="opt-card-main">Lactose free</span><span class="opt-card-price">+R6</span></button>
+      </div>
+
+      <div id="flavourSection" style="display:none;">
+        <div class="modal-section-label">Flavour</div>
+        <div class="opt-card-row opt-card-row-wrap" id="modalFlavourBtns"></div>
+      </div>
+
+      <div class="modal-section-label">Sugar</div>
+      <div class="opt-card-row" id="modalSugarBtns">
+        <button class="opt-card opt-card-active" data-sugar="Regular"><span class="opt-card-main">Regular</span></button>
+        <button class="opt-card" data-sugar="Less sugar"><span class="opt-card-main">Less sugar</span></button>
+        <button class="opt-card" data-sugar="No sugar"><span class="opt-card-main">No sugar</span></button>
+      </div>
+
+      <div class="modal-section-label">Note <span style="opacity:0.4;font-weight:400;">(optional)</span></div>
+      <textarea class="modal-notes" id="modalNotes" placeholder="e.g. extra hot, no foam…" rows="2"></textarea>
+
+      <% if (locals.session && session.userId) { %>
+        <button class="btn btn-primary modal-add-btn" id="modalAddBtn">Add to cart — <span id="modalAddPrice"></span></button>
+      <% } else { %>
+        <a href="/login" class="btn btn-primary modal-add-btn" style="text-align:center;">Sign in to order →</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PASTRY MODAL ===== -->
+<div class="modal-overlay" id="pastryModalOverlay">
+  <div class="modal-sheet">
+    <button class="modal-close" id="pastryModalClose">✕</button>
+    <div class="modal-img-wrap" id="pastryModalImgWrap"></div>
+    <div class="modal-body">
+      <div class="modal-header-row">
+        <div>
+          <h2 class="modal-title" id="pastryModalTitle"></h2>
+          <p class="modal-subtitle" id="pastryModalDesc"></p>
+        </div>
+        <span class="modal-price-badge" id="pastryModalPrice"></span>
+      </div>
+      <div class="modal-chips">
+        <div class="modal-chip"><span class="chip-icon">🔥</span><div><span class="chip-label">Calories</span><span class="chip-val">~280 kcal</span></div></div>
+        <div class="modal-chip"><span class="chip-icon">🌾</span><div><span class="chip-label">Contains</span><span class="chip-val">Gluten, Dairy</span></div></div>
+        <div class="modal-chip"><span class="chip-icon">🧈</span><div><span class="chip-label">Baked</span><span class="chip-val">Fresh daily</span></div></div>
+        <div class="modal-chip"><span class="chip-icon">⏰</span><div><span class="chip-label">Best before</span><span class="chip-val">Same day</span></div></div>
+      </div>
+      <div class="modal-section-label">Quantity</div>
+      <div class="qty-row">
+        <button class="qty-circle" id="pastryMinus">−</button>
+        <span class="qty-display" id="pastryQtyDisplay">1</span>
+        <button class="qty-circle" id="pastryPlus">+</button>
+      </div>
+      <div class="modal-section-label">Note <span style="opacity:0.4;font-weight:400;">(optional)</span></div>
+      <textarea class="modal-notes" id="pastryNotes" placeholder="e.g. warmed up…" rows="2"></textarea>
+      <% if (locals.session && session.userId) { %>
+        <button class="btn btn-primary modal-add-btn" id="pastryAddBtn">Add to cart — <span id="pastryAddPrice"></span></button>
+      <% } else { %>
+        <a href="/login" class="btn btn-primary modal-add-btn" style="text-align:center;">Sign in to order →</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CART SHEET ===== -->
+<div class="modal-overlay" id="cartOverlay">
+  <div class="cart-sheet">
+    <div class="cart-header">
+      <h2 class="cart-title">Your Order</h2>
+      <button class="modal-close" id="cartClose">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer" id="cartFooter" style="display:none;">
+      <div class="cart-total-row"><span>Total</span><span id="cartTotalFooter">R0</span></div>
+      <p class="cart-note">Orders prepared fresh. Estimated wait 10–15 min.</p>
+      <a href="/order/confirm" class="btn btn-primary" style="width:100%;text-align:center;display:block;">Confirm Order →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FLOATING CART FAB ===== -->
+<button class="cart-fab fab-hidden" id="cartFab" aria-label="View cart">
+  <span class="cart-fab-icon">🛒</span>
+  <span class="cart-fab-count" id="cartCount">0</span>
+  <span class="cart-fab-total" id="cartTotal">R0</span>
+</button>
+
+<!-- ===== SHARED MODAL JS ===== -->
+<script>
+// ── Menu data (injected per-page via window.CL_DATA before this partial loads) ──
+const LATTE_FLAVOURS     = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+const FREEZO_FLAVOURS    = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
+const FROZENYOG_FLAVOURS = [...LATTE_FLAVOURS,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+const FILLER = {
+  espresso: {cal:'~80 kcal', protein:'1g',  caff:'~150mg'},
+  specialty:{cal:'~180 kcal',protein:'5g',  caff:'~95mg' },
+  chocolate:{cal:'~240 kcal',protein:'7g',  caff:'~30mg' },
+  tea:      {cal:'~20 kcal', protein:'0g',  caff:'~40mg' },
+  freezo:   {cal:'~310 kcal',protein:'4g',  caff:'~60mg' },
+  iced:     {cal:'~140 kcal',protein:'5g',  caff:'~95mg' },
+  frozen:   {cal:'~280 kcal',protein:'6g',  caff:'~50mg' },
+  other:    {cal:'~120 kcal',protein:'4g',  caff:'~80mg' },
+};
+
+const CL = window.CL_DATA || {};
+const HOT_DRINKS  = CL.hot      || [];
+const COLD_DRINKS = CL.cold     || [];
+const PASTRIES    = CL.pastries || [];
+const IS_LOGGED_IN = CL.loggedIn || false;
+
+// Attach flavour lists
+COLD_DRINKS.forEach(d => {
+  const n = d.name.toLowerCase();
+  d.flavours = n.includes('frozen yogurt')||n.includes('froyo') ? FROZENYOG_FLAVOURS
+             : n.includes('freezo') ? FREEZO_FLAVOURS
+             : n.includes('latte')  ? LATTE_FLAVOURS : [];
+});
+HOT_DRINKS.forEach(d => {
+  d.flavours = d.name.toLowerCase().includes('latte') ? LATTE_FLAVOURS : [];
+});
+
+// ── State ─────────────────────────────────────────────────────────
+let cart       = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
+let activeDrink = null, activePastry = null;
+let selSize = null, selMilk = 'Full cream', milkExtra = 0, selFlavour = null, selSugar = 'Regular';
+let pastryQty = 1;
+
+// ── Wire up every card on the page ───────────────────────────────
+document.querySelectorAll('[data-drink-idx]').forEach(card => {
+  card.addEventListener('click', () => {
+    const idx = parseInt(card.dataset.drinkIdx);
+    openDrinkModal(card.dataset.drinkCat === 'hot' ? HOT_DRINKS[idx] : COLD_DRINKS[idx]);
+  });
+});
+document.querySelectorAll('[data-pastry-idx]').forEach(card => {
+  card.addEventListener('click', () => openPastryModal(PASTRIES[parseInt(card.dataset.pastryIdx)]));
+});
+
+// ── opt-card selection helper ─────────────────────────────────────
+function bindOptCards(containerId, onSelect) {
+  document.querySelectorAll('#' + containerId + ' .opt-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#' + containerId + ' .opt-card').forEach(b => b.classList.remove('opt-card-active'));
+      btn.classList.add('opt-card-active');
+      onSelect(btn);
+    });
+  });
+}
+
+// ── Drink modal ───────────────────────────────────────────────────
+function openDrinkModal(drink) {
+  if (!drink) return;
+  activeDrink = drink;
+  selMilk = 'Full cream'; milkExtra = 0; selSugar = 'Regular';
+  selFlavour = drink.flavours && drink.flavours.length ? drink.flavours[0] : null;
+  selSize    = drink.sizes && drink.sizes.length ? drink.sizes[0] : null;
+
+  document.getElementById('modalImgWrap').innerHTML = drink.image
+    ? `<img src="${drink.image}" alt="${drink.name}" class="modal-img" />`
+    : `<div class="modal-img-placeholder"><span>${drink.category==='cold'?'🧊':'☕'}</span></div>`;
+
+  document.getElementById('modalTitle').textContent    = drink.name;
+  document.getElementById('modalSubtitle').textContent = (drink.category==='hot'?'Hot':'Cold') + (drink.subcategory?' · '+drink.subcategory:'') + (drink.isSpecial?' · ✦ Special':'');
+
+  const info = FILLER[drink.subcategory] || FILLER.other;
+  document.getElementById('chipCal').textContent     = info.cal;
+  document.getElementById('chipProtein').textContent = info.protein;
+  document.getElementById('chipCaff').textContent    = info.caff;
+  document.getElementById('chipMilk').textContent    = 'Full cream';
+
+  // Size cards
+  document.getElementById('modalSizeBtns').innerHTML = drink.sizes.length
+    ? drink.sizes.map((s,i) => `<button class="opt-card${i===0?' opt-card-active':''}" data-price="${s.price}" data-label="${s.label}" data-ml="${s.ml}"><span class="opt-card-main">${s.label}</span><span class="opt-card-sub">${s.ml}</span><span class="opt-card-price">R${s.price}</span></button>`).join('')
+    : '<span style="font-size:0.8rem;opacity:0.4;">One size</span>';
+  bindOptCards('modalSizeBtns', btn => {
+    selSize = {label:btn.dataset.label, ml:btn.dataset.ml, price:Number(btn.dataset.price)};
+    updateModalPrice();
+  });
+
+  // Reset milk
+  document.querySelectorAll('#modalMilkBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.milk==='Full cream'));
+  bindOptCards('modalMilkBtns', btn => {
+    selMilk = btn.dataset.milk; milkExtra = parseInt(btn.dataset.extra)||0;
+    document.getElementById('chipMilk').textContent = selMilk;
+    updateModalPrice();
+  });
+
+  // Flavours
+  const fs = document.getElementById('flavourSection');
+  const fc = document.getElementById('modalFlavourBtns');
+  if (drink.flavours && drink.flavours.length) {
+    fs.style.display = 'block';
+    fc.innerHTML = drink.flavours.map((f,i) =>
+      `<button class="opt-card${i===0?' opt-card-active':''}" data-flavour="${f}"><span class="opt-card-main">${f}</span></button>`
+    ).join('');
+    bindOptCards('modalFlavourBtns', btn => { selFlavour = btn.dataset.flavour; });
+  } else {
+    fs.style.display = 'none'; selFlavour = null;
+  }
+
+  // Reset sugar
+  document.querySelectorAll('#modalSugarBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.sugar==='Regular'));
+  bindOptCards('modalSugarBtns', btn => { selSugar = btn.dataset.sugar; });
+
+  document.getElementById('modalNotes').value = '';
+  updateModalPrice();
+  openOverlay('drinkModalOverlay');
+}
+
+function updateModalPrice() {
+  if (!selSize) return;
+  const t = selSize.price + milkExtra;
+  document.getElementById('modalPriceBadge').textContent = 'R' + t;
+  const ap = document.getElementById('modalAddPrice');
+  if (ap) ap.textContent = 'R' + t;
+}
+
+const modalAddBtn = document.getElementById('modalAddBtn');
+if (modalAddBtn) {
+  modalAddBtn.addEventListener('click', () => {
+    if (!selSize) return;
+    cart.push({
+      id:Date.now(), type:'drink', name:activeDrink.name,
+      size:selSize.label, ml:selSize.ml, price:selSize.price+milkExtra,
+      milk:selMilk, flavour:selFlavour, sugar:selSugar,
+      notes:document.getElementById('modalNotes').value.trim(),
+      image:activeDrink.image, category:activeDrink.category,
+    });
+    saveCart(); closeOverlay('drinkModalOverlay');
+    showToast(activeDrink.name + ' added to cart');
+  });
+}
+
+// ── Pastry modal ──────────────────────────────────────────────────
+function openPastryModal(pastry) {
+  if (!pastry) return;
+  activePastry = pastry; pastryQty = 1;
+  document.getElementById('pastryQtyDisplay').textContent = '1';
+  document.getElementById('pastryModalTitle').textContent = pastry.name;
+  document.getElementById('pastryModalDesc').textContent  = pastry.description || '';
+  document.getElementById('pastryModalPrice').textContent = 'R' + pastry.price;
+  const ap = document.getElementById('pastryAddPrice');
+  if (ap) ap.textContent = 'R' + pastry.price;
+  document.getElementById('pastryNotes').value = '';
+  document.getElementById('pastryModalImgWrap').innerHTML = pastry.image
+    ? `<img src="${pastry.image}" alt="${pastry.name}" class="modal-img" />`
+    : `<div class="modal-img-placeholder"><span>🥐</span></div>`;
+  openOverlay('pastryModalOverlay');
+}
+
+document.getElementById('pastryMinus').addEventListener('click', () => {
+  pastryQty = Math.max(1, pastryQty-1);
+  document.getElementById('pastryQtyDisplay').textContent = pastryQty;
+  const ap = document.getElementById('pastryAddPrice');
+  if (ap) ap.textContent = 'R' + (activePastry.price * pastryQty);
+});
+document.getElementById('pastryPlus').addEventListener('click', () => {
+  pastryQty++;
+  document.getElementById('pastryQtyDisplay').textContent = pastryQty;
+  const ap = document.getElementById('pastryAddPrice');
+  if (ap) ap.textContent = 'R' + (activePastry.price * pastryQty);
+});
+
+const pastryAddBtn = document.getElementById('pastryAddBtn');
+if (pastryAddBtn) {
+  pastryAddBtn.addEventListener('click', () => {
+    for (let i=0; i<pastryQty; i++) {
+      cart.push({id:Date.now()+i, type:'pastry', name:activePastry.name, price:activePastry.price, image:activePastry.image, notes:i===0?document.getElementById('pastryNotes').value.trim():''});
+    }
+    saveCart(); closeOverlay('pastryModalOverlay');
+    showToast(pastryQty + '× ' + activePastry.name + ' added');
+  });
+}
+
+// ── Overlay helpers ───────────────────────────────────────────────
+function openOverlay(id)  { document.getElementById(id).classList.add('open');    document.body.style.overflow='hidden'; }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+
+['drinkModalOverlay','pastryModalOverlay','cartOverlay'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', function(e) { if(e.target===this) closeOverlay(id); });
+});
+document.getElementById('drinkModalClose').addEventListener('click',  () => closeOverlay('drinkModalOverlay'));
+document.getElementById('pastryModalClose').addEventListener('click', () => closeOverlay('pastryModalOverlay'));
+document.getElementById('cartClose').addEventListener('click',        () => closeOverlay('cartOverlay'));
+document.getElementById('cartFab').addEventListener('click', () => { renderCartItems(); openOverlay('cartOverlay'); });
+
+// ── Cart ──────────────────────────────────────────────────────────
+function renderCartItems() {
+  const el = document.getElementById('cartItems');
+  const footer = document.getElementById('cartFooter');
+  if (!cart.length) {
+    el.innerHTML = '<div class="cart-empty"><span>🛒</span><p>Your cart is empty</p></div>';
+    footer.style.display='none'; return;
+  }
+  footer.style.display='block';
+  el.innerHTML = cart.map((item, idx) => `
+    <div class="cart-item">
+      <div class="cart-item-img">${item.image?`<img src="${item.image}" alt="${item.name}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
+      <div class="cart-item-body">
+        <p class="cart-item-name">${item.name}</p>
+        <div class="cart-item-opts">
+          ${item.size?`<span class="cart-opt-pill">${item.size} · ${item.ml}</span>`:''}
+          ${item.flavour?`<span class="cart-opt-pill">${item.flavour}</span>`:''}
+          ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${item.milk}</span>`:''}
+          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${item.sugar}</span>`:''}
+        </div>
+        ${item.notes?`<p class="cart-item-note">"${item.notes}"</p>`:''}
+      </div>
+      <div class="cart-item-right">
+        <span class="cart-item-price">R${item.price}</span>
+        <button class="cart-remove-btn" data-idx="${idx}">✕</button>
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('.cart-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => { cart.splice(parseInt(btn.dataset.idx),1); saveCart(); renderCartItems(); });
+  });
+  document.getElementById('cartTotalFooter').textContent = 'R' + cart.reduce((s,i)=>s+i.price,0);
+}
+
+function saveCart() {
+  sessionStorage.setItem('cl_cart', JSON.stringify(cart));
+  const count = cart.length, total = cart.reduce((s,i)=>s+i.price,0);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotal').textContent = 'R' + total;
+  document.getElementById('cartFab').classList.toggle('fab-hidden', count===0);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div'); t.className='cl-toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(),300); }, 2200);
+}
+
+// Init
+saveCart();
+</script>

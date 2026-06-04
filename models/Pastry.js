@@ -9,7 +9,7 @@ const pastrySchema = new mongoose.Schema({
   order:       { type: Number, default: 99 },
   createdAt:   { type: Date, default: Date.now },
   updatedAt:   { type: Date, default: Date.now }
-});
+}, { suppressReservedKeysWarning: true });
 
 pastrySchema.pre('save', function (next) {
   this.updatedAt = new Date();

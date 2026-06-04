@@ -14,10 +14,15 @@
     <div class="container">
       <div class="pastries-grid">
         <% pastries.forEach((pastry, i) => { %>
-        <div class="pastry-card <%= i === 0 ? 'pastry-card-wide' : '' %>">
+        <div class="pastry-card order-item-card <%= i === 0 ? 'pastry-card-wide' : '' %>"
+             data-pastry-idx="<%= i %>">
           <div class="pastry-card-front">
             <div class="pastry-img-wrap">
-              <img src="<%= pastry.image %>" alt="<%= pastry.name %>" class="pastry-img" loading="lazy" />
+              <% if (pastry.image) { %>
+                <img src="<%= pastry.image %>" alt="<%= pastry.name %>" class="pastry-img" loading="lazy" />
+              <% } else { %>
+                <div class="pastry-img-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--cream-dark);">🥐</div>
+              <% } %>
               <div class="pastry-overlay"></div>
             </div>
             <div class="pastry-info">
@@ -26,16 +31,38 @@
               <span class="pastry-price">R<%= pastry.price %></span>
             </div>
           </div>
+          <span class="order-add-hint" style="position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(253,246,237,0.9);padding:0.25rem 0.6rem;border-radius:50px;font-size:0.7rem;color:var(--maroon);opacity:0;transition:opacity 0.2s;">Tap to add →</span>
         </div>
         <% }) %>
       </div>
-
-      <div class="pastry-note">
-        <p>🥐 Our pastries are baked fresh each morning in limited quantities. Early bird gets the croissant.</p>
-        <p>Battlepass members earn a <strong>10% pastry voucher</strong> at drinks 10, 20, 40, 60, 70 and 90.</p>
-      </div>
+      <% if (!pastries.length) { %><p class="drinks-empty" style="margin-top:2rem;">Pastries coming soon!</p><% } %>
     </div>
   </section>
 </main>
+
+<script>
+window.CL_DATA = {
+  loggedIn: <%= !!(locals.session && session.userId) %>,
+  hot: [],
+  cold: [],
+  pastries: <%- JSON.stringify(pastries.map(p => ({
+    name:p.name, description:p.description||'', price:p.price,
+    image:p.image||null
+  }))) %>
+};
+</script>
+
+<%- include('../partials/item-modal') %>
+
+<script>
+/* Show/hide hint on hover for pastry cards */
+document.querySelectorAll('.pastry-card.order-item-card').forEach(card => {
+  const hint = card.querySelector('.order-add-hint');
+  card.addEventListener('mouseenter', () => { if(hint) hint.style.opacity='1'; });
+  card.addEventListener('mouseleave', () => { if(hint) hint.style.opacity='0'; });
+  card.style.position = 'relative';
+  card.style.cursor   = 'pointer';
+});
+</script>
 
 <%- include('../partials/footer') %>

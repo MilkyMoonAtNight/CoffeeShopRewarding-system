@@ -7,7 +7,7 @@ const checkInSchema = new mongoose.Schema({
   checkedInAt:  { type: Date, default: Date.now },
   checkedOutAt: { type: Date, default: null },
   method:       { type: String, enum: ['nfc', 'manual'], default: 'nfc' }
-});
+}, { suppressReservedKeysWarning: true });
 
 // Duration in minutes
 checkInSchema.virtual('duration').get(function () {
