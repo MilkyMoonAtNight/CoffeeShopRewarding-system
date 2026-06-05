@@ -306,9 +306,14 @@ function tick() {
 }
 
 function tryDecode(ctx, x, y, w, h) {
-  // Try all inversion modes — some QR codes on screens need inversion
   const imageData = ctx.getImageData(x, y, w, h);
-  return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+  const result = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+  if (result) {
+    // Show raw decoded value in status bar so we can see what jsQR found
+    console.log('jsQR decoded:', result.data);
+    document.getElementById('scanAnimText').textContent = 'Found: ' + result.data.slice(0, 30);
+  }
+  return result;
 }
 
 // ── API call ──────────────────────────────────────────────────────
