@@ -20,7 +20,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'conleche_secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 7 * 24 * 60 * 60 * 1000
+}
 }));
 
 app.use((req, res, next) => {

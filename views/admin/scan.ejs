@@ -15,14 +15,45 @@
 
   <!-- ── CAMERA SCAN ── -->
   <div class="admin-scan-panel" id="panel-camera">
-    <div class="admin-card">
+    <div class="admin-card" style="padding:0;overflow:hidden;">
+
+      <!-- Camera view -->
       <div id="camera-wrap">
         <video id="qr-video" playsinline></video>
-        <div class="qr-overlay"><div class="qr-frame"></div></div>
+
+        <!-- Scanning frame overlay -->
+        <div class="qr-overlay">
+          <div class="qr-frame" id="qrFrame">
+            <span class="qr-corner qr-tl"></span>
+            <span class="qr-corner qr-tr"></span>
+            <span class="qr-corner qr-bl"></span>
+            <span class="qr-corner qr-br"></span>
+            <div class="qr-laser" id="qrLaser"></div>
+          </div>
+        </div>
+
+        <!-- Live status badge inside the camera -->
+        <div class="camera-live-badge" id="liveBadge">
+          <span class="live-dot" id="liveDot"></span>
+          <span class="live-text" id="liveText">Starting…</span>
+        </div>
       </div>
-      <div id="camera-status" class="camera-status">Starting camera…</div>
-      <button id="camera-toggle" class="btn btn-primary btn-full" style="margin-top:1rem;">Stop Camera</button>
+
+      <!-- Animated scanning text below camera -->
+      <div class="camera-status-bar" id="statusBar">
+        <div class="scan-anim-wrap" id="scanAnimWrap">
+          <span class="scan-anim-icon">📷</span>
+          <span class="scan-anim-text" id="scanAnimText">Starting camera</span>
+          <span class="scan-anim-dots" id="scanDots"></span>
+        </div>
+      </div>
+
+      <button id="camera-toggle" class="btn btn-outline" style="margin:0.75rem 1rem 1rem;width:calc(100% - 2rem);">
+        Stop Camera
+      </button>
     </div>
+
+    <!-- Result card -->
     <div id="camera-result" class="admin-card scan-result-card" style="display:none;"></div>
   </div>
 
@@ -36,6 +67,14 @@
           <input type="text" name="qrCode" required placeholder="Paste QR token…" class="scan-input" />
           <span class="form-hint">From the customer's battlepass screen</span>
         </div>
+        <div class="form-group">
+          <label>Number of Drinks</label>
+          <div class="qty-selector">
+            <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="20" class="qty-input" readonly />
+            <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
         <button type="submit" class="btn btn-primary btn-full">✓ Record Drink</button>
       </form>
     </div>
@@ -44,19 +83,15 @@
       <% if (result.success) { %>
         <div class="scan-result-icon">✓</div>
         <h3><%= result.user.name %></h3>
-        <% if (result.qty > 1) { %><p style="color:rgba(44,44,44,0.5);font-size:0.85rem;margin-bottom:0.5rem;"><%= result.qty %> drinks recorded</p><% } %>
+        <% if (result.qty > 1) { %><p style="font-size:0.85rem;opacity:0.6;"><%= result.qty %> drinks recorded</p><% } %>
         <div class="scan-result-stats">
           <div class="scan-result-stat"><span class="scan-result-num"><%= result.user.totalDrinks %></span><span class="scan-result-lbl">Total drinks</span></div>
           <div class="scan-result-stat"><span class="scan-result-num"><%= result.user.tier %></span><span class="scan-result-lbl">Tier</span></div>
         </div>
         <% if (result.newReward) { %>
         <div class="scan-new-reward">
-          <span class="scan-reward-icon"><%= result.newReward.type === 'free_drink' ? '☕' : result.newReward.type === 'voucher' ? '🎫' : result.newReward.type === 'special' ? '✨' : result.newReward.type === 'merch' ? '🎁' : '💳' %></span>
-          <div>
-            <strong><%= result.newReward.type === 'voucher' ? 'Voucher auto-added!' : 'New reward unlocked!' %></strong>
-            <p><%= result.newReward.description %></p>
-            <% if (result.newReward.type !== 'voucher') { %><p style="margin-top:0.4rem;font-size:0.8rem;opacity:0.7;">Tell the customer to check their battlepass to claim.</p><% } %>
-          </div>
+          <span class="scan-reward-icon"><%= result.newReward.type === 'free_drink' ? '☕' : result.newReward.type === 'voucher' ? '🎫' : '🎁' %></span>
+          <div><strong><%= result.newReward.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!' %></strong><p><%= result.newReward.description %></p></div>
         </div>
         <% } %>
       <% } else { %>
@@ -83,17 +118,10 @@
         </div>
         <div class="form-group">
           <label>4-Digit Code</label>
-          <input type="text" name="claimCode" required placeholder="e.g. 4827" class="scan-input" maxlength="4" style="font-size:1.5rem;letter-spacing:0.3em;text-align:center;" />
+          <input type="text" name="claimCode" required placeholder="e.g. 4827" class="scan-input"
+                 maxlength="4" style="font-size:1.5rem;letter-spacing:0.3em;text-align:center;" />
         </div>
-        <div class="form-group">
-          <label>Number of Drinks</label>
-          <div class="qty-selector">
-            <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
-            <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="20" class="qty-input" readonly />
-            <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full">✓ Record Drinks</button>
+        <button type="submit" class="btn btn-primary btn-full">✓ Confirm Claim</button>
       </form>
     </div>
     <% if (result && result.panel === 'confirm') { %>
@@ -109,15 +137,13 @@
 
 </div>
 
-<!-- Load jsQR for camera scanning -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
 <script>
-const tabs = document.querySelectorAll('.admin-scan-tab');
-const panels = document.querySelectorAll('.admin-scan-panel');
-tabs.forEach(tab => {
+// ── Tabs ──────────────────────────────────────────────────────────
+document.querySelectorAll('.admin-scan-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
-    panels.forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.admin-scan-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-scan-panel').forEach(p => p.classList.add('hidden'));
     tab.classList.add('active');
     document.getElementById('panel-' + tab.dataset.panel).classList.remove('hidden');
     if (tab.dataset.panel !== 'camera') stopCamera();
@@ -125,27 +151,79 @@ tabs.forEach(tab => {
   });
 });
 
-let stream = null;
-let scanning = true;
+// ── State ─────────────────────────────────────────────────────────
+let stream    = null;
+let scanning  = false;
+let cooldown  = false;
 let lastScanned = null;
-let cooldown = false;
+let dotInterval = null;
+let dotCount  = 0;
+let framesSinceCode = 0;
+let frameCount = 0;
 
-const video = document.getElementById('qr-video');
-const status = document.getElementById('camera-status');
-const resultBox = document.getElementById('camera-result');
-const toggleBtn = document.getElementById('camera-toggle');
+const video      = document.getElementById('qr-video');
+const resultBox  = document.getElementById('camera-result');
+const toggleBtn  = document.getElementById('camera-toggle');
+const liveDot    = document.getElementById('liveDot');
+const liveText   = document.getElementById('liveText');
+const scanText   = document.getElementById('scanAnimText');
+const scanDots   = document.getElementById('scanDots');
+const qrFrame    = document.getElementById('qrFrame');
+const qrLaser    = document.getElementById('qrLaser');
 
+// ── Animated dots ─────────────────────────────────────────────────
+function startDotAnim(msg) {
+  stopDotAnim();
+  scanText.textContent = msg;
+  scanDots.textContent = '';
+  dotCount = 0;
+  dotInterval = setInterval(() => {
+    dotCount = (dotCount + 1) % 4;
+    scanDots.textContent = '.'.repeat(dotCount);
+  }, 400);
+}
+function stopDotAnim() {
+  if (dotInterval) clearInterval(dotInterval);
+  dotInterval = null;
+}
+
+// ── Status helpers ────────────────────────────────────────────────
+function setStatus(state, msg) {
+  // state: 'idle' | 'scanning' | 'found' | 'error' | 'off'
+  liveText.textContent = msg;
+  liveDot.className = 'live-dot live-dot-' + state;
+
+  const colors = {
+    idle:     'rgba(44,44,44,0.5)',
+    scanning: '#1D9E75',
+    found:    '#581217',
+    error:    '#c83232',
+    off:      'rgba(44,44,44,0.3)',
+  };
+  liveDot.style.background = colors[state] || colors.idle;
+
+  if (state === 'scanning') startDotAnim('Scanning');
+  else if (state === 'found') { stopDotAnim(); scanText.textContent = 'Code found!'; scanDots.textContent = ''; }
+  else if (state === 'error') { stopDotAnim(); scanText.textContent = msg; scanDots.textContent = ''; }
+  else if (state === 'off')   { stopDotAnim(); scanText.textContent = 'Camera off'; scanDots.textContent = ''; }
+  else { startDotAnim('Starting camera'); }
+}
+
+// ── Camera ────────────────────────────────────────────────────────
 async function startCamera() {
+  setStatus('idle', 'Starting…');
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
     video.srcObject = stream;
-    video.play();
+    await video.play();
     scanning = true;
-    status.textContent = 'Point camera at customer QR code…';
     toggleBtn.textContent = 'Stop Camera';
+    setStatus('scanning', 'Scanning');
     requestAnimationFrame(tick);
   } catch (e) {
-    status.textContent = 'Camera not available — use Manual Entry instead.';
+    setStatus('error', 'Camera unavailable — use Manual Entry');
     toggleBtn.style.display = 'none';
   }
 }
@@ -153,90 +231,241 @@ async function startCamera() {
 function stopCamera() {
   scanning = false;
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  status.textContent = 'Camera stopped.';
+  video.srcObject = null;
   toggleBtn.textContent = 'Start Camera';
+  setStatus('off', 'Camera off');
+  qrFrame.classList.remove('qr-frame-found');
+  qrLaser.style.display = 'block';
 }
 
 toggleBtn.addEventListener('click', () => {
   if (stream) stopCamera(); else startCamera();
 });
 
+// ── Scan loop ─────────────────────────────────────────────────────
+const offscreen = document.createElement('canvas');
+const offCtx    = offscreen.getContext('2d');
+
 function tick() {
   if (!scanning) return;
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    offscreen.width  = w;
+    offscreen.height = h;
+    offCtx.drawImage(video, 0, 0, w, h);
+    frameCount++;
+    // Show frame count every 60 frames so barista knows camera is live
+    if (frameCount % 60 === 0 && scanning && !cooldown) {
+      liveText.textContent = `Scanning (${w}×${h})`;
+    }
+
+    // Try full frame first
+    let code = tryDecode(offCtx, 0, 0, w, h);
+
+    // If not found, try centre crop (QR usually held in middle of frame)
+    if (!code) {
+      const cropSize = Math.min(w, h) * 0.7;
+      const cx = (w - cropSize) / 2;
+      const cy = (h - cropSize) / 2;
+      code = tryDecode(offCtx, cx, cy, cropSize, cropSize);
+    }
+
     if (code && !cooldown) {
-      const raw = code.data;
-      // Extract token — format is conleche:TOKEN
-      const token = raw.startsWith('conleche:') ? raw.replace('conleche:', '') : raw;
+      const raw   = code.data;
+      const token = raw.startsWith('conleche:') ? raw.slice('conleche:'.length) : raw;
+
       if (token !== lastScanned) {
         lastScanned = token;
-        cooldown = true;
+        cooldown    = true;
+        framesSinceCode = 0;
+
+        qrFrame.classList.add('qr-frame-found');
+        qrLaser.style.display = 'none';
+        setStatus('found', 'Code detected!');
+
         recordDrink(token);
-        setTimeout(() => { cooldown = false; lastScanned = null; }, 4000);
+
+        setTimeout(() => {
+          cooldown    = false;
+          lastScanned = null;
+          qrFrame.classList.remove('qr-frame-found');
+          qrLaser.style.display = 'block';
+          if (scanning) setStatus('scanning', 'Scanning');
+        }, 4000);
+      }
+    } else if (!code) {
+      framesSinceCode++;
+      if (framesSinceCode > 30 && !cooldown && scanning) {
+        setStatus('scanning', 'Scanning');
       }
     }
   }
   requestAnimationFrame(tick);
 }
 
+function tryDecode(ctx, x, y, w, h) {
+  // Try all inversion modes — some QR codes on screens need inversion
+  const imageData = ctx.getImageData(x, y, w, h);
+  return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+}
+
+// ── API call ──────────────────────────────────────────────────────
 async function recordDrink(qrCode) {
-  status.textContent = 'Scanning…';
   resultBox.style.display = 'none';
   try {
-    const res = await fetch('/admin/scan-api', {
-      method: 'POST',
+    const res  = await fetch('/admin/scan-api', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ qrCode })
+      body:    JSON.stringify({ qrCode }),
     });
     const data = await res.json();
     resultBox.style.display = 'block';
+
     if (data.success) {
-      status.textContent = '✓ Recorded! Ready for next scan…';
-      let html = `<div class="scan-result-icon">✓</div>
+      setStatus('found', '✓ Recorded!');
+      let html = `
+        <div class="scan-result-icon">✓</div>
         <h3>${data.user.name}</h3>
         <div class="scan-result-stats">
-          <div class="scan-result-stat"><span class="scan-result-num">${data.user.totalDrinks}</span><span class="scan-result-lbl">drinks</span></div>
-          <div class="scan-result-stat"><span class="scan-result-num">${data.user.tier}</span><span class="scan-result-lbl">tier</span></div>
+          <div class="scan-result-stat">
+            <span class="scan-result-num">${data.user.totalDrinks}</span>
+            <span class="scan-result-lbl">drinks</span>
+          </div>
+          <div class="scan-result-stat">
+            <span class="scan-result-num">${data.user.tier}</span>
+            <span class="scan-result-lbl">tier</span>
+          </div>
         </div>`;
       if (data.newReward) {
-        const icon = data.newReward.type === 'free_drink' ? '☕' : data.newReward.type === 'voucher' ? '🎫' : data.newReward.type === 'special' ? '✨' : '🎁';
-        html += `<div class="scan-new-reward"><span class="scan-reward-icon">${icon}</span><div><strong>${data.newReward.type === 'voucher' ? 'Voucher auto-added!' : 'Reward unlocked!'}</strong><p>${data.newReward.description}</p></div></div>`;
+        const icon = data.newReward.type === 'free_drink' ? '☕'
+                   : data.newReward.type === 'voucher'    ? '🎫' : '🎁';
+        html += `<div class="scan-new-reward">
+          <span class="scan-reward-icon">${icon}</span>
+          <div><strong>${data.newReward.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!'}</strong>
+          <p>${data.newReward.description}</p></div></div>`;
       }
       resultBox.className = 'admin-card scan-result-card scan-success-card';
       resultBox.innerHTML = html;
     } else {
-      status.textContent = 'Not found — try again.';
+      setStatus('error', 'Not found');
       resultBox.className = 'admin-card scan-result-card scan-error-card';
-      resultBox.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div><h3>Not found</h3><p>${data.message}</p>`;
+      resultBox.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div>
+        <h3>Not found</h3><p>${data.message}</p>`;
     }
   } catch (e) {
-    status.textContent = 'Error — check connection.';
+    setStatus('error', 'Connection error');
   }
 }
 
 function changeQty(delta) {
   const input = document.getElementById('qtyInput');
-  const val = parseInt(input.value) + delta;
-  input.value = Math.min(20, Math.max(1, val));
+  input.value = Math.min(20, Math.max(1, parseInt(input.value) + delta));
 }
 
-// Auto-start camera on load
+// Auto-start
 startCamera();
 </script>
 
 <style>
-#camera-wrap { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; aspect-ratio: 4/3; }
-#qr-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.qr-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-.qr-frame { width: 200px; height: 200px; border: 3px solid var(--maroon); border-radius: 12px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.4); animation: pulse-frame 2s ease-in-out infinite; }
-@keyframes pulse-frame { 0%,100% { border-color: var(--maroon); } 50% { border-color: var(--maroon-light); } }
-.camera-status { text-align: center; padding: 0.75rem; font-size: 0.88rem; color: rgba(44,44,44,0.6); }
+/* Camera wrap */
+#camera-wrap {
+  position: relative;
+  background: #000;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+#qr-video {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+
+/* Overlay */
+.qr-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  background: rgba(0,0,0,0.35);
+  /* Cut-out effect via mask */
+}
+
+/* Frame corners */
+.qr-frame {
+  position: relative;
+  width: 210px; height: 210px;
+  transition: all 0.25s ease;
+}
+.qr-corner {
+  position: absolute;
+  width: 24px; height: 24px;
+  border-color: #fff;
+  border-style: solid;
+  border-width: 0;
+}
+.qr-tl { top:0; left:0;   border-top-width:3px;    border-left-width:3px;   border-radius:4px 0 0 0; }
+.qr-tr { top:0; right:0;  border-top-width:3px;    border-right-width:3px;  border-radius:0 4px 0 0; }
+.qr-bl { bottom:0; left:0;  border-bottom-width:3px; border-left-width:3px;   border-radius:0 0 0 4px; }
+.qr-br { bottom:0; right:0; border-bottom-width:3px; border-right-width:3px;  border-radius:0 0 4px 0; }
+
+/* Laser line */
+.qr-laser {
+  position: absolute; left: 4px; right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(88,18,23,0.9), transparent);
+  animation: laser-scan 2s ease-in-out infinite;
+  border-radius: 2px;
+}
+@keyframes laser-scan {
+  0%   { top: 10px;   opacity: 0.5; }
+  50%  { top: 192px;  opacity: 1; }
+  100% { top: 10px;   opacity: 0.5; }
+}
+
+/* Frame when code found */
+.qr-frame-found .qr-corner { border-color: #1D9E75; }
+.qr-frame-found { transform: scale(1.05); }
+
+/* Live badge */
+.camera-live-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50px;
+  padding: 5px 12px;
+  display: flex; align-items: center; gap: 6px;
+  backdrop-filter: blur(4px);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #1D9E75;
+  animation: live-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes live-pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+.live-text {
+  font-size: 11px; font-weight: 600;
+  color: #fff; letter-spacing: 0.04em;
+}
+
+/* Status bar */
+.camera-status-bar {
+  background: var(--cream-dark);
+  padding: 0.65rem 1rem;
+  border-top: 1px solid rgba(44,44,44,0.06);
+}
+.scan-anim-wrap {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.85rem; color: rgba(44,44,44,0.65);
+}
+.scan-anim-icon { font-size: 1rem; }
+.scan-anim-text { font-weight: 500; }
+.scan-anim-dots {
+  font-weight: 700; color: var(--maroon);
+  letter-spacing: 0.05em; min-width: 18px;
+}
 </style>
 
 <%- include('./layout-bottom') %>
