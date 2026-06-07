@@ -163,7 +163,8 @@ const drinks = [
   },
 ];
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://iwangroenewald14_db_user:ConLecheCoffeeShop@cluster0.vri5avz.mongodb.net/conleche';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) throw new Error('MONGODB_URI not set in .env');
 
 // ── ADMIN ACCOUNTS ──────────────────────────────────────────────
 const admins = [

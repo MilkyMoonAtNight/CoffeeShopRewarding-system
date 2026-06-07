@@ -7,16 +7,20 @@
 
     <!-- QR CARD -->
       <div class="bp-qr-card">
-        <div class="bp-tier-chip">
-          <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
-          <%= user.tier %>
+        <div class="bp-card-logo">
+          <img src="/images/logo.png" alt="Con Leche" />
         </div>
         <h2 class="bp-name"><%= user.name %></h2>
         <p class="bp-email"><%= user.email %></p>
         <div class="bp-qr-box">
           <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
         </div>
-        <p class="bp-qr-hint" style="text-align:center;width:100%;">Show this to your barista when ordering</p>
+        
+        <div class="bp-tier-chip">
+          <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
+          <%= user.tier %>
+        </div>
+        <p class="bp-qr-hint">Show this to your barista when ordering</p>
       </div>
 
     <!-- STATS ROW -->
