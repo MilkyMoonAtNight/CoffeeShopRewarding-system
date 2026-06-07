@@ -1,4 +1,4 @@
-# Con Leche ☕🐱
+# Con Leche
 
 Specialty coffee, friendly cats, and a loyalty battlepass system.
 
@@ -59,10 +59,7 @@ Server starts at **http://localhost:3000**
 | 100 | Exclusive hoodie + free drink for a month |
 
 ## Tiers
-- 🐱 Kitten — 0–14 drinks
-- 🐈 Cat — 15–39 drinks
-- 😸 Tom Cat — 40–74 drinks
-- 🐆 Panther — 75+ drinks
+tier system depening on the amount of drinks the user had baught
 
 ## Scanning Flow (Staff)
 1. Customer opens `/battlepass` and shows their QR code
