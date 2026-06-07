@@ -6,59 +6,73 @@
     <div class="container">
       <p class="section-eyebrow light">Where We'll Be</p>
       <h1 class="page-title light">Events & Calendar</h1>
-    </div>
-  </section>
-
-  <section class="section events-section">
-    <div class="container">
       <div class="events-legend">
         <span class="legend-item"><span class="legend-dot event-truck_location"></span>Trailer Location</span>
         <span class="legend-item"><span class="legend-dot event-run_club"></span>Run Club</span>
         <span class="legend-item"><span class="legend-dot event-painting"></span>Fun Classes</span>
         <span class="legend-item"><span class="legend-dot event-special"></span>Special Event</span>
       </div>
+    </div>
+  </section>
+
+  <section class="section events-section section-bloop">
+    <div class="container">
 
       <% if (events.length === 0) { %>
       <div class="events-empty">
-        <p>No upcoming events yet. Check back soon — we're always planning something.</p>
+        <p>No upcoming events yet — follow <strong>@conleche_coffee</strong> on Instagram for real-time updates.</p>
       </div>
       <% } else { %>
-      <div class="events-list">
-        <% events.forEach(event => { %>
-        <div class="event-card event-card-<%= event.type %>">
-          <div class="event-date-block">
-            <span class="event-day"><%= event.date.toLocaleDateString('en-ZA', { day: 'numeric' }) %></span>
-            <span class="event-month"><%= event.date.toLocaleDateString('en-ZA', { month: 'short' }) %></span>
-            <span class="event-year"><%= event.date.getFullYear() %></span>
+      <div class="events-grid">
+        <% events.forEach(function(event) { %>
+        <div class="event-tile event-tile-<%= event.type %>">
+
+          <!-- Image — half shown, full on hover -->
+          <div class="event-tile-img-wrap">
+            <% if (event.image) { %>
+              <img src="/images/events/<%= event.image %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
+            <% } else { %>
+              <div class="event-tile-placeholder">
+                <span><%= event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐' %></span>
+              </div>
+            <% } %>
+            <div class="event-tile-overlay"></div>
+            <!-- Date badge over image -->
+            <div class="event-tile-date">
+              <span class="event-tile-day"><%= event.date.toLocaleDateString('en-ZA', { day: 'numeric' }) %></span>
+              <span class="event-tile-month"><%= event.date.toLocaleDateString('en-ZA', { month: 'short' }) %></span>
+            </div>
           </div>
-          <div class="event-body">
+
+          <!-- Details — slide up on hover -->
+          <div class="event-tile-body">
             <div class="event-tags">
               <span class="event-tag event-tag-<%= event.type %>">
                 <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : '⭐ Event' %>
               </span>
               <% if (event.recurring) { %><span class="event-tag event-tag-recurring">Weekly</span><% } %>
             </div>
-            <h3 class="event-title"><%= event.title %></h3>
-            <p class="event-location">📍 <%= event.location %></p>
-            <% if (event.description) { %>
-            <p class="event-description"><%= event.description %></p>
-            <% } %>
-            <p class="event-time">
+            <h3 class="event-tile-title"><%= event.title %></h3>
+            <p class="event-tile-location">📍 <%= event.location %></p>
+            <p class="event-tile-time">
               <%= event.date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %>
               <%= event.endDate ? '– ' + event.endDate.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '' %>
             </p>
+            <% if (event.description) { %>
+            <p class="event-tile-desc"><%= event.description %></p>
+            <% } %>
           </div>
+
         </div>
-        <% }) %>
+        <% }); %>
       </div>
       <% } %>
-    </div>
-  </section>
 
-  <section class="section-cta">
-    <div class="container text-center">
-      <h3>Never miss a stop.</h3>
-      <p>Follow us on Instagram <strong>@conleche.coffee</strong> for real-time truck locations and last-minute events.</p>
+      <div class="events-cta-row">
+        <p>Never miss a stop — follow <strong>@conleche_coffee</strong> on Instagram for real-time updates.</p>
+        <a href="https://instagram.com/conleche_coffee" target="_blank" class="btn btn-primary">Follow us →</a>
+      </div>
+
     </div>
   </section>
 </main>

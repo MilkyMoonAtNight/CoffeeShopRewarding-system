@@ -16,14 +16,14 @@
     <div class="drinks-tabs" id="pastryTabs">
       <%
         let firstTab = true;
-        ORDER.forEach(cat => {
+        ORDER.forEach(function(cat) {
           if (grouped[cat] && grouped[cat].length > 0) {
       %>
         <button class="drinks-tab <%= firstTab ? 'active' : '' %>"
                 data-cat="<%= cat %>">
           <%= ICONS[cat] %> <%= LABELS[cat] %>
         </button>
-      <% firstTab = false; }); %>
+      <% firstTab = false; } }); %>
     </div>
   </div>
 
@@ -31,19 +31,16 @@
   <section class="section pastries-section section-bloop">
     <div class="container">
 
-      <% let firstPanel = true; %>
-      <% ORDER.forEach((cat) => { %>
+      <% let firstPanel = true; let globalCounter = 0; %>
+      <% ORDER.forEach(function(cat) { %>
         <% if (grouped[cat] && grouped[cat].length > 0) { %>
         <div class="pastry-panel <%= firstPanel ? '' : 'hidden' %>" id="pcat-<%= cat %>">
           <% firstPanel = false; %>
           <div class="drink-grid">
-            <% grouped[cat].forEach((pastry, idx) => { %>
-            <%
-              const globalIdx = ORDER.slice(0, ORDER.indexOf(cat))
-                .reduce((sum, c) => sum + (grouped[c] ? grouped[c].length : 0), 0) + idx;
-            %>
+            <% grouped[cat].forEach(function(pastry) { %>
+            <% var idx = globalCounter; globalCounter++; %>
             <div class="drink-card order-item-card"
-                 data-pastry-idx="<%= globalIdx %>">
+                 data-pastry-idx="<%= idx %>">
               <div class="drink-card-inner-wrap">
                 <div class="drink-img-wrap">
                   <% if (pastry.image) { %>
@@ -64,13 +61,13 @@
                 <span class="order-add-hint">Tap to add →</span>
               </div>
             </div>
-            <% }) %>
+            <% }); %>
           </div>
         </div>
         <% } %>
-      <% }) %>
+      <% }); %>
 
-      <% const totalPastries = ORDER.reduce((s,c) => s + (grouped[c]?grouped[c].length:0), 0); %>
+      <% var totalPastries = ORDER.reduce(function(s,c) { return s + (grouped[c] ? grouped[c].length : 0); }, 0); %>
       <% if (totalPastries === 0) { %>
         <p class="drinks-empty">Pastries coming soon!</p>
       <% } %>

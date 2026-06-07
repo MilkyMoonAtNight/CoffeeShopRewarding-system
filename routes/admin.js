@@ -184,18 +184,21 @@ router.get('/events', ownerManager, async (req, res) => {
   res.render('admin/events', { title: 'Events — Con Leche Admin', admin: req.admin, events, msg: req.query.msg || null });
 });
 
-router.post('/events/add', ownerManager, async (req, res) => {
+router.post('/events/add', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
     const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
-    await new Event({ title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay }).save();
+    const image = req.file ? req.file.filename : null;
+    await new Event({ title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay, image }).save();
     res.redirect('/admin/events?msg=Event+added');
   } catch (err) { res.redirect('/admin/events?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
-router.post('/events/edit/:id', ownerManager, async (req, res) => {
+router.post('/events/edit/:id', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
     const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
-    await Event.findByIdAndUpdate(req.params.id, { title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay });
+    const update = { title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay };
+    if (req.file) update.image = req.file.filename;
+    await Event.findByIdAndUpdate(req.params.id, update);
     res.redirect('/admin/events?msg=Event+updated');
   } catch (err) { res.redirect('/admin/events?msg=Error:+' + encodeURIComponent(err.message)); }
 });
@@ -312,12 +315,16 @@ router.post('/users/delete/:id', ownerManager, async (req, res) => {
   }
 });
 
+// ── Adjust stamps (barista and up) ───────────────────────────────
 router.post('/users/stamps/:id', requireAdmin, async (req, res) => {
   try {
-    const change = parseInt(req.body.delta);
+    const { delta, reason } = req.body;          // delta: +1 / -1 / custom number
+    const change = parseInt(delta);
     if (isNaN(change)) return res.json({ ok: false, error: 'Invalid delta' });
+
     const user = await User.findById(req.params.id);
     if (!user) return res.json({ ok: false, error: 'User not found' });
+
     user.totalDrinks = Math.max(0, user.totalDrinks + change);
     await user.save();
     res.json({ ok: true, totalDrinks: user.totalDrinks });
