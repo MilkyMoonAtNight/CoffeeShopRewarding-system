@@ -120,27 +120,11 @@ ul { list-style: none; }
   padding-top: 70px;
 }
 .hero-bg {
-  position: absolute;
-  inset: 0;
-
+  position: absolute; inset: 0;
   background:
-    radial-gradient(circle at top left,
-      rgba(84, 22, 34, 0.6) 0%,
-      transparent 40%),
-
-    radial-gradient(circle at top right,
-      rgba(84, 22, 34, 0.6) 0%,
-      transparent 40%),
-
-    radial-gradient(circle at bottom left,
-      rgba(84, 22, 34, 0.6) 0%,
-      transparent 40%),
-
-    radial-gradient(circle at bottom right,
-      rgba(84, 22, 34, 0.6) 0%,
-      transparent 40%),
-
-    url('../images/backgrounds/home.jpg') center/cover no-repeat;
+    radial-gradient(ellipse at 70% 60%, rgba(59, 31, 14, 0.6) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(201, 151, 74, 0.08) 0%, transparent 50%),
+    var(--black);
 }
 .hero-grain {
   position: absolute; inset: 0;
@@ -161,7 +145,7 @@ ul { list-style: none; }
   font-size: clamp(3rem, 8vw, 6.5rem);
   font-weight: 700;
   color: var(--cream);
-  line-height: 1.2;
+  line-height: 1.05;
   margin-bottom: 1.5rem;
 }
 .hero-title em {
@@ -175,11 +159,7 @@ ul { list-style: none; }
   font-family: var(--font-body); font-size: 1.25rem; font-weight: 300;
 }
 .hero-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: flex; gap: 1rem; flex-wrap: wrap;
 }
 .hero-paw {
   position: absolute; right: -5%; bottom: 5%;
@@ -251,15 +231,7 @@ ul { list-style: none; }
 .container {
   max-width: 1280px; margin: 0 auto; padding: 0 2rem;
 }
-
-.section-bloop {
-  background-image: url('../images/backgrounds/bloop.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: var(--cream);
-}
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: stretch; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
 .gap-xl { gap: 6rem; }
 .text-center { text-align: center; }
 .section-eyebrow {
@@ -279,24 +251,8 @@ ul { list-style: none; }
 .section-body { font-size: 1.05rem; line-height: 1.75; color: rgba(44,44,44,0.8); max-width: 520px; }
 
 /* ====== BATTLEPASS TEASER ====== */
-.battlepass-teaser {
-  background:
-    url('../images/backgrounds/bloop.png') center/cover no-repeat,
-    var(--cream);
-}
-.bp-text {
-  border: 1px solid rgba(88, 18, 23, 0.2);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 2rem;
-}
-.bp-text .section-eyebrow { color: rgba(201, 151, 74, 0.8); }
-.bp-text .section-title   { color: var(--cream); }
-.bp-text .section-title em { color: rgba(201, 151, 74, 0.9); }
-.bp-text .section-body    { color: rgba(253, 246, 237, 0.65); }
+.battlepass-teaser { background: var(--cream); }
+.bp-text { display: flex; flex-direction: column; gap: 1.5rem; }
 .milestone-pills { display: flex; flex-direction: column; gap: 0.5rem; }
 .pill {
   display: inline-block; padding: 0.5rem 1rem;
@@ -307,12 +263,9 @@ ul { list-style: none; }
 .pill-drink { background: rgba(88, 18, 23, 0.08); color: var(--maroon); border: 1px solid rgba(88, 18, 23, 0.2); }
 .pill-merch { background: var(--black); color: var(--cream); border: 1px solid rgba(88, 18, 23, 0.4); }
 
-.bp-visual { display: flex; align-items: stretch; }
-
+.bp-visual { display: flex; justify-content: center; }
 .bp-card-preview {
-  width: 100%;
-  height: auto;
-  min-height: unset;  
+  width: 320px; height: 460px;
   background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(88, 18, 23, 0.2);
@@ -325,51 +278,37 @@ ul { list-style: none; }
   width: 200%; height: 200%;
   background: radial-gradient(ellipse at 60% 30%, rgba(88, 18, 23, 0.06), transparent 60%);
 }
-.bp-card-logo img { width: 90px; filter: brightness(0) invert(1); opacity: 0.9; }
-.bp-card-name { 
-  color: rgba(253,246,237,0.7); 
-  font-size: 1.1rem; 
-  font-family: var(--font-body);
-  font-weight: 500;
+.bp-card-inner {
+  padding: 2.5rem 2rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  height: 100%;
 }
+.bp-card-logo img { width: 70px; filter: brightness(0) invert(1); opacity: 0.9; }
+.bp-card-name { color: rgba(253,246,237,0.5); font-size: 0.85rem; font-family: var(--font-body); }
 .bp-card-qr-placeholder {
-  width: 75%;
-  aspect-ratio: 1;
-  background: rgba(253,246,237,0.06);
+  width: 160px; height: 160px;
+  background: rgba(253,246,237,0.07);
   border-radius: 12px;
-  border: 1px solid rgba(253,246,237,0.08);
   display: flex; align-items: center; justify-content: center;
-  padding: 1rem;
-  box-sizing: border-box;
 }
 .qr-grid {
-  width: 100%;
-  aspect-ratio: 1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='5' y='5' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='15' y='15' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='60' y='5' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='70' y='15' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='5' y='60' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='15' y='70' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='50' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='62' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='86' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='62' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='62' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='62' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='86' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='86' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='86' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  width: 120px; height: 120px;
+  background:
+    repeating-linear-gradient(0deg, rgba(88, 18, 23, 0.3) 0px, rgba(88, 18, 23, 0.3) 8px, transparent 8px, transparent 16px),
+    repeating-linear-gradient(90deg, rgba(88, 18, 23, 0.3) 0px, rgba(88, 18, 23, 0.3) 8px, transparent 8px, transparent 16px);
   border-radius: 4px;
-  opacity: 0.7;
 }
 .bp-card-tier {
   display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
 }
 .tier-badge {
-  background: rgba(88,18,23,0.15);
-  border: 1px solid rgba(88,18,23,0.3);
+  background: rgba(88, 18, 23, 0.15);
+  border: 1px solid rgba(88, 18, 23, 0.3);
   color: var(--maroon-light);
-  padding: 0.5rem 1.25rem;
-  border-radius: 50px; 
-  font-size: 0.95rem;
+  padding: 0.4rem 1rem;
+  border-radius: 50px; font-size: 0.8rem;
 }
-.bp-card-drinks { color: rgba(253,246,237,0.35); font-size: 0.85rem; }
-.bp-card-inner {
-  padding: 2rem;
-  display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
-  box-sizing: border-box;
-  justify-content: center;
-}
+.bp-card-drinks { color: rgba(253,246,237,0.35); font-size: 0.75rem; }
 
 /* ====== MENU PREVIEW ====== */
 .menu-preview { padding: 6rem 0; }
@@ -442,11 +381,7 @@ ul { list-style: none; }
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.about-logo-large {
-  background: url('../images/backgrounds/about.jpg') center center / cover no-repeat;
-  width: 100%;
-  height: 100%;
-}
+.about-logo-large { width: 50%; opacity: 0.9; filter: brightness(0) invert(1); }
 .about-img-caption { font-size: 0.8rem; color: rgba(44,44,44,0.45); text-align: center; }
 .about-text { display: flex; flex-direction: column; gap: 1.25rem; }
 .about-text p { line-height: 1.8; color: rgba(44,44,44,0.75); }
@@ -817,7 +752,7 @@ ul { list-style: none; }
 
 /* ====== RESPONSIVE ====== */
 @media (max-width: 900px) {
-  .grid-2 { grid-template-columns: 1fr; gap: 1.5rem; }
+  .grid-2 { grid-template-columns: 1fr; gap: 2.5rem; }
   .menu-grid { grid-template-columns: 1fr; }
   .values-grid { grid-template-columns: 1fr; }
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -1140,60 +1075,27 @@ ul { list-style: none; }
 
 /* QR card */
 .bp-qr-card {
-  background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+  background: var(--black);
   border-radius: var(--radius-lg);
+  padding: 1.5rem;
   border: 1px solid rgba(88,18,23,0.2);
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05);
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  width: 100%;
-  box-sizing: border-box;
 }
 .bp-tier-chip {
   display: inline-flex; align-items: center; gap: 0.4rem;
-  background: rgba(201,151,74,0.12); border: 1px solid rgba(201,151,74,0.35);
-  color: rgba(201,151,74,0.9); padding: 0.35rem 0.9rem;
-  border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+  background: rgba(88,18,23,0.2); border: 1px solid rgba(88,18,23,0.35);
+  color: var(--maroon-light); padding: 0.25rem 0.7rem;
+  border-radius: 50px; font-size: 0.72rem; font-weight: 600;
+  margin-bottom: 0.5rem;
 }
-.bp-name {
-  font-family: var(--font-nimbus); font-size: 1.5rem;
-  color: var(--cream); line-height: 1.1;
-  text-align: center;
-}
-.bp-email {
-  font-size: 0.78rem; color: rgba(253,246,237,0.3);
-  text-align: center;
-}
+.bp-name { font-family: var(--font-nimbus); font-size: 1.5rem; color: var(--cream); line-height: 1.1; }
+.bp-email { font-size: 0.75rem; color: rgba(253,246,237,0.3); margin-top: 0.2rem; }
 .bp-qr-box {
-  background: var(--cream);
-  padding: 0.75rem;
-  border-radius: 10px;
-  width: 75%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--cream); padding: 0.75rem; border-radius: 10px;
+  margin-top: 1.25rem; display: block;
+  width: fit-content; margin-left: auto; margin-right: auto;
 }
-.bp-qr-img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.bp-qr-hint {
-  font-size: 0.78rem;
-  color: rgba(253,246,237,0.3);
-  text-align: center;
-  width: 100%;
-}
-.bp-qr-card .bp-card-logo img {
-  width: 72px;
-  filter: brightness(0) invert(1);
-  opacity: 0.9;
-}
+.bp-qr-img { width: 160px; height: 160px; display: block; }
+.bp-qr-hint { font-size: 0.72rem; color: rgba(253,246,237,0.25); margin-top: 0.75rem; text-align: center; }
 
 /* Stats row */
 .bp-stats-row {
@@ -2388,17 +2290,8 @@ button.detail-pill.detail-pill-active {
   .hero-content { padding: 2rem 1.25rem; max-width: 100%; }
   .hero-title { font-size: clamp(2.8rem, 12vw, 5rem); }
   .hero-subtitle { font-size: 1rem; }
-  .hero-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  .hero-secondary-link {
-    align-self: flex-start;
-    padding-left: 0;
-    margin-left: 0;
-  }
+  .hero-actions { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .hero-secondary-link { padding: 0.5rem 0; }
   .hero-paw { display: none; }
 
   /* ── Drink grid — one card per row on small screens ── */
@@ -2519,46 +2412,12 @@ button.detail-pill.detail-pill-active {
 
   /* ── Battlepass teaser (home) ── */
   .bp-text { order: 2; }
-  .bp-visual { order: 1; width: 100%; display: flex; justify-content: center; }
-  .bp-card-preview { max-width: 100%; }
-  .battlepass-teaser .grid-2 { grid-template-columns: 1fr; gap: 1.5rem; }
+  .bp-visual { order: 1; width: 100%; display:flex; justify-content:center; }
+  .bp-card-preview { max-width: 280px; }
 
   /* ── Menu cards (home) ── */
   .menu-grid { grid-template-columns: 1fr; gap: 0.75rem; }
   .menu-card { padding: 1.25rem; }
-  /* ── Grid stacking ── */
-  .grid-2 { grid-template-columns: 1fr; gap: 2rem; }
-
-  /* ── Battlepass profile card ── */
-  .bp-qr-card { padding: 1.5rem; }
-  .bp-qr-box { width: 85%; }
-  .bp-name { font-size: 1.25rem; }
-
-  /* ── Section titles ── */
-  .section-title { font-size: clamp(1.6rem, 6vw, 2.5rem); }
-
-  /* ── Strip section ── */
-  .strip-inner { font-size: 0.78rem; }
-
-  /* ── Pastries grid ── */
-  .pastries-grid { grid-template-columns: 1fr 1fr; }
-  .pastry-card-wide { grid-column: span 2; }
-
-  /* ── Detail page ── */
-  .detail-chips { grid-template-columns: 1fr 1fr; }
-
-  /* ── Admin two col ── */
-  .admin-two-col { grid-template-columns: 1fr; }
-
-  /* ── Orders filter row ── */
-  .orders-filter-row { gap: 0.35rem; }
-  .order-filter-btn { font-size: 0.72rem; padding: 0.25rem 0.65rem; }
-
-  /* ── Confirm layout ── */
-  .confirm-layout { flex-direction: column; }
-
-  /* ── Menu preview grid ── */
-  .menu-grid { grid-template-columns: 1fr; }
 
   /* ── Events ── */
   .events-row { flex-direction: column; gap: 0.75rem; }
@@ -2831,3 +2690,36 @@ button.detail-pill.detail-pill-active {
 .admin-delete-btn:hover {
   background: rgba(200,50,50,0.06) !important;
 }
+
+/* ====== BLOOP IMAGE — absolute positioned img tag ====== */
+.section-bloop-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+/* Remove the old CSS background approach */
+.section-bloop {
+  background-image: none !important;
+  background-color: var(--cream);
+}
+
+/* ====== BLOOP BACKGROUND — scrolls with page, full image visible ====== */
+.section-bloop {
+  background-image: url('../images/backgrounds/bloop.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-color: var(--cream);
+}
+/* Remove the img tag approach */
+.section-bloop-img { display: none; }
+
+/* pastry panel hidden */
+.pastry-panel.hidden { display: none; }
+.pastry-panel { animation: fadeIn 0.2s ease; }

@@ -49,9 +49,14 @@ router.get('/pastries', async (req, res) => {
     { name:'Caramel Cake',              description:'Salted caramel layers with caramel drip',              price:72, category:'cake',      isSpecial:false, image:null },
   ];
 
-  let pastries = raw.length > 0
-    ? raw.map(p => ({ ...p.toObject(), image: p.image ? (p.image.startsWith('/') ? p.image : '/images/pastries/' + p.image) : null }))
-    : STATIC;
+  // Use DB if items have proper categories, otherwise use static fallback
+  let pastries;
+  const hasCategories = raw.some(p => p.category && p.category !== 'other');
+  if (raw.length > 0 && hasCategories) {
+    pastries = raw.map(p => ({ ...p.toObject(), image: p.image ? (p.image.startsWith('/') ? p.image : '/images/pastries/' + p.image) : null }));
+  } else {
+    pastries = STATIC;
+  }
 
   const ORDER  = ['croissant','donut','cookie','sandwich','quiche','cake','other'];
   const LABELS = { croissant:'Croissants', donut:'Donuts', cookie:'Cookies', sandwich:'Sandwiches', quiche:'Quiches', cake:'Cakes', other:'Other' };

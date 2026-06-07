@@ -20,6 +20,18 @@
         <input type="text" name="name" required placeholder="e.g. Almond Croissant" />
       </div>
       <div class="form-group">
+        <label>Category</label>
+        <select name="category" class="scan-input">
+          <option value="croissant">🥐 Croissant</option>
+          <option value="donut">🍩 Donut</option>
+          <option value="cookie">🍪 Cookie</option>
+          <option value="sandwich">🥪 Sandwich</option>
+          <option value="quiche">🥧 Quiche</option>
+          <option value="cake">🎂 Cake</option>
+          <option value="other">🍴 Other</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Description</label>
         <input type="text" name="description" placeholder="Short description…" />
       </div>
@@ -27,8 +39,13 @@
         <label>Price (R)</label>
         <input type="number" name="price" required placeholder="e.g. 42" min="0" step="0.50" />
       </div>
-
-      <!-- Photo upload -->
+      <div class="form-group">
+        <label>Special item?</label>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">
+          <input type="checkbox" name="isSpecial" id="isSpecialPastry" style="width:auto;" />
+          <label for="isSpecialPastry" style="margin:0;font-size:0.85rem;">Mark as ✦ Special</label>
+        </div>
+      </div>
       <div class="form-group">
         <label>Photo</label>
         <div class="upload-zone" id="pastryUploadZone" onclick="document.getElementById('pastryImageFile').click()">
@@ -40,10 +57,7 @@
         </div>
         <input type="file" id="pastryImageFile" name="imageFile" accept="image/*" style="display:none;"
                onchange="previewUpload(this,'pastryUploadInner','pastryUploadZone')" />
-        <span class="form-hint">Or enter a filename if already uploaded:</span>
-        <input type="text" name="image" placeholder="e.g. croissant.jpg" style="margin-top:0.35rem;" />
       </div>
-
       <div class="form-group">
         <label>Display Order</label>
         <input type="number" name="order" placeholder="1" min="1" value="99" />
@@ -71,15 +85,19 @@
             <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
               <div>
                 <strong style="font-size:0.92rem;"><%= pastry.name %></strong>
+                <% if (pastry.isSpecial) { %><span class="admin-item-tag tag-special" style="margin-left:0.3rem;">✦</span><% } %>
                 <% if (!pastry.available) { %><span class="admin-item-tag tag-off" style="margin-left:0.3rem;">Off</span><% } %>
-                <p style="font-size:0.75rem;color:rgba(44,44,44,0.45);margin-top:0.1rem;"><%= pastry.description %> · R<%= pastry.price %></p>
+                <p style="font-size:0.75rem;color:rgba(44,44,44,0.45);margin-top:0.1rem;">
+                  <%= pastry.category || 'other' %> · <%= pastry.description %> · R<%= pastry.price %>
+                </p>
               </div>
               <div style="display:flex;gap:0.4rem;flex-shrink:0;">
                 <form action="/admin/pastries/toggle/<%= pastry._id %>" method="POST" style="display:inline;">
                   <button type="submit" class="admin-toggle-btn"><%= pastry.available ? 'Hide' : 'Show' %></button>
                 </form>
                 <button onclick="toggleEdit('pedit-<%= pastry._id %>')" class="admin-toggle-btn">Edit</button>
-                <form action="/admin/pastries/delete/<%= pastry._id %>" method="POST" onsubmit="return confirm('Delete <%= pastry.name %>?')" style="display:inline;">
+                <form action="/admin/pastries/delete/<%= pastry._id %>" method="POST"
+                      onsubmit="return confirm('Delete <%= pastry.name %>?')" style="display:inline;">
                   <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
                 </form>
               </div>
@@ -94,6 +112,18 @@
               <div class="form-group" style="grid-column:span 2;">
                 <label>Name</label>
                 <input type="text" name="name" value="<%= pastry.name %>" required class="scan-input" />
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Category</label>
+                <select name="category" class="scan-input">
+                  <option value="croissant" <%= pastry.category==='croissant'?'selected':'' %>>🥐 Croissant</option>
+                  <option value="donut"     <%= pastry.category==='donut'    ?'selected':'' %>>🍩 Donut</option>
+                  <option value="cookie"    <%= pastry.category==='cookie'   ?'selected':'' %>>🍪 Cookie</option>
+                  <option value="sandwich"  <%= pastry.category==='sandwich' ?'selected':'' %>>🥪 Sandwich</option>
+                  <option value="quiche"    <%= pastry.category==='quiche'   ?'selected':'' %>>🥧 Quiche</option>
+                  <option value="cake"      <%= pastry.category==='cake'     ?'selected':'' %>>🎂 Cake</option>
+                  <option value="other"     <%= (!pastry.category||pastry.category==='other')?'selected':'' %>>🍴 Other</option>
+                </select>
               </div>
               <div class="form-group" style="grid-column:span 2;">
                 <label>Description</label>
@@ -125,6 +155,11 @@
                   <option value="true"  <%= pastry.available?'selected':'' %>>Yes</option>
                   <option value="false" <%= !pastry.available?'selected':'' %>>No</option>
                 </select>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;">
+                <input type="checkbox" name="isSpecial" id="isp-<%= pastry._id %>"
+                       style="width:auto;" <%= pastry.isSpecial?'checked':'' %> />
+                <label for="isp-<%= pastry._id %>" style="margin:0;font-size:0.85rem;">✦ Special</label>
               </div>
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;width:100%;">Save Changes</button>

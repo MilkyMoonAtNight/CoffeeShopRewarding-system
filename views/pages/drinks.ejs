@@ -118,28 +118,20 @@
 <script>
 window.CL_DATA = {
   loggedIn: <%= !!(locals.session && session.userId) %>,
-  hot: <%- JSON.stringify((hot||[]).map(d => ({
-    name:        d.name        || '',
-    category:    'hot',
-    subcategory: d.subcategory || 'other',
-    isSpecial:   d.isSpecial   || false,
-    image:       d.image ? '/images/drinks/' + d.image : null,
-    flavours:    Array.isArray(d.flavours) ? d.flavours : [],
-    sizes: [
-      d.prices && d.prices.regular ? { label:'Regular', ml:'250ml', price: d.prices.regular } : null,
-      d.prices && d.prices.large   ? { label:'Large',   ml:'350ml', price: d.prices.large   } : null
+  hot: <%- JSON.stringify(hot.map(d => ({
+    name:d.name, category:'hot', subcategory:d.subcategory, isSpecial:d.isSpecial,
+    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    sizes:[
+      d.prices&&d.prices.regular?{label:'Regular',ml:'250ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Large',  ml:'350ml',price:d.prices.large  }:null
     ].filter(Boolean)
   }))) %>,
-  cold: <%- JSON.stringify((cold||[]).map(d => ({
-    name:        d.name        || '',
-    category:    'cold',
-    subcategory: d.subcategory || 'other',
-    isSpecial:   d.isSpecial   || false,
-    image:       d.image ? '/images/drinks/' + d.image : null,
-    flavours:    Array.isArray(d.flavours) ? d.flavours : [],
-    sizes: [
-      d.prices && d.prices.regular ? { label:'Regular', ml:'350ml', price: d.prices.regular } : null,
-      d.prices && d.prices.large   ? { label:'Large',   ml:'500ml', price: d.prices.large   } : null
+  cold: <%- JSON.stringify(cold.map(d => ({
+    name:d.name, category:'cold', subcategory:d.subcategory, isSpecial:d.isSpecial,
+    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    sizes:[
+      d.prices&&d.prices.regular?{label:'Regular',ml:'350ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Large',  ml:'500ml',price:d.prices.large  }:null
     ].filter(Boolean)
   }))) %>,
   pastries: []

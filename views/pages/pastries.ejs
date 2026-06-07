@@ -14,24 +14,28 @@
   <!-- Category tabs -->
   <div class="drinks-tabs-wrap">
     <div class="drinks-tabs" id="pastryTabs">
-      <% ORDER.forEach((cat, i) => { %>
-        <% if (grouped[cat] && grouped[cat].length > 0) { %>
-        <button class="drinks-tab <%= i === 0 ? 'active' : '' %>"
+      <%
+        let firstTab = true;
+        ORDER.forEach(cat => {
+          if (grouped[cat] && grouped[cat].length > 0) {
+      %>
+        <button class="drinks-tab <%= firstTab ? 'active' : '' %>"
                 data-cat="<%= cat %>">
           <%= ICONS[cat] %> <%= LABELS[cat] %>
         </button>
-        <% } %>
-      <% }) %>
+      <% firstTab = false; }); %>
     </div>
   </div>
 
-  <!-- Items section — bloop background same as drinks -->
+  <!-- Items section -->
   <section class="section pastries-section section-bloop">
     <div class="container">
 
-      <% ORDER.forEach((cat, i) => { %>
+      <% let firstPanel = true; %>
+      <% ORDER.forEach((cat) => { %>
         <% if (grouped[cat] && grouped[cat].length > 0) { %>
-        <div class="pastry-panel <%= i === 0 ? '' : 'hidden' %>" id="pcat-<%= cat %>">
+        <div class="pastry-panel <%= firstPanel ? '' : 'hidden' %>" id="pcat-<%= cat %>">
+          <% firstPanel = false; %>
           <div class="drink-grid">
             <% grouped[cat].forEach((pastry, idx) => { %>
             <%
@@ -78,12 +82,16 @@
 <script>
 // Flatten all pastries in ORDER for the modal's pastry index
 const ALL_PASTRIES = <%- JSON.stringify(
-  ORDER.flatMap(cat => (grouped[cat]||[]).map(p => ({
-    name:        p.name,
-    description: p.description || '',
-    price:       p.price,
-    image:       p.image || null
-  })))
+  ORDER.reduce(function(acc, cat) {
+    return acc.concat((grouped[cat]||[]).map(function(p) {
+      return {
+        name:        p.name,
+        description: p.description || '',
+        price:       p.price,
+        image:       p.image || null
+      };
+    }));
+  }, [])
 ) %>;
 
 window.CL_DATA = {
