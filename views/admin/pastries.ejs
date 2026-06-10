@@ -58,10 +58,7 @@
         <input type="file" id="pastryImageFile" name="imageFile" accept="image/*" style="display:none;"
                onchange="previewUpload(this,'pastryUploadInner','pastryUploadZone')" />
       </div>
-      <div class="form-group">
-        <label>Display Order</label>
-        <input type="number" name="order" placeholder="1" min="1" value="99" />
-      </div>
+      <input type="hidden" name="order" value="99" />
       <button type="submit" class="btn btn-primary btn-full">Add Pastry</button>
     </form>
   </div>
@@ -134,8 +131,7 @@
                 <input type="number" name="price" value="<%= pastry.price %>" required class="scan-input" min="0" step="0.50" />
               </div>
               <div class="form-group">
-                <label>Order</label>
-                <input type="number" name="order" value="<%= pastry.order %>" class="scan-input" />
+                <input type="hidden" name="order" value="<%= pastry.order %>" />
               </div>
               <div class="form-group" style="grid-column:span 2;">
                 <label>Replace photo</label>

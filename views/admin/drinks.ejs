@@ -67,21 +67,17 @@
           <div class="upload-zone-inner" id="drinkUploadInner">
             <span class="upload-icon">📷</span>
             <span class="upload-label">Tap to upload photo</span>
-            <span class="upload-hint">JPG, PNG or WebP · max 5MB</span>
+            <span class="upload-hint">JPG, PNG, WebP or SVG · max 10MB</span>
           </div>
         </div>
-        <input type="file" id="drinkImageFile" name="imageFile" accept="image/*" style="display:none;" onchange="previewUpload(this,'drinkUploadInner','drinkUploadZone')" />
+        <input type="file" id="drinkImageFile" name="imageFile" accept="image/*,.svg" style="display:none;" onchange="previewUpload(this,'drinkUploadInner','drinkUploadZone')" />
         <span class="form-hint">Or enter a filename if already uploaded:</span>
         <input type="text" name="image" placeholder="e.g. flat-white.jpg" style="margin-top:0.35rem;" />
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-        <div class="form-group">
-          <label>Display Order</label>
-          <input type="number" name="order" placeholder="1" min="1" value="99" />
-        </div>
-        <div class="form-group" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:0.5rem;">
-          <input type="checkbox" name="isSpecial" id="isSpecial" style="width:auto;" />
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem;">
+        <input type="hidden" name="order" value="99" />
+        <input type="checkbox" name="isSpecial" id="isSpecial" style="width:auto;" />
           <label for="isSpecial" style="margin:0;font-size:0.85rem;">Mark as Special</label>
         </div>
       </div>
@@ -165,14 +161,11 @@
                   <span class="upload-label" style="font-size:0.78rem;">Tap to choose new photo</span>
                 </div>
               </div>
-              <input type="file" id="ef-<%= drink._id %>" name="imageFile" accept="image/*" style="display:none;"
+              <input type="file" id="ef-<%= drink._id %>" name="imageFile" accept="image/*,.svg" style="display:none;"
                      onchange="previewUpload(this,'ei-<%= drink._id %>','ez-<%= drink._id %>')" />
             </div>
             <div class="form-group">
-              <label>Order</label>
-              <input type="number" name="order" value="<%= drink.order %>" class="scan-input" />
-            </div>
-            <div class="form-group">
+              <input type="hidden" name="order" value="<%= drink.order %>" />
               <label>Available</label>
               <select name="available" class="scan-input">
                 <option value="true" <%= drink.available?'selected':'' %>>Yes</option>

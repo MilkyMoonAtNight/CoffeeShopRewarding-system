@@ -22,10 +22,16 @@ function makeUploader(subfolder) {
       cb(null, `${base}-${Date.now()}${ext}`);
     }
   });
-  return multer({ storage, limits: { fileSize: 5 * 1024 * 1024 },
+  return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-      if (/image\/(jpeg|png|webp|gif)/.test(file.mimetype)) cb(null, true);
-      else cb(new Error('Only image files allowed'), false);
+      // Accept images AND SVG files
+      const allowed = /image\/(jpeg|png|webp|gif|svg\+xml)|application\/octet-stream/;
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (allowed.test(file.mimetype) || ['.svg','.jpg','.jpeg','.png','.webp','.gif'].includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image and SVG files allowed'), false);
+      }
     }
   });
 }

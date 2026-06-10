@@ -121,8 +121,10 @@ router.post('/place', requireUser, async (req, res) => {
   }
 });
 
-// ── Update order status ───────────────────────────────────────────
+// ── Update order status (admin only) ─────────────────────────────
 router.post('/status/:userId/:ref', async (req, res) => {
+  // Must be a logged-in admin to change order status
+  if (!req.session.adminId) return res.json({ ok: false, error: 'Unauthorised' });
   try {
     const { status } = req.body;
     await User.updateOne(

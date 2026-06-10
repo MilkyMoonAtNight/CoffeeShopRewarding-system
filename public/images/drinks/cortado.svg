@@ -1,0 +1,10 @@
+<svg width="70" height="90" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
+  <rect width="70" height="90" fill="#1e1812" rx="8"/>
+  <defs><clipPath id="c_cortado"><path d="M12,16 L58,16 L52,74 L18,74 Z"/></clipPath></defs>
+  <polygon points="15.0,45.0 55.0,45.0 52.0,74.0 18.0,74.0" fill="#3D1A0E" clip-path="url(#c_cortado)"/><polygon points="12.2,17.7 57.8,17.7 55.0,45.0 15.0,45.0" fill="#C4845C" clip-path="url(#c_cortado)"/><polygon points="12.0,16.0 58.0,16.0 57.8,17.7 12.2,17.7" fill="#EDD8C0" clip-path="url(#c_cortado)"/>
+  <path d="M12,16 L58,16 L52,74 L18,74 Z" fill="none" stroke="#1a1210" stroke-width="1"/>
+  <rect x="18" y="69" width="34" height="5" fill="#1a1210" opacity="0.4" clip-path="url(#c_cortado)"/>
+  <rect x="11" y="8" width="48" height="8" rx="2" fill="#2e2018" stroke="#1a1210" stroke-width="0.8"/>
+<line x1="14" y1="10" x2="56" y2="10" stroke="#4a3020" stroke-width="0.7" stroke-linecap="round"/>
+<rect x="26.5" y="4" width="17" height="5" rx="1.5" fill="#2a1c10" stroke="#1a1210" stroke-width="0.8"/>
+</svg>

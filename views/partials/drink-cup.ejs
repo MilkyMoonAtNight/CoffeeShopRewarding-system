@@ -1,0 +1,191 @@
+<%
+function getCupConfig(name, subcategory) {
+  var n = (name||'').toLowerCase();
+
+  // ── HOT DRINKS ────────────────────────────────────────────────
+  if (n.includes('americano'))
+    return { size:'large', layers:[{c:'#1A3A6B',pct:78},{c:'#3D1A0E',pct:22}] };
+
+  if (n.includes('red cappuccino') || n.includes('red cap'))
+    return { size:'large', layers:[{c:'#EDD8C0',pct:12},{c:'#C4845C',pct:53},{c:'#7A2818',pct:35}] };
+
+  if (n.includes('cappuccino'))
+    return { size:'large', layers:[{c:'#EEE0D0',pct:34},{c:'#C4845C',pct:33},{c:'#3D1A0E',pct:33}] };
+
+  if (n.includes('flat white'))
+    return { size:'large', layers:[{c:'#EDD8C0',pct:8},{c:'#C4845C',pct:62},{c:'#3D1A0E',pct:30}] };
+
+  if (n.includes('cortado'))
+    return { size:'small', layers:[{c:'#EDD8C0',pct:3},{c:'#C4845C',pct:47},{c:'#3D1A0E',pct:50}] };
+
+  if (n.includes('macchiato'))
+    return { size:'small', layers:[{c:'#EDD8C0',pct:20},{c:'#3D1A0E',pct:80}] };
+
+  if (n.includes('chai'))
+    return { size:'large', spice:true, layers:[{c:'#DDA870',pct:15},{c:'#C8824A',pct:85}] };
+
+  if (n.includes('amor'))
+    return { size:'large', spice:true, cinnamon:true,
+             layers:[{c:'#E8C89A',pct:10},{c:'#C8824A',pct:45},{c:'#7A2818',pct:45}] };
+
+  if (n.includes('white choc') || n.includes('white chocolate'))
+    return { size:'large', layers:[{c:'#F5ECD8',pct:15},{c:'#E0C89A',pct:55},{c:'#8B5A2A',pct:30}] };
+
+  if (n.includes('hot choc') || n.includes('hot chocolate') || subcategory==='chocolate')
+    return { size:'large', layers:[{c:'#C87840',pct:15},{c:'#6B2C0A',pct:85}] };
+
+  if (n.includes('flavoured latte') || n.includes('flavored latte'))
+    return { size:'large', layers:[{c:'#F0D8A8',pct:10},{c:'#D4924A',pct:78},{c:'#8B5E2A',pct:12}] };
+
+  if (n.includes('matcha') && !n.includes('iced') && !n.includes('frozen'))
+    return { size:'large', layers:[{c:'#8ABD72',pct:12},{c:'#4A7A3A',pct:88}] };
+
+  if (n.includes('latte') && !n.includes('iced'))
+    return { size:'large', layers:[{c:'#EDD8C0',pct:8},{c:'#C4845C',pct:77},{c:'#3D1A0E',pct:15}] };
+
+  // ── COLD DRINKS ───────────────────────────────────────────────
+  // Slushi — bright layered slushie
+  if (n.includes('slush') || n.includes('slushi'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#FF6B8A',pct:30},{c:'#FFB347',pct:35},{c:'#4FC3F7',pct:35}] };
+
+  // Iced Matcha — flavour stripe, iced milk, green matcha on top
+  if (n.includes('iced matcha'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#6DB56D',pct:35},{c:'#DCEDC8',pct:8},{c:'#C8E6C9',pct:50},{c:'#F9D38C',pct:7}] };
+
+  // Frozen Yogurt Matcha
+  if ((n.includes('frozen') && n.includes('matcha')) || n.includes('froyo matcha'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#4CAF50',pct:30},{c:'#E8F5E9',pct:10},{c:'#F5E8D0',pct:55},{c:'#E8C070',pct:5}] };
+
+  // Frozen Yogurt
+  if (n.includes('frozen yogurt') || n.includes('froyo'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#F5E8D0',pct:15},{c:'#EAD08A',pct:55},{c:'#F0C850',pct:30}] };
+
+  // Freezo — main blue with ice
+  if (n.includes('freezo'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#90CAF9',pct:18},{c:'#42A5F5',pct:52},{c:'#1565C0',pct:30}] };
+
+  // Iced Latte — flavour, iced milk, espresso
+  if (n.includes('iced latte') || n.includes('iced coffee'))
+    return { size:'large', cold:true, ice:true,
+             layers:[{c:'#3D1A0E',pct:25},{c:'#D4A882',pct:10},{c:'#EDD8C0',pct:58},{c:'#C8724A',pct:7}] };
+
+  if (subcategory==='tea')
+    return { size:'large', layers:[{c:'#DDA870',pct:15},{c:'#C8824A',pct:85}] };
+
+  if (subcategory==='espresso')
+    return { size:'small', layers:[{c:'#EDD8C0',pct:8},{c:'#3D1A0E',pct:92}] };
+
+  // Default
+  return { size:'large', layers:[{c:'#EDD8C0',pct:10},{c:'#C4845C',pct:75},{c:'#3D1A0E',pct:15}] };
+}
+
+var cfg     = getCupConfig(drink.name, drink.subcategory);
+var isSmall = cfg.size === 'small';
+var svgW    = isSmall ? 70  : 90;
+var svgH    = isSmall ? 90  : 110;
+var topW    = isSmall ? 46  : 62;
+var botW    = isSmall ? 34  : 46;
+var innerH  = isSmall ? 58  : 76;
+var lidH    = isSmall ? 8   : 9;
+var spoutH  = isSmall ? 4   : 5;
+var cx      = svgW / 2;
+var cupTop  = lidH + spoutH + 4;
+var cupBot  = cupTop + innerH;
+var tl = cx - topW/2;
+var tr = cx + topW/2;
+var bl = cx - botW/2;
+var br = cx + botW/2;
+var uid = 'cup_' + Math.random().toString(36).slice(2,8);
+
+// ── Build layer polygons ──────────────────────────────────────
+var layersSVG = '';
+var reversedLayers = cfg.layers.slice().reverse();
+var yBot = cupBot;
+var layerBoundaries = []; // track top y of each layer for ice crack overlay
+
+for (var li = 0; li < reversedLayers.length; li++) {
+  var l = reversedLayers[li];
+  var lh   = (l.pct / 100) * innerH;
+  var yTop  = yBot - lh;
+  var t1 = (yTop - cupTop) / innerH;
+  var t2 = (yBot - cupTop) / innerH;
+  var x1l = (tl + (bl-tl)*t1).toFixed(1);
+  var x1r = (tr - (tr-br)*t1).toFixed(1);
+  var x2l = (tl + (bl-tl)*t2).toFixed(1);
+  var x2r = (tr - (tr-br)*t2).toFixed(1);
+  layersSVG += '<polygon points="'+x1l+','+yTop.toFixed(1)+' '+x1r+','+yTop.toFixed(1)+' '+x2r+','+yBot.toFixed(1)+' '+x2l+','+yBot.toFixed(1)+'" fill="'+l.c+'" clip-path="url(#'+uid+')"/>';
+  layerBoundaries.push({ yTop: yTop, yBot: yBot });
+  yBot = yTop;
+}
+
+// ── Ice crack texture ─────────────────────────────────────────
+// Drawn over light-coloured layers on cold drinks
+var iceSVG = '';
+if (cfg.ice) {
+  // Crack lines — jagged polylines scattered through the cup
+  var cracks = [
+    // format: array of [dx, dy] relative to cx, cupTop
+    [[-8,18],[-4,23],[-9,28],[-5,33]],
+    [[6,22],[10,29],[7,35],[11,40]],
+    [[-12,40],[-7,46],[-11,52],[-8,57]],
+    [[4,48],[8,53],[3,60],[7,65]],
+    [[-5,30],[-1,36],[3,42],[-2,48]],
+    [[10,15],[14,22],[9,28],[13,33]],
+    [[-14,55],[-9,62],[-13,68],[-10,73]],
+    [[2,62],[6,68],[1,74],[5,78]],
+  ];
+  for (var ci = 0; ci < cracks.length; ci++) {
+    var pts = cracks[ci];
+    var ptStr = pts.map(function(p) { return (cx+p[0]).toFixed(1)+','+(cupTop+p[1]).toFixed(1); }).join(' ');
+    iceSVG += '<polyline points="'+ptStr+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#'+uid+')"/>';
+  }
+  // Small ice crystal dots
+  var crystals = [[-10,20],[5,32],[-6,45],[9,55],[-13,63],[3,70],[11,25],[-4,58],[7,42],[-9,36],[12,68],[-7,15]];
+  for (var ki = 0; ki < crystals.length; ki++) {
+    var kx = cx + crystals[ki][0];
+    var ky = cupTop + crystals[ki][1];
+    iceSVG += '<circle cx="'+kx.toFixed(1)+'" cy="'+ky.toFixed(1)+'" r="1.2" fill="rgba(255,255,255,0.4)" clip-path="url(#'+uid+')"/>';
+  }
+}
+
+// ── Spice / cinnamon dots ─────────────────────────────────────
+var spiceSVG = '';
+if (cfg.spice) {
+  var dots = [[-10,20],[8,35],[-5,55],[12,48],[-14,42],[6,65],[-8,70],[14,30],[-16,62],[10,18]];
+  for (var di = 0; di < dots.length; di++) {
+    spiceSVG += '<circle cx="'+(cx+dots[di][0])+'" cy="'+(cupTop+dots[di][1])+'" r="1.4" fill="#2A0E04" opacity="0.45" clip-path="url(#'+uid+')"/>';
+  }
+}
+if (cfg.cinnamon) {
+  var specks = [[-9,6],[0,4],[9,7],[-5,10],[6,9],[-12,9],[12,5],[-3,13],[8,13],[-7,3],[3,3],[11,12],[-11,13],[1,10]];
+  for (var si = 0; si < specks.length; si++) {
+    spiceSVG += '<circle cx="'+(cx+specks[si][0])+'" cy="'+(cupTop+specks[si][1])+'" r="0.9" fill="#6B2010" opacity="0.55" clip-path="url(#'+uid+')"/>';
+  }
+}
+
+// ── Lid ───────────────────────────────────────────────────────
+var lidY   = cupTop - lidH;
+var spoutW = Math.round(topW * 0.38);
+var spoutX = cx - spoutW/2;
+var lidSVG = '<rect x="'+(tl-1)+'" y="'+lidY+'" width="'+(topW+2)+'" height="'+lidH+'" rx="2" fill="#2e2018" stroke="#1a1210" stroke-width="0.8"/>'
+           + '<line x1="'+(tl+2)+'" y1="'+(lidY+2)+'" x2="'+(tr-2)+'" y2="'+(lidY+2)+'" stroke="#4a3020" stroke-width="0.7" stroke-linecap="round"/>'
+           + '<rect x="'+spoutX+'" y="'+(lidY-spoutH)+'" width="'+spoutW+'" height="'+(spoutH+1)+'" rx="1.5" fill="#2a1c10" stroke="#1a1210" stroke-width="0.8"/>';
+%>
+<svg width="<%= svgW %>" height="<%= svgH %>" viewBox="0 0 <%= svgW %> <%= svgH %>" xmlns="http://www.w3.org/2000/svg" class="drink-cup-svg">
+  <defs>
+    <clipPath id="<%= uid %>">
+      <path d="M<%= tl %>,<%= cupTop %> L<%= tr %>,<%= cupTop %> L<%= br %>,<%= cupBot %> L<%= bl %>,<%= cupBot %> Z"/>
+    </clipPath>
+  </defs>
+  <%- layersSVG %>
+  <%- iceSVG %>
+  <%- spiceSVG %>
+  <path d="M<%= tl %>,<%= cupTop %> L<%= tr %>,<%= cupTop %> L<%= br %>,<%= cupBot %> L<%= bl %>,<%= cupBot %> Z" fill="none" stroke="#1a1210" stroke-width="1"/>
+  <rect x="<%= bl %>" y="<%= cupBot-5 %>" width="<%= botW %>" height="5" fill="#1a1210" opacity="0.4" clip-path="url(#<%= uid %>)"/>
+  <%- lidSVG %>
+</svg>

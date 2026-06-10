@@ -17,8 +17,8 @@
           <% if (drink.image) { %>
             <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" class="detail-img" />
           <% } else { %>
-            <div class="detail-img-placeholder">
-              <span><%= drink.subcategory === 'chocolate' ? '🍫' : drink.subcategory === 'tea' ? '🍵' : drink.category === 'cold' ? '🧊' : '☕' %></span>
+            <div class="drink-cup-wrap" style="width:100%;height:100%;background:linear-gradient(135deg,#2a2420,#1e1812);">
+              <%- include('../partials/drink-cup', { drink: drink }) %>
             </div>
           <% } %>
           <% if (drink.isSpecial) { %><div class="detail-special-badge">✦ Special</div><% } %>

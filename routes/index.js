@@ -80,17 +80,59 @@ router.get('/drinks', async (req, res) => {
   // Static fallback when DB is empty
   if (!allDrinks.length) {
     allDrinks = [
-      { _id: 'flat-white',    name: 'Flat White',      category: 'hot',  subcategory: 'espresso',  prices: { regular: 35, large: 45 }, isSpecial: false, image: null, flavours: [] },
-      { _id: 'cappuccino',    name: 'Cappuccino',       category: 'hot',  subcategory: 'espresso',  prices: { regular: 35, large: 45 }, isSpecial: false, image: null, flavours: [] },
-      { _id: 'vanilla-latte', name: 'Vanilla Latte',    category: 'hot',  subcategory: 'specialty', prices: { regular: 40, large: 50 }, isSpecial: false, image: null, flavours: [] },
-      { _id: 'iced-latte',    name: 'Iced Latte',       category: 'cold', subcategory: 'iced',      prices: { regular: 45, large: 55 }, isSpecial: false, image: null, flavours: [] },
-      { _id: 'freezo',        name: 'Freezo',           category: 'cold', subcategory: 'freezo',    prices: { regular: 50, large: 60 }, isSpecial: false, image: null, flavours: [] },
-      { _id: 'frozen-yogurt', name: 'Frozen Yogurt',    category: 'cold', subcategory: 'frozen',    prices: { regular: 55, large: 65 }, isSpecial: false, image: null, flavours: [] },
+      // ── Hot drinks ──
+      { _id: 'americano',       name: 'Americano',        category: 'hot',  subcategory: 'espresso',  prices: { regular: 33, large: 38 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'cappuccino',      name: 'Cappuccino',       category: 'hot',  subcategory: 'espresso',  prices: { regular: 36, large: 40 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'cafe-latte',      name: 'Café Latte',       category: 'hot',  subcategory: 'specialty', prices: { regular: 35, large: 40 }, isSpecial: false, image: null, flavours: ['Plain','Vanilla','Hazelnut','Chocolate'] },
+      { _id: 'cortado',         name: 'Cortado',          category: 'hot',  subcategory: 'espresso',  prices: { regular: 41, large: null }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'flat-white',      name: 'Flat White',       category: 'hot',  subcategory: 'espresso',  prices: { regular: 39, large: 44 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'macchiato',       name: 'Macchiato',        category: 'hot',  subcategory: 'espresso',  prices: { regular: 36, large: null }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'flavoured-latte', name: 'Flavoured Latte',  category: 'hot',  subcategory: 'specialty', prices: { regular: 39, large: 44 }, isSpecial: false, image: null, flavours: ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'] },
+      { _id: 'hot-chocolate',   name: 'Hot Chocolate',    category: 'hot',  subcategory: 'chocolate', prices: { regular: 42, large: 49 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'white-chocolate', name: 'White Chocolate',  category: 'hot',  subcategory: 'chocolate', prices: { regular: 42, large: 49 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'chai-latte',      name: 'Chai Latte',       category: 'hot',  subcategory: 'tea',       prices: { regular: 36, large: 45 }, isSpecial: false, image: null, flavours: ['Plain','Vanilla','Hazelnut','Chocolate'] },
+      { _id: 'matcha',          name: 'Matcha',           category: 'hot',  subcategory: 'tea',       prices: { regular: null, large: 55 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'red-cappuccino',  name: 'Red Cappuccino',   category: 'hot',  subcategory: 'specialty', prices: { regular: 40, large: 44 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'amor',            name: 'Amor',             category: 'hot',  subcategory: 'specialty', prices: { regular: 42, large: 48 }, isSpecial: true,  image: null, flavours: ['Cinnamon','Cardamom','Rooibos'] },
+      // ── Cold drinks ──
+      { _id: 'iced-latte',      name: 'Iced Latte',       category: 'cold', subcategory: 'iced',      prices: { regular: 45, large: 55 }, isSpecial: false, image: null, flavours: ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'] },
+      { _id: 'freezo',          name: 'Freezo',           category: 'cold', subcategory: 'freezo',    prices: { regular: 50, large: 60 }, isSpecial: false, image: null, flavours: ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'] },
+      { _id: 'frozen-yogurt',   name: 'Frozen Yogurt',    category: 'cold', subcategory: 'frozen',    prices: { regular: 55, large: 65 }, isSpecial: false, image: null, flavours: ['Plain','Vanilla','Hazelnut','Strawberry','Cherry','Litchi','Creamsoda'] },
+      { _id: 'iced-matcha',      name: 'Iced Matcha',       category: 'cold', subcategory: 'iced',      prices: { regular: 58, large: 68 }, isSpecial: false, image: null, flavours: [] },
+      { _id: 'froyo-matcha',     name: 'Frozen Yogurt Matcha', category: 'cold', subcategory: 'frozen', prices: { regular: 60, large: 70 }, isSpecial: true,  image: null, flavours: [] },
+      { _id: 'slushi',           name: 'Slushi',            category: 'cold', subcategory: 'frozen',    prices: { regular: 45, large: 55 }, isSpecial: false, image: null, flavours: ['Strawberry','Mango','Blue Raspberry','Watermelon','Grape'] },
+      { _id: 'fizz-fix',         name: 'Fizz Fix',          category: 'cold', subcategory: 'frozen',    prices: { regular: 45, large: 55 }, isSpecial: false, image: null, flavours: ['Watermelon','Cloudy Lemonade','Elderflower'] },
+      { _id: 'latte-of-month',   name: 'Latte of the Month', category: 'hot', subcategory: 'specialty', prices: { regular: 42, large: 50 }, isSpecial: true,  image: null, flavours: [] },
     ];
   }
 
-  const hot  = allDrinks.filter(d => d.category === 'hot');
-  const cold = allDrinks.filter(d => d.category === 'cold');
+  // For each drink, check if a matching SVG/image icon exists in /images/drinks/
+  // Priority: DB image > named file in /images/drinks/ > generated SVG cup
+  const fs   = require('fs');
+  const path = require('path');
+  const drinksImgDir = path.join(__dirname, '..', 'public', 'images', 'drinks');
+
+  function svgSlug(name) {
+    return (name||'').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  const resolvedDrinks = allDrinks.map(function(d) {
+    if (d.image) return d; // DB image set — use it
+    var slug = svgSlug(d.name || '');
+    var candidates = [slug+'.svg', slug+'.png', slug+'.jpg', slug+'.webp'];
+    for (var i = 0; i < candidates.length; i++) {
+      if (fs.existsSync(path.join(drinksImgDir, candidates[i]))) {
+        var base = d.toObject ? d.toObject() : Object.assign({}, d);
+        base.image = candidates[i];
+        return base;
+      }
+    }
+    return d; // no file — fall through to generated SVG
+  });
+
+  const hot  = resolvedDrinks.filter(d => d.category === 'hot');
+  const cold = resolvedDrinks.filter(d => d.category === 'cold');
   res.render('pages/drinks', { title: 'Drinks — Con Leche', hot, cold });
 });
 

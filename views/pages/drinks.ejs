@@ -31,13 +31,12 @@
           <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
                data-drink-idx="<%= idx %>" data-drink-cat="hot">
             <div class="drink-card-inner-wrap">
-              <div class="drink-img-wrap">
+              <div class="drink-img-wrap drink-img-wrap-cup">
                 <% if (drink.image) { %>
                   <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
-                  <div class="drink-img-placeholder">
-                    <span><%= drink.subcategory==='chocolate'?'🍫':drink.subcategory==='tea'?'🍵':'☕' %></span>
-                    <span><%= drink.name %></span>
+                  <div class="drink-cup-wrap">
+                    <%- include('../partials/drink-cup', { drink: drink }) %>
                   </div>
                 <% } %>
               </div>
@@ -70,21 +69,25 @@
           <% cold.forEach((drink, idx) => { %>
           <%
             const dn = (drink.name||'').toLowerCase();
-            const LATTE_F = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
+            const LATTE_F  = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
             const FREEZO_F = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
-            const FY_F = [...LATTE_F,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
-            const dispFlavours = dn.includes('frozen yogurt')||dn.includes('froyo') ? FY_F : dn.includes('freezo') ? FREEZO_F : dn.includes('latte') ? LATTE_F : (drink.flavours||[]);
+            const FY_F     = ['Plain','Vanilla','Hazelnut','Strawberry','Cherry','Litchi','Creamsoda'];
+            const SLUSHI_F = ['Strawberry','Mango','Blue Raspberry','Watermelon','Grape'];
+            const dispFlavours = dn.includes('frozen yogurt')||dn.includes('froyo') ? FY_F
+                               : dn.includes('freezo')   ? FREEZO_F
+                               : dn.includes('slush')    ? SLUSHI_F
+                               : dn.includes('latte')    ? LATTE_F
+                               : (drink.flavours||[]);
           %>
           <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
                data-drink-idx="<%= idx %>" data-drink-cat="cold">
             <div class="drink-card-inner-wrap">
-              <div class="drink-img-wrap">
+              <div class="drink-img-wrap drink-img-wrap-cup">
                 <% if (drink.image) { %>
                   <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
-                  <div class="drink-img-placeholder">
-                    <span><%= dn.includes('frozen')?'🍦':dn.includes('tea')?'🍵':'🧊' %></span>
-                    <span><%= drink.name %></span>
+                  <div class="drink-cup-wrap">
+                    <%- include('../partials/drink-cup', { drink: drink }) %>
                   </div>
                 <% } %>
               </div>
