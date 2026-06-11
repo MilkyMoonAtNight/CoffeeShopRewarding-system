@@ -1,5 +1,5 @@
 <svg width="70" height="90" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
-  <rect width="70" height="90" fill="#1e1812" rx="8"/>
+  
   <defs><clipPath id="c_cortado"><path d="M12,16 L58,16 L52,74 L18,74 Z"/></clipPath></defs>
   <polygon points="15.0,45.0 55.0,45.0 52.0,74.0 18.0,74.0" fill="#3D1A0E" clip-path="url(#c_cortado)"/><polygon points="12.2,17.7 57.8,17.7 55.0,45.0 15.0,45.0" fill="#C4845C" clip-path="url(#c_cortado)"/><polygon points="12.0,16.0 58.0,16.0 57.8,17.7 12.2,17.7" fill="#EDD8C0" clip-path="url(#c_cortado)"/>
   <path d="M12,16 L58,16 L52,74 L18,74 Z" fill="none" stroke="#1a1210" stroke-width="1"/>

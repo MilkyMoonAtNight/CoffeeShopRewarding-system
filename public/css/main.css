@@ -120,11 +120,21 @@ ul { list-style: none; }
   padding-top: 70px;
 }
 .hero-bg {
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
+  background: url('../images/backgrounds/home.jpeg') center/cover no-repeat;
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+
   background:
-    radial-gradient(ellipse at 70% 60%, rgba(59, 31, 14, 0.6) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 80%, rgba(201, 151, 74, 0.08) 0%, transparent 50%),
-    var(--black);
+    radial-gradient(circle at top left, rgba(84,22,34,.7), transparent 40%),
+    radial-gradient(circle at top right, rgba(84,22,34,.7), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(84,22,34,.7), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(84,22,34,.7), transparent 40%);
 }
 .hero-grain {
   position: absolute; inset: 0;
@@ -251,8 +261,28 @@ ul { list-style: none; }
 .section-body { font-size: 1.05rem; line-height: 1.75; color: rgba(44,44,44,0.8); max-width: 520px; }
 
 /* ====== BATTLEPASS TEASER ====== */
-.battlepass-teaser { background: var(--cream); }
-.bp-text { display: flex; flex-direction: column; gap: 1.5rem; }
+.battlepass-teaser { 
+  background: url('../images/backgrounds/bloop.png');
+  background-size: cover;
+}
+.battlepass-teaser .grid-2 {
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: stretch;
+}
+.bp-text {
+  border: 1px solid rgba(88, 18, 23, 0.2);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+.bp-text .section-eyebrow { color: rgba(201, 151, 74, 0.8); }
+.bp-text .section-title   { color: var(--cream); }
+.bp-text .section-title em { color: rgba(201, 151, 74, 0.9); }
+.bp-text .section-body    { color: rgba(253, 246, 237, 0.75); }
 .milestone-pills { display: flex; flex-direction: column; gap: 0.5rem; }
 .pill {
   display: inline-block; padding: 0.5rem 1rem;
@@ -263,9 +293,9 @@ ul { list-style: none; }
 .pill-drink { background: rgba(88, 18, 23, 0.08); color: var(--maroon); border: 1px solid rgba(88, 18, 23, 0.2); }
 .pill-merch { background: var(--black); color: var(--cream); border: 1px solid rgba(88, 18, 23, 0.4); }
 
-.bp-visual { display: flex; justify-content: center; }
+.bp-visual { display: flex; align-items: stretch; justify-content: center; }
 .bp-card-preview {
-  width: 320px; height: 460px;
+  width: 100%; height: auto; min-height: unset;
   background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(88, 18, 23, 0.2);
@@ -286,29 +316,69 @@ ul { list-style: none; }
 .bp-card-logo img { width: 70px; filter: brightness(0) invert(1); opacity: 0.9; }
 .bp-card-name { color: rgba(253,246,237,0.5); font-size: 0.85rem; font-family: var(--font-body); }
 .bp-card-qr-placeholder {
-  width: 160px; height: 160px;
-  background: rgba(253,246,237,0.07);
+  width: 60%;
+  aspect-ratio: 1;
+  background: rgba(253,246,237,0.06);
   border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(253,246,237,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  box-sizing: border-box;
 }
+
 .qr-grid {
-  width: 120px; height: 120px;
-  background:
-    repeating-linear-gradient(0deg, rgba(88, 18, 23, 0.3) 0px, rgba(88, 18, 23, 0.3) 8px, transparent 8px, transparent 16px),
-    repeating-linear-gradient(90deg, rgba(88, 18, 23, 0.3) 0px, rgba(88, 18, 23, 0.3) 8px, transparent 8px, transparent 16px);
+  width: 100%;
+  aspect-ratio: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='5' y='5' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='15' y='15' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='60' y='5' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='70' y='15' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='5' y='60' width='35' height='35' rx='4' fill='none' stroke='%23c9974a' stroke-width='4'/%3E%3Crect x='15' y='70' width='15' height='15' fill='%23c9974a' opacity='0.6'/%3E%3Crect x='50' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='62' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='86' y='50' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='62' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='62' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='62' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='86' y='74' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='50' y='86' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3Crect x='74' y='86' width='8' height='8' fill='%23c9974a' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   border-radius: 4px;
+  opacity: 0.75;
 }
-.bp-card-tier {
-  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+
+.bp-card-inner {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
 }
+
+.bp-card-logo img {
+  width: 80px;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+.bp-card-name {
+  color: var(--cream);
+  font-size: 1.3rem;
+  font-family: var(--font-nimbus);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .tier-badge {
-  background: rgba(88, 18, 23, 0.15);
-  border: 1px solid rgba(88, 18, 23, 0.3);
-  color: var(--maroon-light);
-  padding: 0.4rem 1rem;
-  border-radius: 50px; font-size: 0.8rem;
+  background: rgba(201,151,74,0.15);
+  border: 1px solid rgba(201,151,74,0.35);
+  color: rgba(201,151,74,0.95);
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
-.bp-card-drinks { color: rgba(253,246,237,0.35); font-size: 0.75rem; }
+
+.bp-card-drinks {
+  color: rgba(253,246,237,0.55);
+  font-size: 0.82rem;
+}
 
 /* ====== MENU PREVIEW ====== */
 .menu-preview { padding: 6rem 0; }
@@ -1398,14 +1468,16 @@ ul { list-style: none; }
 /* Hero secondary link (replaces second button) */
 .hero-secondary-link {
   display: inline-flex; align-items: center;
-  color: rgba(253,246,237,0.6);
+  color: rgba(201, 151, 74, 0.85);
   font-size: 0.95rem; font-weight: 400;
   padding: 0.85rem 0.5rem;
   transition: color var(--transition);
   text-decoration: none;
-  align-self: center;
+  align-self: flex-start;
+  padding-left: 0;
+  margin-left: 0;
 }
-.hero-secondary-link:hover { color: var(--cream); }
+.hero-secondary-link:hover { color: rgba(201, 151, 74, 1); }
 
 /* Nav Pase de Café badge accent */
 .nav-pase {
@@ -2692,33 +2764,13 @@ button.detail-pill.detail-pill-active {
 }
 
 /* ====== BLOOP IMAGE — absolute positioned img tag ====== */
-.section-bloop-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  z-index: 0;
-  pointer-events: none;
-  user-select: none;
-}
-/* Remove the old CSS background approach */
-.section-bloop {
-  background-image: none !important;
-  background-color: var(--cream);
-}
-
-/* ====== BLOOP BACKGROUND — scrolls with page, full image visible ====== */
 .section-bloop {
   background-image: url('../images/backgrounds/bloop.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-size: 100% auto;
+  background-repeat: repeat-y;
   background-position: center top;
   background-color: var(--cream);
 }
-/* Remove the img tag approach */
-.section-bloop-img { display: none; }
 
 /* pastry panel hidden */
 .pastry-panel.hidden { display: none; }
@@ -2847,14 +2899,21 @@ button.detail-pill.detail-pill-active {
 }
 
 /* ====== DRINK CUP SVG ICON ====== */
-/* ====== DRINK CUP SVG ICON ====== */
 .drink-img-wrap-cup {
   background: linear-gradient(135deg, #f5ede0, #e8d4bc);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
-
+/* When SVG loads as <img> tag — fill card proportionally */
+.drink-img-wrap-cup img {
+  width: auto;
+  height: 88%;
+  max-width: 80%;
+  object-fit: contain;
+  display: block;
+}
 .drink-cup-wrap {
   display: flex;
   align-items: center;
@@ -2862,8 +2921,7 @@ button.detail-pill.detail-pill-active {
   width: 100%;
   height: 100%;
 }
-
 .drink-cup-svg {
-  width: 100%;
-  height: 100%;
+  width: 75%;
+  height: 75%;
 }
