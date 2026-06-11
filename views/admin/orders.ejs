@@ -43,6 +43,14 @@
 <%- include('./layout-bottom') %>
 
 <script>
+// Escape any value before inserting it into innerHTML — order fields
+// (customer name, item names, notes, …) are user-supplied and would otherwise
+// allow stored XSS in the staff dashboard.
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 const STATUS_LABELS = { pending:'Pending', preparing:'Preparing', ready:'Ready for pickup', done:'Done' };
 const STATUS_NEXT   = { pending:['preparing','done'], preparing:['ready','done'], ready:['done'], done:[] };
 const STATUS_COLORS = { pending:'#EF9F27', preparing:'#1D9E75', ready:'rgb(88,18,23)', done:'rgba(44,44,44,0.3)' };
@@ -92,17 +100,17 @@ function renderOrders() {
     const date = new Date(o.placedAt).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
     return `<div class="order-row" data-idx="${orders.indexOf(o)}">
       <div class="order-row-left">
-        <span class="order-ref">${o.ref}</span>
+        <span class="order-ref">${esc(o.ref)}</span>
         <span class="order-time">${date} · ${time}</span>
       </div>
       <div class="order-row-mid">
-        <p class="order-customer">${o.userName}</p>
-        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${o.pickupMethod}</p>
+        <p class="order-customer">${esc(o.userName)}</p>
+        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${esc(o.pickupMethod)}</p>
       </div>
       <div class="order-row-right">
-        <span class="order-total-pill">R${o.total}</span>
+        <span class="order-total-pill">R${esc(o.total)}</span>
         <span class="order-status-dot" style="background:${STATUS_COLORS[o.status]||'#888'}"></span>
-        <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||o.status}</span>
+        <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||esc(o.status)}</span>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -123,18 +131,18 @@ function openOrderDetail(idx) {
 
   document.getElementById('odItems').innerHTML = o.items.map(item => `
     <div class="od-item">
-      <div class="od-item-img">${item.image?`<img src="${item.image}" alt="${item.name}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
+      <div class="od-item-img">${item.image?`<img src="${esc(item.image)}" alt="${esc(item.name)}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
       <div class="od-item-body">
-        <p class="od-item-name">${item.name}</p>
+        <p class="od-item-name">${esc(item.name)}</p>
         <div class="cart-item-opts">
-          ${item.size?`<span class="cart-opt-pill">${item.size} · ${item.ml}</span>`:''}
-          ${item.flavour?`<span class="cart-opt-pill">${item.flavour}</span>`:''}
-          ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${item.milk}</span>`:''}
-          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${item.sugar}</span>`:''}
+          ${item.size?`<span class="cart-opt-pill">${esc(item.size)} · ${esc(item.ml)}</span>`:''}
+          ${item.flavour?`<span class="cart-opt-pill">${esc(item.flavour)}</span>`:''}
+          ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${esc(item.milk)}</span>`:''}
+          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${esc(item.sugar)}</span>`:''}
         </div>
-        ${item.notes?`<p class="cart-item-note">"${item.notes}"</p>`:''}
+        ${item.notes?`<p class="cart-item-note">"${esc(item.notes)}"</p>`:''}
       </div>
-      <span class="cart-item-price">R${item.price}</span>
+      <span class="cart-item-price">R${esc(item.price)}</span>
     </div>`).join('');
 
   document.getElementById('odTotal').textContent = `R${o.total}`;

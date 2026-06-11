@@ -4,15 +4,32 @@ const User     = require('../models/User');
 const QRCode   = require('qrcode');
 const crypto   = require('crypto');
 const { sendPasswordReset } = require('../utils/mailer');
+const { rateLimit, asString } = require('../utils/security');
+
+// Throttle credential / reset endpoints to blunt brute-force and reset-spam.
+const loginLimiter  = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many attempts. Please wait a few minutes and try again.' });
+const resetLimiter  = rateLimit({ windowMs: 60 * 60 * 1000, max: 5,  message: 'Too many requests. Please try again later.' });
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── REGISTER ──────────────────────────────────────────────────────
 router.get('/register', (req, res) => {
   res.render('pages/register', { title: 'Join the Pack — Con Leche', error: null });
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', loginLimiter, async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const name     = asString(req.body.name, 100);
+    const email    = asString(req.body.email, 200).toLowerCase();
+    const password = asString(req.body.password, 200);
+    const confirmPassword = asString(req.body.confirmPassword, 200);
+
+    if (!name || !email || !password)
+      return res.render('pages/register', { title: 'Join the Pack', error: 'All fields are required' });
+    if (!EMAIL_RE.test(email))
+      return res.render('pages/register', { title: 'Join the Pack', error: 'Please enter a valid email address' });
+    if (password.length < 8)
+      return res.render('pages/register', { title: 'Join the Pack', error: 'Password must be at least 8 characters' });
     if (password !== confirmPassword)
       return res.render('pages/register', { title: 'Join the Pack', error: 'Passwords do not match' });
     const exists = await User.findOne({ email });
@@ -35,9 +52,10 @@ router.get('/login', (req, res) => {
   res.render('pages/login', { title: 'Sign In — Con Leche', error: null, success: null });
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email    = asString(req.body.email, 200).toLowerCase();
+    const password = asString(req.body.password, 200);
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password)))
       return res.render('pages/login', { title: 'Sign In', error: 'Invalid email or password', success: null });
@@ -61,9 +79,9 @@ router.get('/forgot-password', (req, res) => {
   res.render('pages/forgot-password', { title: 'Forgot Password — Con Leche', error: null, success: null });
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', resetLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = asString(req.body.email, 200).toLowerCase();
     const user = await User.findOne({ email });
 
     // Always show success — don't reveal if email exists
@@ -105,7 +123,7 @@ router.get('/reset-password/:token', async (req, res) => {
   });
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', resetLimiter, async (req, res) => {
   try {
     const user = await User.findOne({
       resetToken: req.params.token,
@@ -117,7 +135,8 @@ router.post('/reset-password/:token', async (req, res) => {
         success: null, token: null, valid: false
       });
     }
-    const { password, confirmPassword } = req.body;
+    const password        = asString(req.body.password, 200);
+    const confirmPassword = asString(req.body.confirmPassword, 200);
     if (password !== confirmPassword) {
       return res.render('pages/reset-password', {
         title: 'Reset Password', error: 'Passwords do not match.',

@@ -89,7 +89,7 @@ const ALL_PASTRIES = <%- JSON.stringify(
       };
     }));
   }, [])
-) %>;
+).replace(/</g,"\\u003c") %>;
 
 window.CL_DATA = {
   loggedIn: <%= !!(locals.session && session.userId) %>,

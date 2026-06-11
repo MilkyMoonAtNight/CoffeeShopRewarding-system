@@ -128,7 +128,7 @@ window.CL_DATA = {
       d.prices&&d.prices.regular?{label:'Regular',ml:'250ml',price:d.prices.regular}:null,
       d.prices&&d.prices.large  ?{label:'Large',  ml:'350ml',price:d.prices.large  }:null
     ].filter(Boolean)
-  }))) %>,
+  }))).replace(/</g,"\\u003c") %>,
   cold: <%- JSON.stringify(cold.map(d => ({
     name:d.name, category:'cold', subcategory:d.subcategory, isSpecial:d.isSpecial,
     image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
@@ -136,7 +136,7 @@ window.CL_DATA = {
       d.prices&&d.prices.regular?{label:'Regular',ml:'350ml',price:d.prices.regular}:null,
       d.prices&&d.prices.large  ?{label:'Large',  ml:'500ml',price:d.prices.large  }:null
     ].filter(Boolean)
-  }))) %>,
+  }))).replace(/</g,"\\u003c") %>,
   pastries: []
 };
 </script>

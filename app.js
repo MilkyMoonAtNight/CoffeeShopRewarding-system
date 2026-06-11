@@ -6,24 +6,41 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const path = require('path');
+const { mongoSanitize, securityHeaders } = require('./utils/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Hide framework fingerprint; trust the first proxy in production so that
+// secure cookies and req.ip (rate limiting) work behind a load balancer / TLS terminator.
+app.disable('x-powered-by');
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(securityHeaders);
+
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Cap body size to limit abuse / DoS via huge payloads.
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(express.json({ limit: '100kb' }));
+
+// Strip Mongo operator keys ($ne, $gt, …) from all user input — neutralises
+// NoSQL injection across every route that builds a query from req.body/query/params.
+app.use(mongoSanitize);
+
 app.use(session({
+  name: 'conleche.sid',
   secret: process.env.SESSION_SECRET || 'conleche_secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-  secure: process.env.NODE_ENV === 'production',
-  maxAge: 7 * 24 * 60 * 60 * 1000
-}
+    httpOnly: true,                                   // not readable from JS (XSS cookie theft)
+    sameSite: 'lax',                                  // blocks cross-site CSRF for cookie auth
+    secure: process.env.NODE_ENV === 'production',    // HTTPS-only in production
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  }
 }));
 
 app.use((req, res, next) => {

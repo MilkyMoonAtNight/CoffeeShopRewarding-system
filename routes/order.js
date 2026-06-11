@@ -5,6 +5,11 @@ const Pastry  = require('../models/Pastry');
 const User    = require('../models/User');
 const Admin   = require('../models/Admin');
 const { notifyStaffNewOrder, notifyCustomerStatusUpdate } = require('../utils/mailer');
+const { asString, cleanText } = require('../utils/security');
+
+// Statuses an admin is allowed to set — prevents arbitrary/script values being
+// stored on the order and later rendered in the dashboard / emailed out.
+const ALLOWED_STATUSES = ['pending', 'preparing', 'ready', 'done', 'paid', 'cancelled'];
 
 // ── Auth guard ────────────────────────────────────────────────────
 function requireUser(req, res, next) {
@@ -81,12 +86,47 @@ router.get('/confirm', requireUser, (req, res) => {
 // ── Place order ───────────────────────────────────────────────────
 router.post('/place', requireUser, async (req, res) => {
   try {
-    const { name, phone, email, collection, notes, items, total } = req.body;
-    if (!items || !items.length) return res.json({ ok: false, error: 'Cart is empty' });
+    const body = req.body || {};
+    if (!Array.isArray(body.items) || body.items.length === 0)
+      return res.json({ ok: false, error: 'Cart is empty' });
+    if (body.items.length > 50)
+      return res.json({ ok: false, error: 'Too many items' });
+
+    // Sanitise every free-text field so nothing executable reaches the admin
+    // dashboard (which renders these via innerHTML) or the staff notification email.
+    const items = body.items.map(raw => {
+      const it = raw && typeof raw === 'object' ? raw : {};
+      const price = Math.max(0, Number(it.price) || 0);
+      return {
+        name:     cleanText(it.name, 120) || 'Item',
+        type:     cleanText(it.type, 30),
+        category: cleanText(it.category, 30),
+        size:     cleanText(it.size, 40),
+        ml:       cleanText(it.ml, 20),
+        flavour:  cleanText(it.flavour, 60),
+        milk:     cleanText(it.milk, 40),
+        sugar:    cleanText(it.sugar, 40),
+        notes:    cleanText(it.notes, 300),
+        image:    cleanText(it.image, 300),
+        price,
+      };
+    });
+
+    // Authoritative total is computed on the server from the (sanitised) line
+    // items — the client-supplied `total` is ignored to stop price tampering.
+    // NOTE: item.price still originates from the client. For full integrity the
+    // unit price should be looked up from the Drink/Pastry collections here.
+    const total = items.reduce((sum, it) => sum + it.price, 0);
+
+    const collection = cleanText(body.collection, 40);
+    const notes      = cleanText(body.notes, 500);
+    const name       = cleanText(body.name, 100);
+    const phone      = asString(body.phone, 30).replace(/[^\d+()\s-]/g, '');
+    const email      = asString(body.email, 200).toLowerCase();
 
     const ref   = 'CL-' + Date.now().toString(36).toUpperCase();
     const order = {
-      ref, items, total: Number(total),
+      ref, items, total,
       pickupMethod: collection, notes,
       status: 'pending', placedAt: new Date(),
     };
@@ -126,7 +166,8 @@ router.post('/status/:userId/:ref', async (req, res) => {
   // Must be a logged-in admin to change order status
   if (!req.session.adminId) return res.json({ ok: false, error: 'Unauthorised' });
   try {
-    const { status } = req.body;
+    const status = asString(req.body.status, 30);
+    if (!ALLOWED_STATUSES.includes(status)) return res.json({ ok: false, error: 'Invalid status' });
     await User.updateOne(
       { _id: req.params.userId, 'pastOrders.ref': req.params.ref },
       { $set: { 'pastOrders.$.status': status } }

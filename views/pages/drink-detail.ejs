@@ -152,7 +152,7 @@ const DRINK = <%- JSON.stringify({
   name: drink.name, category: drink.category, subcategory: drink.subcategory,
   image: drink.image ? '/images/drinks/' + drink.image : null,
   isSpecial: drink.isSpecial, sizes: drink.sizes, flavours: drink.flavours
-}) %>;
+}).replace(/</g,"\\u003c") %>;
 
 let selSize   = DRINK.sizes && DRINK.sizes.length ? DRINK.sizes[0] : null;
 let milkExtra = 0;

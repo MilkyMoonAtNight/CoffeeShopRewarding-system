@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const crypto  = require('crypto');
 const User    = require('../models/User');
+const { asString } = require('../utils/security');
 
 function requireUser(req, res, next) {
   if (!req.session.userId) return res.redirect('/login');
@@ -16,14 +17,18 @@ function generateOzowHash(fields, privateKey) {
 // ── Initiate payment ──────────────────────────────────────────────
 router.post('/initiate', requireUser, async (req, res) => {
   try {
-    const { orderRef, total, customerEmail } = req.body;
+    const orderRef      = asString(req.body.orderRef, 60).replace(/[^A-Za-z0-9\-_]/g, '');
+    const customerEmail = asString(req.body.customerEmail, 200);
+    const amountNum     = Number(req.body.total);
+    if (!orderRef) return res.redirect('/order/confirm?error=payment_failed');
+    if (!Number.isFinite(amountNum) || amountNum <= 0) return res.redirect('/order/confirm?error=payment_failed');
     const isTest = process.env.NODE_ENV !== 'production';
 
     const fields = {
       SiteCode:             process.env.OZOW_SITE_CODE,
       CountryCode:          'ZA',
       CurrencyCode:         'ZAR',
-      Amount:               parseFloat(total).toFixed(2),
+      Amount:               amountNum.toFixed(2),
       TransactionReference: orderRef,
       BankReference:        `ConLeche-${orderRef}`,
       Optional1:            '',

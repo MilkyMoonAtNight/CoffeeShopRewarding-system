@@ -8,6 +8,9 @@ const Event   = require('../models/Event');
 const Drink   = require('../models/Drink');
 const Pastry  = require('../models/Pastry');
 const CheckIn = require('../models/CheckIn');
+const { rateLimit, asString } = require('../utils/security');
+
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
 
 // ── Multer — image uploads ────────────────────────────────────────
 function makeUploader(subfolder) {
@@ -16,21 +19,28 @@ function makeUploader(subfolder) {
       cb(null, path.join(__dirname, '..', 'public', 'images', subfolder));
     },
     filename: (req, file, cb) => {
-      const ext  = path.extname(file.originalname).toLowerCase() || '.jpg';
+      // Whitelist the extension from a fixed set — never trust the raw value.
+      const ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+      let ext = path.extname(file.originalname).toLowerCase();
+      if (!ALLOWED_EXT.includes(ext)) ext = '.jpg';
       const base = path.basename(file.originalname, path.extname(file.originalname))
-                       .replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 40);
+                       .replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 40) || 'image';
       cb(null, `${base}-${Date.now()}${ext}`);
     }
   });
   return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-      // Accept images AND SVG files
-      const allowed = /image\/(jpeg|png|webp|gif|svg\+xml)|application\/octet-stream/;
+      // Only raster images. SVG is intentionally rejected: an uploaded SVG is
+      // served inline from /public and can carry <script>, giving stored XSS.
+      // application/octet-stream is rejected too — it would let any file through.
+      const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      const ALLOWED_EXT  = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
       const ext = path.extname(file.originalname).toLowerCase();
-      if (allowed.test(file.mimetype) || ['.svg','.jpg','.jpeg','.png','.webp','.gif'].includes(ext)) {
+      // Require BOTH a valid image MIME type AND a valid extension.
+      if (ALLOWED_MIME.includes(file.mimetype) && ALLOWED_EXT.includes(ext)) {
         cb(null, true);
       } else {
-        cb(new Error('Only image and SVG files allowed'), false);
+        cb(new Error('Only JPG, PNG, WEBP or GIF images are allowed'), false);
       }
     }
   });
@@ -65,8 +75,15 @@ const ownerManager = (req, res, next) => requireRole(req, res, next, ['owner', '
 const ownerOnly    = (req, res, next) => requireRole(req, res, next, ['owner']);
 
 // ── ONE-TIME SETUP ─────────────────────────────────────────────
+// Creates the initial admin accounts only while none exist. If SETUP_KEY is
+// configured, it must be supplied (?key=) so the endpoint can't be triggered
+// by a stranger if the Admin collection is ever emptied. Change the seeded
+// passwords immediately after first login.
 router.get('/setup', async (req, res) => {
   try {
+    if (process.env.SETUP_KEY && asString(req.query.key, 200) !== process.env.SETUP_KEY) {
+      return res.status(403).send('Forbidden');
+    }
     const count = await Admin.countDocuments();
     if (count > 0) return res.send('Setup already done.');
     await new Admin({ name: 'JuanMartin', email: 'juanmartin@conleche.co.za', password: 'admin', role: 'owner' }).save();
@@ -82,9 +99,10 @@ router.get('/login', (req, res) => {
   res.render('admin/login', { title: 'Staff Login — Con Leche', error: null });
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', adminLoginLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email    = asString(req.body.email, 200).toLowerCase();
+    const password = asString(req.body.password, 200);
     const admin = await Admin.findOne({ email, active: true });
     if (!admin || !(await admin.comparePassword(password))) {
       return res.render('admin/login', { title: 'Staff Login', error: 'Invalid credentials' });
@@ -133,7 +151,10 @@ router.get('/scan', requireAdmin, (req, res) => {
 });
 
 router.post('/scan', requireAdmin, async (req, res) => {
-  const { panel, qrCode, rewardId, claimCode } = req.body;
+  const panel     = asString(req.body.panel, 32);
+  const qrCode    = asString(req.body.qrCode, 200);
+  const rewardId  = asString(req.body.rewardId, 64);
+  const claimCode = asString(req.body.claimCode, 16);
   let result = { panel };
   try {
     if (panel === 'record') {
@@ -173,7 +194,7 @@ router.post('/scan', requireAdmin, async (req, res) => {
 // Camera scan API
 router.post('/scan-api', requireAdmin, async (req, res) => {
   try {
-    const { qrCode } = req.body;
+    const qrCode = asString(req.body.qrCode, 200);
     const user = await User.findOne({ qrCode });
     if (!user) return res.json({ success: false, message: 'QR code not found' });
     const newReward = user.recordDrink('Drink');
@@ -524,7 +545,13 @@ router.get('/staff', ownerOnly, async (req, res) => {
 
 router.post('/staff/add', ownerOnly, async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const name     = asString(req.body.name, 100);
+    const email    = asString(req.body.email, 200).toLowerCase();
+    const password = asString(req.body.password, 200);
+    const role     = asString(req.body.role, 20);
+    if (!name || !email || !password) return res.redirect('/admin/staff?error=All+fields+required');
+    if (password.length < 8) return res.redirect('/admin/staff?error=Password+must+be+8%2B+characters');
+    if (!['owner', 'manager', 'barista'].includes(role)) return res.redirect('/admin/staff?error=Invalid+role');
     const exists = await Admin.findOne({ email });
     if (exists) return res.redirect('/admin/staff?error=Email+already+exists');
     await new Admin({ name, email, password, role }).save();

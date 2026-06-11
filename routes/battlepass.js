@@ -1,12 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const QRCode = require('qrcode');
 const { getMilestoneForDrink } = require('../models/User');
+const { asString } = require('../utils/security');
 
 function requireAuth(req, res, next) {
   if (!req.session.userId) return res.redirect('/login');
   next();
+}
+
+// Admin-only guard for the staff scan/claim JSON endpoints below.
+// Previously these were completely unauthenticated — anyone could POST a qrCode
+// and record drinks or confirm reward claims for any customer.
+async function requireAdminApi(req, res, next) {
+  try {
+    if (!req.session.adminId) return res.status(401).json({ success: false, message: 'Unauthorised' });
+    const admin = await Admin.findById(req.session.adminId);
+    if (!admin || !admin.active) return res.status(401).json({ success: false, message: 'Unauthorised' });
+    req.admin = admin;
+    next();
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Auth error' });
+  }
 }
 
 // ── BATTLEPASS DASHBOARD ─────────────────────────────────────────
@@ -72,9 +89,11 @@ router.post('/claim/:rewardId', requireAuth, async (req, res) => {
 });
 
 // ── ADMIN: SCAN & RECORD DRINK ────────────────────────────────────
-router.post('/scan', async (req, res) => {
+router.post('/scan', requireAdminApi, async (req, res) => {
   try {
-    const { qrCode, drinkName } = req.body;
+    const qrCode    = asString(req.body.qrCode, 200);
+    const drinkName = asString(req.body.drinkName, 100) || 'Drink';
+    if (!qrCode) return res.json({ success: false, message: 'QR code not found' });
     const user = await User.findOne({ qrCode });
     if (!user) return res.json({ success: false, message: 'QR code not found' });
     const newReward = user.recordDrink(drinkName);
@@ -90,9 +109,11 @@ router.post('/scan', async (req, res) => {
 });
 
 // ── ADMIN: CONFIRM CLAIM (barista enters 4-digit code) ────────────
-router.post('/confirm-claim', async (req, res) => {
+router.post('/confirm-claim', requireAdminApi, async (req, res) => {
   try {
-    const { qrCode, rewardId, code } = req.body;
+    const qrCode   = asString(req.body.qrCode, 200);
+    const rewardId = asString(req.body.rewardId, 64);
+    const code     = asString(req.body.code, 16);
     const user = await User.findOne({ qrCode });
     if (!user) return res.json({ success: false, message: 'User not found' });
     const result = user.confirmClaim(rewardId, code);
