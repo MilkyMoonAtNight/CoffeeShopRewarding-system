@@ -277,9 +277,22 @@ router.get('/events', ownerManager, async (req, res) => {
   res.render('admin/events', { title: 'Events — Con Leche Admin', admin: req.admin, events, msg: req.query.msg || null });
 });
 
+
+// Resolve the event type: built-in option or a custom one typed by the admin
+function resolveEventType(body) {
+  let type = String(body.type || 'special').slice(0, 40);
+  if (type === '__custom') {
+    const custom = String(body.customType || '').trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30);
+    type = custom || 'special';
+  }
+  return type;
+}
+
 router.post('/events/add', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
-    const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
+    const { title, date, location, address, description, recurring, recurringDay } = req.body;
+    const type = resolveEventType(req.body);
     const image = req.file ? req.file.filename : null;
     await new Event({ title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay, image }).save();
     res.redirect('/admin/events?msg=Event+added');
@@ -288,7 +301,8 @@ router.post('/events/add', ownerManager, makeUploader('events').single('imageFil
 
 router.post('/events/edit/:id', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
-    const { title, type, date, location, address, description, recurring, recurringDay } = req.body;
+    const { title, date, location, address, description, recurring, recurringDay } = req.body;
+    const type = resolveEventType(req.body);
     const update = { title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay };
     if (req.file) update.image = req.file.filename;
     await Event.findByIdAndUpdate(req.params.id, update);

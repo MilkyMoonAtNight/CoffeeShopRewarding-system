@@ -45,7 +45,9 @@
     </div>
   </section>
 
-  <!-- Specials — placeholders for now, will be managed from /admin/specials -->
+  <!-- Specials + Battlepass share one continuous background -->
+  <div class="home-duo">
+
   <section class="section specials-home">
     <div class="container">
       <p class="section-eyebrow">Right Now at Con Leche</p>
@@ -131,6 +133,8 @@
     </div>
   </section>
 
+  </div><!-- /home-duo -->
+
   <!-- Menu preview -->
   <section class="section section-dark menu-preview">
     <div class="container">
@@ -165,7 +169,37 @@
   </section>
 
   <!-- Google Reviews — coloured placeholder blocks for now -->
-  <section class="section reviews-home">
+  <section class="section reviews-home" id="reviewsHome">
+    <!-- Background animation: silver pitcher pours a silky stream, milk rises -->
+    <div class="milk-stage" aria-hidden="true">
+      <div class="milk-fill"></div>
+      <div class="milk-stream"></div>
+      <svg class="milk-pitcher" viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"  stop-color="#e8e8ea"/>
+            <stop offset="35%" stop-color="#b9bcc2"/>
+            <stop offset="60%" stop-color="#d8dadf"/>
+            <stop offset="100%" stop-color="#94989f"/>
+          </linearGradient>
+          <linearGradient id="silverDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#c4c7cc"/>
+            <stop offset="100%" stop-color="#7e828a"/>
+          </linearGradient>
+        </defs>
+        <!-- body -->
+        <path d="M30 22 L96 22 L88 78 Q87 86 78 86 L46 86 Q37 86 36 78 Z" fill="url(#silver)" stroke="#84878e" stroke-width="1.5"/>
+        <!-- spout -->
+        <path d="M22 14 L34 22 L30 34 Z" fill="url(#silverDark)" stroke="#84878e" stroke-width="1.2"/>
+        <!-- handle -->
+        <path d="M96 30 Q116 34 112 52 Q109 66 90 66" fill="none" stroke="url(#silverDark)" stroke-width="7" stroke-linecap="round"/>
+        <!-- rim -->
+        <path d="M30 22 L96 22" stroke="#f2f3f5" stroke-width="3" stroke-linecap="round"/>
+        <!-- light reflection -->
+        <path d="M44 30 Q42 52 47 74" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M56 28 Q55 44 57 60" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
     <div class="container">
       <p class="section-eyebrow">Don't Take Our Word For It</p>
       <h2 class="section-title">What Our <em>Regulars</em> Say</h2>
@@ -254,7 +288,7 @@
         <% upcomingEvents.forEach(event => { %>
         <div class="event-card-small">
           <div class="event-type-badge event-<%= event.type %>">
-            <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : '⭐ Event' %>
+            <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : event.type === 'pop_up' ? '⭐ Pop-Up' : event.type === 'special' ? '🎉 Special' : '⭐ ' + (event.type || 'Event').replace(/_/g, ' ') %>
           </div>
           <h3 class="event-card-title"><%= event.title %></h3>
           <p class="event-card-date"><%= event.date.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'long' }) %></p>
@@ -281,48 +315,42 @@
   const field = document.getElementById('beanField');
   if (!field) return;
 
-  const BEAN_SVG = (fill) => `
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path fill="${fill}" d="M12 2C7 2 3.5 6.5 3.5 12S7 22 12 22s8.5-4.5 8.5-10S17 2 12 2zm0 2c1.2 0 2.3 2 2.3 2s-2.8 2.6-2.8 6-2.6 6.2-2.6 6.2S6 16.5 6 12c0-4.4 2.7-8 6-8zm3.9 1.5C17.2 6.9 18 9.3 18 12c0 4.4-2.7 8-6 8-.6 0-1.2-.6-1.2-.6s2.7-2.5 2.7-5.9 2.4-6.4 2.4-8z"/>
-    </svg>`;
-
-  // A small green friend hiding among the beans... 👀
-  const GROGU_SVG = `
-    <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="5"  cy="13" rx="5" ry="2.6" fill="#7a9b6d"/>
-      <ellipse cx="27" cy="13" rx="5" ry="2.6" fill="#7a9b6d"/>
-      <ellipse cx="16" cy="13" rx="8" ry="7.5" fill="#8fb07f"/>
-      <circle cx="13" cy="12.5" r="1.7" fill="#1a1a1a"/>
-      <circle cx="19" cy="12.5" r="1.7" fill="#1a1a1a"/>
-      <circle cx="13.5" cy="12" r="0.5" fill="#fff"/>
-      <circle cx="19.5" cy="12" r="0.5" fill="#fff"/>
-      <path d="M14.5 16 q1.5 1 3 0" stroke="#3d5237" stroke-width="0.7" fill="none" stroke-linecap="round"/>
-      <path d="M11 20 q5 2.5 10 0 l-1 3 h-8 z" fill="#cbb9a0"/>
-    </svg>`;
-
   const beans = [];
-  const COUNT = 12;
-  for (let i = 0; i < COUNT; i++) {
+  const BEAN_COUNT = 24;
+  const GROGU_SLOT = Math.floor(8 + Math.random() * 8); // one little green guy, mediumly hidden 👀
+  const total = BEAN_COUNT + 1;
+
+  for (let i = 0; i < total; i++) {
     const el = document.createElement('span');
     el.className = 'bean';
-    const isGrogu = i === 7;   // one of them is not like the others
-    const size = isGrogu ? 30 : 16 + Math.random() * 14;
-    const dark = Math.random() > 0.45;
-    el.innerHTML = isGrogu ? GROGU_SVG : BEAN_SVG(dark ? 'rgba(88,18,23,0.8)' : 'rgba(253,246,237,0.8)');
+    const isGrogu = i === GROGU_SLOT;
+    const size = 16 + Math.random() * 16;
+
+    if (isGrogu) {
+      el.innerHTML = `<img src="/images/baby-yoda.png" alt="" class="bean-grogu-img" />`;
+      el.classList.add('bean-grogu');
+      el.style.opacity = 0.35;   // visible if you look, easy to scroll past
+      el.addEventListener('click', () => { window.location = '/the-bean-awakens'; });
+    } else {
+      // Same bean, different roast — brightness/hue filters give each its own brown
+      const bright = (0.55 + Math.random() * 0.7).toFixed(2);   // dark to light roast
+      const hue    = Math.floor(Math.random() * 26) - 8;        // subtle shade shifts
+      const sat    = (0.7 + Math.random() * 0.6).toFixed(2);
+      el.innerHTML = `<img src="/images/coffee-bean.png" alt="" class="bean-img"
+        style="filter: brightness(${bright}) saturate(${sat}) hue-rotate(${hue}deg);" />`;
+      // Some fainter, some stronger — never loud
+      el.style.opacity = (0.06 + Math.random() * 0.16).toFixed(2);
+    }
+
     el.style.width  = size + 'px';
     el.style.height = size + 'px';
-    el.style.left   = (3 + Math.random() * 92) + '%';
-    el.style.top    = (8 + Math.random() * 200) + 'vh';
-    el.style.opacity = isGrogu ? 0.45 : 0.1;
-    const rot = Math.floor(Math.random() * 360);
-    el.dataset.speed = (0.04 + Math.random() * 0.1).toFixed(3);
+    el.style.left   = (2 + Math.random() * 94) + '%';
+    el.style.top    = (4 + (i / total) * 240 + Math.random() * 20) + 'vh';
+    const rot = Math.floor(Math.random() * 360);   // every bean its own angle
+    el.dataset.speed = (0.04 + Math.random() * 0.12).toFixed(3);
     el.dataset.rot   = rot;
-    el.dataset.spin  = (Math.random() * 0.03 - 0.015).toFixed(4);
+    el.dataset.spin  = (Math.random() * 0.04 - 0.02).toFixed(4);
     el.style.transform = `rotate(${rot}deg)`;
-    if (isGrogu) {
-      el.classList.add('bean-grogu');
-      el.addEventListener('click', () => { window.location = '/the-bean-awakens'; });
-    }
     field.appendChild(el);
     beans.push(el);
   }
@@ -341,6 +369,24 @@
     if (!ticking) { requestAnimationFrame(update); ticking = true; }
   }, { passive: true });
   update();
+})();
+
+// ── Milk pour — starts once when the reviews section scrolls into view ──
+(function () {
+  const section = document.getElementById('reviewsHome');
+  if (!section || !('IntersectionObserver' in window)) {
+    if (section) section.classList.add('pouring');
+    return;
+  }
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        section.classList.add('pouring');
+        obs.disconnect();
+      }
+    });
+  }, { threshold: 0.25 });
+  obs.observe(section);
 })();
 
 // ── Review card tilt — presses down toward the pointer ────────────

@@ -19,13 +19,16 @@
       </div>
       <div class="form-group">
         <label>Type</label>
-        <select name="type" class="scan-input">
+        <select name="type" class="scan-input" onchange="toggleCustomType(this, 'customTypeAdd')">
           <option value="truck_location">🚐 Truck Location</option>
           <option value="run_club">🏃 Run Club</option>
           <option value="painting">🎨 Painting Class</option>
           <option value="pop_up">⭐ Pop-Up</option>
           <option value="special">🎉 Special Event</option>
+          <option value="__custom">✏️ Custom type…</option>
         </select>
+        <input type="text" name="customType" id="customTypeAdd" class="scan-input"
+               placeholder="e.g. Open Mic Night" style="display:none;margin-top:0.5rem;" maxlength="30" />
       </div>
       <div class="form-group">
         <label>Date & Time</label>
@@ -65,11 +68,22 @@
 
   <!-- Event list -->
   <div>
+    <div class="admin-card admin-filter-bar">
+      <input type="text" id="eventSearch" class="scan-input" placeholder="🔍 Search events…" oninput="filterAdminList()" />
+      <select id="eventTypeFilter" class="scan-input" onchange="filterAdminList()">
+        <option value="">All types</option>
+        <% [...new Set(events.map(e => e.type))].forEach(t => { %>
+        <option value="<%= t %>"><%= t.replace(/_/g, ' ') %></option>
+        <% }) %>
+      </select>
+    </div>
     <% if (events.length === 0) { %>
       <div class="admin-card"><p class="admin-empty">No events yet.</p></div>
     <% } else { %>
       <% events.forEach(event => { %>
-      <div class="admin-card" style="margin-bottom:1rem;">
+      <div class="admin-card filterable-row" style="margin-bottom:1rem;"
+           data-name="<%= (event.title || '').toLowerCase() %> <%= (event.location || '').toLowerCase() %>"
+           data-cat="<%= event.type %>">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
           <div>
             <span class="admin-badge" style="margin-bottom:0.5rem;display:inline-block;">
@@ -99,13 +113,20 @@
             </div>
             <div class="form-group">
               <label>Type</label>
-              <select name="type" class="scan-input">
+              <select name="type" class="scan-input" onchange="toggleCustomType(this, 'customType-<%= event._id %>')">
                 <option value="truck_location" <%= event.type==='truck_location'?'selected':'' %>>🚐 Truck Location</option>
                 <option value="run_club" <%= event.type==='run_club'?'selected':'' %>>🏃 Run Club</option>
                 <option value="painting" <%= event.type==='painting'?'selected':'' %>>🎨 Painting Class</option>
                 <option value="pop_up" <%= event.type==='pop_up'?'selected':'' %>>⭐ Pop-Up</option>
                 <option value="special" <%= event.type==='special'?'selected':'' %>>🎉 Special Event</option>
+                <% const builtin = ['truck_location','run_club','painting','pop_up','special']; %>
+                <option value="__custom" <%= !builtin.includes(event.type) ? 'selected' : '' %>>✏️ Custom type…</option>
               </select>
+              <input type="text" name="customType" id="customType-<%= event._id %>" class="scan-input"
+                     placeholder="e.g. Open Mic Night" maxlength="30"
+                     value="<%= !builtin.includes(event.type) ? event.type.replace(/_/g, ' ') : '' %>"
+                     style="display:<%= !builtin.includes(event.type) ? 'block' : 'none' %>;margin-top:0.5rem;" />
+              
             </div>
             <div class="form-group">
               <label>Date & Time</label>
@@ -145,6 +166,23 @@ function previewUpload(input, innerId, zoneId) {
     document.getElementById(zoneId).style.border = '2px solid var(--maroon)';
   };
   reader.readAsDataURL(input.files[0]);
+}
+</script>
+
+
+<script>
+function toggleCustomType(sel, inputId) {
+  const input = document.getElementById(inputId);
+  if (input) input.style.display = sel.value === '__custom' ? 'block' : 'none';
+}
+function filterAdminList() {
+  const q   = (document.getElementById('eventSearch')?.value || '').toLowerCase().trim();
+  const cat = document.getElementById('eventTypeFilter')?.value || '';
+  document.querySelectorAll('.filterable-row').forEach(row => {
+    const matchQ   = !q   || (row.dataset.name || '').includes(q);
+    const matchCat = !cat || (row.dataset.cat || '') === cat;
+    row.style.display = (matchQ && matchCat) ? '' : 'none';
+  });
 }
 </script>
 

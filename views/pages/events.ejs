@@ -48,7 +48,7 @@
           <div class="event-tile-body">
             <div class="event-tags">
               <span class="event-tag event-tag-<%= event.type %>">
-                <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : '⭐ Event' %>
+                <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : event.type === 'pop_up' ? '⭐ Pop-Up' : event.type === 'special' ? '🎉 Special' : '⭐ ' + (event.type || 'Event').replace(/_/g, ' ') %>
               </span>
               <% if (event.recurring) { %><span class="event-tag event-tag-recurring">Weekly</span><% } %>
             </div>

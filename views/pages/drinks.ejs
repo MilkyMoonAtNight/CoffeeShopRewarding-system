@@ -33,7 +33,7 @@
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap drink-img-wrap-cup">
                 <% if (drink.image) { %>
-                  <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
+                  <img src="<%= drink.image.startsWith('/') ? drink.image : '/images/drinks/' + drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
                   <div class="drink-cup-wrap">
                     <%- include('../partials/drink-cup', { drink: drink }) %>
@@ -84,7 +84,7 @@
             <div class="drink-card-inner-wrap">
               <div class="drink-img-wrap drink-img-wrap-cup">
                 <% if (drink.image) { %>
-                  <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" loading="lazy" />
+                  <img src="<%= drink.image.startsWith('/') ? drink.image : '/images/drinks/' + drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
                   <div class="drink-cup-wrap">
                     <%- include('../partials/drink-cup', { drink: drink }) %>

@@ -23,6 +23,7 @@ router.post('/register', loginLimiter, async (req, res) => {
     const email    = asString(req.body.email, 200).toLowerCase();
     const password = asString(req.body.password, 200);
     const confirmPassword = asString(req.body.confirmPassword, 200);
+    const birthdayRaw = asString(req.body.birthday, 20);
 
     if (!name || !email || !password)
       return res.render('pages/register', { title: 'Join the Pack', error: 'All fields are required' });
@@ -35,8 +36,15 @@ router.post('/register', loginLimiter, async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists)
       return res.render('pages/register', { title: 'Join the Pack', error: 'Email already registered' });
+    // Birthday: stored only when it's a valid past date
+    let birthday = null;
+    if (birthdayRaw) {
+      const d = new Date(birthdayRaw);
+      if (!isNaN(d.getTime()) && d < new Date()) birthday = d;
+    }
+
     const qrToken = crypto.randomBytes(16).toString('hex');
-    const user = new User({ name, email, password, qrCode: qrToken });
+    const user = new User({ name, email, password, qrCode: qrToken, birthday });
     await user.save();
     req.session.userId   = user._id;
     req.session.userName = user.name;

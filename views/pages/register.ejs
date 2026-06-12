@@ -24,6 +24,11 @@
           <input type="email" id="email" name="email" required placeholder="you@example.com" />
         </div>
         <div class="form-group">
+          <label for="birthday">Birthday</label>
+          <input type="date" id="birthday" name="birthday" required data-cap-today />
+          <span class="form-hint">So we can spoil you on your big day 🎂</span>
+        </div>
+        <div class="form-group">
           <label for="password">Password</label>
           <input type="password" id="password" name="password" required placeholder="8+ characters" minlength="8" />
         </div>
@@ -33,6 +38,7 @@
         </div>
         <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
       </form>
+<script>document.querySelector('[data-cap-today]')?.setAttribute('max', new Date().toISOString().split('T')[0]);</script>
 
       <p class="auth-switch">Already have an account? <a href="/login">Sign in →</a></p>
     </div>

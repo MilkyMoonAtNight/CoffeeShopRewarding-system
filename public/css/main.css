@@ -879,6 +879,10 @@ ul { list-style: none; }
 /* ====== RESPONSIVE ====== */
 @media (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr; gap: 2.5rem; }
+  .battlepass-teaser .grid-2 { grid-template-columns: 1fr; }
+  .bp-text { order: 1; }
+  .bp-visual { order: 2; display: flex; justify-content: center; }
+  .bp-card-preview { max-width: 300px; }
   .menu-grid { grid-template-columns: 1fr; }
   .values-grid { grid-template-columns: 1fr; }
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -886,8 +890,8 @@ ul { list-style: none; }
   .pastry-card-wide { grid-column: span 2; }
   .bp-user-card { flex-direction: column; }
 }
-/* ── Main navbar: hamburger collapse at 915px and below ── */
-@media (max-width: 915px) {
+/* ── Main navbar: hamburger collapse at 1034px and below ── */
+@media (max-width: 1034px) {
   .nav-links {
     display: none; flex-direction: column;
     position: absolute; top: 70px; left: 0; right: 0;
@@ -3167,9 +3171,12 @@ button.detail-pill.detail-pill-active {
 .bean-field {
   position: fixed; inset: 0;
   pointer-events: none;
-  z-index: 2;          /* above section backgrounds, beans are near-transparent */
+  z-index: 0;          /* the very back — behind every panel and all text */
   overflow: hidden;
 }
+/* Everything content-related stacks above the bean field */
+main .container { position: relative; z-index: 1; }
+.bean-grogu-img, .bean-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .bean {
   position: absolute;
   display: block;
@@ -3191,3 +3198,141 @@ button.detail-pill.detail-pill-active {
   transform-style: preserve-3d;
 }
 .review-card:hover { box-shadow: var(--shadow-lg); }
+
+/* ════════ HOME DUO — specials + battlepass share one background ════════ */
+.home-duo {
+  background-image: url('../images/backgrounds/bloop.png');
+  background-size: 100% auto;
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-color: var(--cream);
+}
+.home-duo .specials-home,
+.home-duo .battlepass-teaser { background: none; }
+
+/* ════════ REVIEWS — charcoal + rising milk ════════ */
+:root { --milk: #f8f4ec; }
+
+.reviews-home {
+  position: relative;
+  background: #2c2c2c;          /* charcoal grey */
+  border-top: none;
+  overflow: hidden;
+}
+.reviews-home .container { position: relative; z-index: 2; }
+
+/* Header text needs to read on charcoal */
+.reviews-home .section-eyebrow { color: rgba(201, 151, 74, 0.85); }
+.reviews-home .section-title { color: var(--cream); }
+.reviews-home .section-title em { color: rgba(201, 151, 74, 0.9); }
+.reviews-home .reviews-stars { color: rgba(201, 151, 74, 0.95); }
+.reviews-home .reviews-source { color: rgba(253, 246, 237, 0.55); }
+
+/* ── Milk stage (background animation layer) ── */
+.milk-stage { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+.milk-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 12.5%;                 /* starts at 1/8 */
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 70%),
+    linear-gradient(180deg, #fffdf9 0%, var(--milk) 18%, #f1ebe0 100%);
+  background-size: 300% 100%, 100% 100%;
+  box-shadow: 0 -6px 18px rgba(255, 252, 245, 0.25);
+}
+.milk-fill::before {             /* silky surface line */
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 7px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.reviews-home.pouring .milk-fill {
+  animation:
+    milkRise 10s cubic-bezier(0.25, 0.1, 0.25, 1) forwards,
+    milkSheen 6s linear infinite;
+}
+@keyframes milkRise  { from { height: 12.5%; } to { height: 78%; } }
+@keyframes milkSheen { from { background-position: 150% 0, 0 0; } to { background-position: -150% 0, 0 0; } }
+
+/* ── Pouring stream ── */
+.milk-stream {
+  position: absolute;
+  top: 86px; right: 17%;
+  width: 11px; bottom: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.65), #fffdf9 45%, rgba(240,234,224,0.9));
+  border-radius: 6px;
+  opacity: 0;
+  transform-origin: top center;
+}
+.reviews-home.pouring .milk-stream {
+  opacity: 1;
+  animation: streamWobble 0.9s ease-in-out infinite, streamEnd 10s linear forwards;
+}
+@keyframes streamWobble { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(0.78); } }
+@keyframes streamEnd { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ── Silver pitcher ── */
+.milk-pitcher {
+  position: absolute;
+  top: 8px; right: calc(17% - 64px);
+  width: 130px; height: 100px;
+  opacity: 0;
+  transform: rotate(0deg);
+  transform-origin: 30% 70%;
+}
+.reviews-home.pouring .milk-pitcher {
+  opacity: 1;
+  animation: pitcherPour 10s ease-in-out forwards;
+}
+@keyframes pitcherPour {
+  0%       { transform: rotate(18deg) translateY(-8px); opacity: 0; }
+  6%       { transform: rotate(-32deg); opacity: 1; }
+  88%      { transform: rotate(-32deg); opacity: 1; }
+  100%     { transform: rotate(10deg) translateY(-6px); opacity: 0; }
+}
+
+/* ── Review cards recoloured: must read on charcoal AND on milk ── */
+.review-theme-1 { background: var(--maroon); border: none; }
+.review-theme-2 { background: #fffdf9; border: 1px solid rgba(44,44,44,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+.review-theme-3 { background: #1c1c1c; border: 1px solid rgba(253,246,237,0.14); }
+.review-ph-1 { background: var(--maroon); }
+.review-ph-2 { background: #fffdf9; border: 1px solid rgba(44,44,44,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+.review-ph-3 { background: #1c1c1c; border: 1px solid rgba(253,246,237,0.14); }
+.review-ph-2 .review-ph-stars { color: var(--maroon); }
+.review-ph-2 .review-ph-line,
+.review-ph-2 .review-ph-avatar,
+.review-ph-2 .review-ph-name { background: rgba(44,44,44,0.12); }
+
+/* CTA box on charcoal/milk */
+.reviews-cta {
+  background: rgba(253, 246, 237, 0.94);
+  border: 1px dashed rgba(88,18,23,0.35);
+}
+
+/* ════════ EVENTS — continues seamlessly from the milk ════════ */
+.events-home { background: var(--milk); }
+
+/* ════════ ABOUT — hero + origin share one background ════════ */
+.about-top {
+  background-image: url('../images/backgrounds/bloop.png');
+  background-size: 100% auto;
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-color: var(--cream);
+}
+.about-top .page-hero,
+.about-top .about-origin { background: none; }
+.about-top .page-hero .container { text-align: center; }
+@media (min-width: 769px) {
+  .about-top .page-hero .container { transform: translateX(-4rem); } /* centre, then a tab or two left */
+}
+
+/* ── Admin list search & filter bar ── */
+.admin-filter-bar {
+  display: flex; gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+.admin-filter-bar input[type="text"] { flex: 1; min-width: 0; }
+.admin-filter-bar select { width: auto; max-width: 45%; }

@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema({
   email:      { type: String, required: true, unique: true, lowercase: true, trim: true },
   password:   { type: String, required: true },
   qrCode:     { type: String, unique: true },
+  birthday:   { type: Date, default: null },   // collected at signup for birthday treats 🎂
   totalDrinks:{ type: Number, default: 0 },
   lastVisit:  Date,
   scanHistory: [scanHistorySchema],

@@ -30,7 +30,7 @@
         <% const safeName = JSON.stringify(user.name) %>
         <tr id="urow-<%= user._id %>">
           <td class="admin-td-name"><%= user.name %></td>
-          <td class="admin-td-sub"><%= user.email %></td>
+          <td class="admin-td-sub"><%= user.email %><% if (user.birthday) { %><br/><span style="font-size:0.7rem;color:rgba(44,44,44,0.45);">🎂 <%= new Date(user.birthday).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) %></span><% } %></td>
           <td>
             <span class="admin-badge">
               <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>

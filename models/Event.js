@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const eventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
-  type: { type: String, enum: ['truck_location', 'run_club', 'painting', 'pop_up', 'special'], default: 'special' },
+  type: { type: String, default: 'special', trim: true },  // free-form: built-in types plus custom ones from admin
   date: { type: Date, required: true },
   endDate: Date,
   location: String,

@@ -86,12 +86,27 @@
 
   <!-- Drink list -->
   <div>
+    <div class="admin-card admin-filter-bar">
+      <input type="text" id="drinkSearch" class="scan-input" placeholder="🔍 Search drinks…" oninput="filterAdminList()" />
+      <select id="drinkCatFilter" class="scan-input" onchange="filterAdminList()">
+        <option value="">All categories</option>
+        <option value="hot">☕ Hot</option>
+        <option value="cold">🧊 Cold</option>
+        <option value="espresso">Espresso</option>
+        <option value="specialty">Specialty</option>
+        <option value="chocolate">Chocolate</option>
+        <option value="tea">Tea</option>
+        <option value="iced">Iced</option>
+        <option value="freezo">Freezo</option>
+        <option value="frozen">Frozen</option>
+      </select>
+    </div>
     <% ['hot','cold'].forEach(cat => { %>
     <h3 class="drinks-cat-heading <%= cat==='cold'?'drinks-cat-cold':'' %>">
       <%= cat==='hot' ? '☕ Hot Drinks' : '🧊 Cold Drinks' %>
     </h3>
     <% drinks.filter(d => d.category === cat).forEach(drink => { %>
-    <div class="admin-card admin-drink-row <%= !drink.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
+    <div class="admin-card admin-drink-row filterable-row <%= !drink.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;" data-name="<%= (drink.name || '').toLowerCase() %>" data-cat="<%= drink.category %> <%= drink.subcategory || '' %>">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
         <div style="display:flex;align-items:center;gap:0.75rem;flex:1;min-width:0;">
           <% if (drink.image) { %>
@@ -185,6 +200,26 @@
 </div>
 
 <script>
+
+function filterAdminList() {
+  const q   = (document.getElementById('drinkSearch')?.value || document.getElementById('pastrySearch')?.value || document.getElementById('eventSearch')?.value || '').toLowerCase().trim();
+  const cat = (document.getElementById('drinkCatFilter')?.value || document.getElementById('pastryCatFilter')?.value || document.getElementById('eventTypeFilter')?.value || '');
+  document.querySelectorAll('.filterable-row').forEach(row => {
+    const matchQ   = !q   || (row.dataset.name || '').includes(q);
+    const matchCat = !cat || (row.dataset.cat || '').split(' ').includes(cat);
+    row.style.display = (matchQ && matchCat) ? '' : 'none';
+  });
+  // Hide category headings whose rows are all hidden
+  document.querySelectorAll('.drinks-cat-heading, .admin-cat-heading').forEach(h => {
+    let el = h.nextElementSibling, any = false;
+    while (el && !el.classList.contains('drinks-cat-heading') && !el.classList.contains('admin-cat-heading')) {
+      if (el.classList.contains('filterable-row') && el.style.display !== 'none') { any = true; break; }
+      el = el.nextElementSibling;
+    }
+    h.style.display = any ? '' : 'none';
+  });
+}
+
 function toggleEdit(id) {
   const el = document.getElementById(id);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
