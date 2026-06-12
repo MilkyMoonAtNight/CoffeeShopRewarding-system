@@ -88,12 +88,12 @@
           <div class="scan-result-stat"><span class="scan-result-num"><%= result.user.totalDrinks %></span><span class="scan-result-lbl">Total drinks</span></div>
           <div class="scan-result-stat"><span class="scan-result-num"><%= result.user.tier %></span><span class="scan-result-lbl">Tier</span></div>
         </div>
-        <% if (result.newReward) { %>
+        <% (result.newRewards || (result.newReward ? [result.newReward] : [])).forEach(r => { %>
         <div class="scan-new-reward">
-          <span class="scan-reward-icon"><%= result.newReward.type === 'free_drink' ? '☕' : result.newReward.type === 'voucher' ? '🎫' : '🎁' %></span>
-          <div><strong><%= result.newReward.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!' %></strong><p><%= result.newReward.description %></p></div>
+          <span class="scan-reward-icon"><%= r.type === 'free_drink' ? '☕' : r.type === 'voucher' ? '🎫' : '🎁' %></span>
+          <div><strong><%= r.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!' %></strong><p><%= r.description %></p></div>
         </div>
-        <% } %>
+        <% }) %>
       <% } else { %>
         <div class="scan-result-icon scan-result-icon-err">✗</div>
         <h3>Not found</h3><p><%= result.message %></p>
@@ -138,6 +138,32 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+<!-- ── Quantity popup (appears after a successful scan) ── -->
+<div class="qty-modal-overlay" id="qtyModal">
+  <div class="qty-modal">
+    <div class="qty-modal-head">
+      <span style="font-size:1.8rem;">☕</span>
+      <h3 id="qmName">Customer</h3>
+      <p class="qty-modal-sub"><span id="qmDrinks">0</span> drinks · <span id="qmTier">Kitten</span></p>
+    </div>
+    <p class="qty-modal-label">How many drinks?</p>
+    <div class="qty-selector" style="justify-content:center;">
+      <button type="button" class="qty-btn" onclick="changeModalQty(-1)">−</button>
+      <input type="number" id="qmQty" value="1" min="1" max="20" class="qty-input" readonly />
+      <button type="button" class="qty-btn" onclick="changeModalQty(1)">+</button>
+    </div>
+    <div class="qty-quick-row">
+      <button type="button" class="qty-quick" onclick="setModalQty(1)">1</button>
+      <button type="button" class="qty-quick" onclick="setModalQty(2)">2</button>
+      <button type="button" class="qty-quick" onclick="setModalQty(3)">3</button>
+      <button type="button" class="qty-quick" onclick="setModalQty(5)">5</button>
+      <button type="button" class="qty-quick" onclick="setModalQty(10)">10</button>
+    </div>
+    <button id="qmConfirmBtn" class="btn btn-primary btn-full" onclick="confirmAddDrinks()">Add Drinks ✓</button>
+    <button class="btn btn-outline btn-full" style="margin-top:0.5rem;border-color:rgba(44,44,44,0.2);color:var(--charcoal);" onclick="closeQtyModal()">Cancel</button>
+  </div>
+</div>
+
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────
 document.querySelectorAll('.admin-scan-tab').forEach(tab => {
@@ -285,15 +311,9 @@ function tick() {
         qrLaser.style.display = 'none';
         setStatus('found', 'Code detected!');
 
-        recordDrink(token);
+        lookupCustomer(token);
 
-        setTimeout(() => {
-          cooldown    = false;
-          lastScanned = null;
-          qrFrame.classList.remove('qr-frame-found');
-          qrLaser.style.display = 'block';
-          if (scanning) setStatus('scanning', 'Scanning');
-        }, 4000);
+        // Cooldown released when the popup closes (see closeQtyModal)
       }
     } else if (!code) {
       framesSinceCode++;
@@ -316,16 +336,75 @@ function tryDecode(ctx, x, y, w, h) {
   return result;
 }
 
-// ── API call ──────────────────────────────────────────────────────
-async function recordDrink(qrCode) {
+// ── Step 1: look up customer, open quantity popup ─────────────────
+let pendingToken = null;
+
+async function lookupCustomer(token) {
   resultBox.style.display = 'none';
+  try {
+    const res  = await fetch('/admin/scan-lookup', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ qrCode: token }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      pendingToken = data.token;
+      document.getElementById('qmName').textContent   = data.user.name;
+      document.getElementById('qmDrinks').textContent = data.user.totalDrinks;
+      document.getElementById('qmTier').textContent   = data.user.tier;
+      document.getElementById('qmQty').value = 1;
+      document.getElementById('qtyModal').classList.add('open');
+      setStatus('found', 'Customer found');
+    } else {
+      releaseCooldown();
+      setStatus('error', 'Not found');
+      resultBox.style.display = 'block';
+      resultBox.className = 'admin-card scan-result-card scan-error-card';
+      resultBox.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div>
+        <h3>Not found</h3><p>${data.message}</p>`;
+    }
+  } catch (e) {
+    releaseCooldown();
+    setStatus('error', 'Connection error');
+  }
+}
+
+function releaseCooldown() {
+  cooldown = false;
+  lastScanned = null;
+  qrFrame.classList.remove('qr-frame-found');
+  qrLaser.style.display = 'block';
+  if (scanning) setStatus('scanning', 'Scanning');
+}
+
+function closeQtyModal() {
+  document.getElementById('qtyModal').classList.remove('open');
+  pendingToken = null;
+  setTimeout(releaseCooldown, 1200); // brief pause so the same code isn't instantly re-scanned
+}
+
+function changeModalQty(delta) {
+  const input = document.getElementById('qmQty');
+  input.value = Math.min(20, Math.max(1, parseInt(input.value || 1) + delta));
+}
+function setModalQty(n) { document.getElementById('qmQty').value = n; }
+
+// ── Step 2: confirm — record the chosen quantity ──────────────────
+async function confirmAddDrinks() {
+  if (!pendingToken) return;
+  const qty = Math.min(20, Math.max(1, parseInt(document.getElementById('qmQty').value) || 1));
+  const btn = document.getElementById('qmConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Adding…';
   try {
     const res  = await fetch('/admin/scan-api', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ qrCode }),
+      body:    JSON.stringify({ qrCode: pendingToken, quantity: qty }),
     });
     const data = await res.json();
+    btn.disabled = false; btn.textContent = 'Add Drinks ✓';
+    closeQtyModal();
     resultBox.style.display = 'block';
 
     if (data.success) {
@@ -333,6 +412,7 @@ async function recordDrink(qrCode) {
       let html = `
         <div class="scan-result-icon">✓</div>
         <h3>${data.user.name}</h3>
+        <p style="font-size:0.85rem;opacity:0.6;">${data.qty} drink${data.qty !== 1 ? 's' : ''} added</p>
         <div class="scan-result-stats">
           <div class="scan-result-stat">
             <span class="scan-result-num">${data.user.totalDrinks}</span>
@@ -343,23 +423,23 @@ async function recordDrink(qrCode) {
             <span class="scan-result-lbl">tier</span>
           </div>
         </div>`;
-      if (data.newReward) {
-        const icon = data.newReward.type === 'free_drink' ? '☕'
-                   : data.newReward.type === 'voucher'    ? '🎫' : '🎁';
+      (data.newRewards || []).forEach(r => {
+        const icon = r.type === 'free_drink' ? '☕' : r.type === 'voucher' ? '🎫' : '🎁';
         html += `<div class="scan-new-reward">
           <span class="scan-reward-icon">${icon}</span>
-          <div><strong>${data.newReward.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!'}</strong>
-          <p>${data.newReward.description}</p></div></div>`;
-      }
+          <div><strong>${r.type === 'voucher' ? 'Voucher added!' : 'Reward unlocked!'}</strong>
+          <p>${r.description}</p></div></div>`;
+      });
       resultBox.className = 'admin-card scan-result-card scan-success-card';
       resultBox.innerHTML = html;
     } else {
-      setStatus('error', 'Not found');
+      setStatus('error', 'Error');
       resultBox.className = 'admin-card scan-result-card scan-error-card';
       resultBox.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div>
-        <h3>Not found</h3><p>${data.message}</p>`;
+        <h3>Couldn't record</h3><p>${data.message}</p>`;
     }
   } catch (e) {
+    btn.disabled = false; btn.textContent = 'Add Drinks ✓';
     setStatus('error', 'Connection error');
   }
 }
@@ -471,6 +551,41 @@ startCamera();
   font-weight: 700; color: var(--maroon);
   letter-spacing: 0.05em; min-width: 18px;
 }
+
+/* ── Quantity popup ── */
+.qty-modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(10,10,10,0.55);
+  display: none; align-items: center; justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(3px);
+}
+.qty-modal-overlay.open { display: flex; }
+.qty-modal {
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.5rem 1.5rem;
+  width: 100%; max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  animation: qtyPop 0.18s ease;
+}
+@keyframes qtyPop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.qty-modal-head { text-align: center; margin-bottom: 1rem; }
+.qty-modal-head h3 { font-family: var(--font-nimbus); font-size: 1.25rem; margin-top: 0.25rem; }
+.qty-modal-sub { font-size: 0.8rem; color: rgba(44,44,44,0.55); margin-top: 0.15rem; }
+.qty-modal-label {
+  text-align: center; font-size: 0.8rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: rgba(44,44,44,0.5); margin-bottom: 0.6rem;
+}
+.qty-quick-row { display: flex; gap: 0.4rem; justify-content: center; margin: 0.85rem 0 1.1rem; }
+.qty-quick {
+  width: 44px; height: 36px; border-radius: 8px;
+  border: 1px solid rgba(88,18,23,0.25); background: var(--white);
+  color: var(--maroon); font-weight: 700; cursor: pointer;
+  transition: all 0.12s ease;
+}
+.qty-quick:hover { background: var(--maroon); color: var(--cream); }
 </style>
 
 <%- include('./layout-bottom') %>

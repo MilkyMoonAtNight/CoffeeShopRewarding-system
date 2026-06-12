@@ -886,10 +886,26 @@ ul { list-style: none; }
   .pastry-card-wide { grid-column: span 2; }
   .bp-user-card { flex-direction: column; }
 }
-@media (max-width: 650px) {
-  .nav-links { display: none; flex-direction: column; position: absolute; top: 70px; left: 0; right: 0; background: rgba(10,10,10,0.97); padding: 1.5rem; gap: 0.5rem; }
+/* ── Main navbar: hamburger collapse at 915px and below ── */
+@media (max-width: 915px) {
+  .nav-links {
+    display: none; flex-direction: column;
+    position: absolute; top: 70px; left: 0; right: 0;
+    background: rgba(10,10,10,0.97);
+    padding: 1.5rem; gap: 0.5rem;
+    border-bottom: 1px solid rgba(201, 151, 74, 0.15);
+  }
   .nav-links.open { display: flex; }
   .nav-toggle { display: flex; }
+  .nav-links .nav-link {
+    display: block; width: 100%;
+    padding: 0.75rem 1rem; font-size: 1rem;
+    border-radius: var(--radius);
+  }
+  .nav-links .nav-cta { margin-top: 0.5rem; text-align: center; }
+  .nav-links .nav-pase { text-align: center; }
+}
+@media (max-width: 650px) {
   .hero-content { padding-left: 2rem; }
   .pastries-grid { grid-template-columns: 1fr; }
   .pastry-card-wide { grid-column: span 1; aspect-ratio: 4/3; }
@@ -1158,8 +1174,8 @@ ul { list-style: none; }
   .admin-stats-grid-new .admin-stat-card:nth-child(2) { grid-column: 2; grid-row: 1; }
   .admin-stats-grid-new .admin-stat-scan { grid-column: 1 / span 2; grid-row: 2; justify-content: center; }
 
-/* ── Desktop upgrades ── */
-@media (min-width: 768px) {
+/* ── Desktop upgrades (916px+ — below that the admin nav stays a hamburger drawer) ── */
+@media (min-width: 916px) {
   .admin-header-user { display: inline; }
   .admin-nav-toggle { display: none; }
   .admin-nav-drawer {
@@ -2538,9 +2554,9 @@ button.detail-pill.detail-pill-active {
   .page-hero { padding: 5rem 0 3rem; }
   .page-hero-short { padding: 4.5rem 0 2rem; }
 
-  /* ── Battlepass teaser (home) ── */
-  .bp-text { order: 2; }
-  .bp-visual { order: 1; width: 100%; display:flex; justify-content:center; }
+  /* ── Battlepass teaser (home) — text first, QR card underneath ── */
+  .bp-text { order: 1; }
+  .bp-visual { order: 2; width: 100%; display:flex; justify-content:center; }
   .bp-card-preview { max-width: 280px; }
 
   /* ── Menu cards (home) ── */
@@ -2652,63 +2668,7 @@ button.detail-pill.detail-pill-active {
    Icon-only links, no hamburger, no text
    Modern "icon rail" pattern
    ====================================================== */
-@media (max-width: 914px) and (min-width: 651px) {
-  .nav-inner { padding: 0 1.25rem; gap: 0.5rem; }
-
-  /* Shrink logo text slightly */
-  .logo-text { font-size: 1.1rem; }
-
-  /* Each nav link becomes an icon-only pill */
-  .nav-link {
-    padding: 0.45rem 0.55rem;
-    font-size: 0;           /* hide text */
-    position: relative;
-  }
-
-  /* Show text as tooltip on hover */
-  .nav-link::after {
-    content: attr(data-label);
-    position: absolute;
-    bottom: -2.2rem; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(10,10,10,0.92);
-    color: var(--cream);
-    font-size: 0.7rem;
-    white-space: nowrap;
-    padding: 0.25rem 0.55rem;
-    border-radius: 6px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 9999;
-  }
-  .nav-link:hover::after { opacity: 1; }
-
-  /* Show the icon — each link needs a data-icon attr */
-  .nav-link::before {
-    content: attr(data-icon);
-    font-size: 1.1rem;
-    display: block;
-  }
-
-  /* CTAs keep a small label */
-  .nav-cta {
-    font-size: 0.72rem !important;
-    padding: 0.45rem 0.75rem !important;
-    white-space: nowrap;
-  }
-  .nav-pase {
-    font-size: 0.72rem !important;
-  }
-  .nav-order-link {
-    font-size: 0.72rem !important;
-    padding: 0.4rem 0.6rem !important;
-  }
-
-  /* Hide nav toggle — not needed at this range */
-  .nav-toggle { display: none !important; }
-  .nav-links  { display: flex !important; }
-}
+/* (removed: 651–914px icon-rail nav — replaced by 915px hamburger collapse) */
 
 /* ====== PASSWORD EYEBALL ====== */
 .pw-wrap {
@@ -2981,3 +2941,253 @@ button.detail-pill.detail-pill-active {
   width: 75%;
   height: 75%;
 }
+/* ====== SPECIALS (home) ====== */
+.specials-home { background: var(--cream); }
+.specials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+.special-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--cream-dark);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.special-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.special-card-image {
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--cream-mid);
+  display: flex; align-items: center; justify-content: center;
+}
+.special-card-body { padding: 1.25rem 1.5rem 1.5rem; }
+.special-card-title {
+  font-family: var(--font-nimbus);
+  font-size: 1.1rem;
+  color: var(--maroon);
+  margin-bottom: 0.35rem;
+}
+.special-card-desc {
+  font-size: 0.85rem;
+  color: rgba(44, 44, 44, 0.6);
+  margin-bottom: 0.6rem;
+}
+.special-card-price {
+  display: inline-block;
+  background: var(--maroon);
+  color: var(--cream);
+  font-size: 0.85rem;
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+}
+/* Placeholder variants until images are uploaded via admin */
+.special-card-placeholder .special-card-image { position: relative; }
+.special-ph-img-1 { background: linear-gradient(135deg, var(--maroon) 0%, var(--maroon-light) 100%); }
+.special-ph-img-2 { background: linear-gradient(135deg, var(--cream-mid) 0%, var(--cream-dark) 100%); }
+.special-ph-img-3 { background: linear-gradient(135deg, var(--charcoal) 0%, var(--charcoal-lt) 100%); }
+.special-ph-mark {
+  font-size: 2.5rem;
+  color: rgba(253, 246, 237, 0.55);
+}
+.special-ph-img-2 .special-ph-mark { color: rgba(88, 18, 23, 0.35); }
+
+/* ====== GOOGLE REVIEWS (home) ====== */
+.reviews-home { background: var(--cream); border-top: 1px solid var(--cream-dark); }
+.reviews-rating-line {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.reviews-stars { color: var(--maroon); font-size: 1.25rem; letter-spacing: 3px; }
+.reviews-source { font-size: 0.85rem; color: rgba(44, 44, 44, 0.55); }
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+.review-card {
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 0.85rem;
+  min-height: 200px;
+}
+/* Coloured placeholder blocks */
+.review-ph-1 { background: var(--maroon); }
+.review-ph-2 { background: var(--cream-mid); }
+.review-ph-3 { background: var(--charcoal); }
+.review-ph-stars { font-size: 1rem; letter-spacing: 2px; }
+.review-ph-1 .review-ph-stars, .review-ph-3 .review-ph-stars { color: var(--cream); }
+.review-ph-2 .review-ph-stars { color: var(--maroon); }
+.review-ph-line { height: 10px; border-radius: 999px; }
+.review-ph-1 .review-ph-line, .review-ph-3 .review-ph-line { background: rgba(253, 246, 237, 0.25); }
+.review-ph-2 .review-ph-line { background: rgba(88, 18, 23, 0.18); }
+.review-ph-line-60 { width: 60%; }
+.review-ph-line-70 { width: 70%; }
+.review-ph-line-80 { width: 80%; }
+.review-ph-line-90 { width: 90%; }
+.review-ph-line-100 { width: 100%; }
+.review-ph-author { display: flex; align-items: center; gap: 0.6rem; margin-top: auto; }
+.review-ph-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+.review-ph-name { height: 10px; width: 90px; border-radius: 999px; }
+.review-ph-1 .review-ph-avatar, .review-ph-1 .review-ph-name,
+.review-ph-3 .review-ph-avatar, .review-ph-3 .review-ph-name { background: rgba(253, 246, 237, 0.3); }
+.review-ph-2 .review-ph-avatar, .review-ph-2 .review-ph-name { background: rgba(88, 18, 23, 0.22); }
+.reviews-cta {
+  margin-top: 3rem;
+  text-align: center;
+  background: var(--maroon-pale);
+  border: 1px dashed rgba(88, 18, 23, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.5rem;
+}
+.reviews-cta-text {
+  margin-bottom: 1.1rem;
+  color: var(--charcoal);
+  font-size: 0.95rem;
+}
+
+/* Responsive — specials & reviews */
+@media (max-width: 915px) {
+  .specials-grid, .reviews-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 650px) {
+  .specials-grid, .reviews-grid { grid-template-columns: 1fr; }
+  .special-card-image { height: 180px; }
+}
+
+/* ── Live Google reviews — Con Leche themed cards ── */
+.review-live { position: relative; }
+.review-live::before {
+  content: '✦';
+  position: absolute; top: 1rem; right: 1.25rem;
+  font-size: 1.1rem; opacity: 0.35;
+}
+.review-theme-1 { background: var(--maroon); }
+.review-theme-2 { background: var(--white); border: 1px solid var(--cream-dark); }
+.review-theme-3 { background: var(--charcoal); }
+.review-theme-1, .review-theme-3 { color: var(--cream); }
+.review-theme-1::before, .review-theme-3::before { color: var(--cream); }
+.review-theme-2 { color: var(--charcoal); }
+.review-theme-2::before { color: var(--maroon); }
+.review-live-stars { font-size: 1rem; letter-spacing: 2px; }
+.review-theme-1 .review-live-stars, .review-theme-3 .review-live-stars { color: rgba(253,246,237,0.9); }
+.review-theme-2 .review-live-stars { color: var(--maroon); }
+.review-live-text {
+  font-size: 0.88rem; line-height: 1.6;
+  flex: 1;
+}
+.review-theme-1 .review-live-text, .review-theme-3 .review-live-text { color: rgba(253,246,237,0.85); }
+.review-theme-2 .review-live-text { color: rgba(44,44,44,0.75); }
+.review-live-author { display: flex; align-items: center; gap: 0.65rem; margin-top: auto; }
+.review-live-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.review-live-avatar-fallback { background: var(--maroon-pale); }
+.review-theme-1 .review-live-avatar-fallback,
+.review-theme-3 .review-live-avatar-fallback { background: rgba(253,246,237,0.15); }
+.review-live-name { display: block; font-size: 0.82rem; font-weight: 600; }
+.review-live-when { display: block; font-size: 0.7rem; opacity: 0.55; }
+
+/* ── Battlepass internal tabs ── */
+.bp-tabs {
+  display: flex; gap: 0.4rem;
+  background: rgba(44,44,44,0.05);
+  padding: 0.3rem; border-radius: 12px;
+  position: sticky; top: 76px; z-index: 50;
+  backdrop-filter: blur(6px);
+}
+.bp-tab {
+  flex: 1; padding: 0.65rem 0.5rem;
+  border: none; border-radius: 9px;
+  background: transparent; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600;
+  color: rgba(44,44,44,0.55);
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+.bp-tab:hover { color: var(--charcoal); }
+.bp-tab.active {
+  background: var(--maroon); color: var(--cream);
+  box-shadow: 0 2px 8px rgba(88,18,23,0.25);
+}
+.bp-tab-panel { display: flex; flex-direction: column; gap: 1rem; }
+.bp-tab-panel.hidden { display: none; }
+
+/* ── Backup token on QR card ── */
+.bp-token-box {
+  margin-top: 0.85rem;
+  background: rgba(253,246,237,0.07);
+  border: 1px dashed rgba(253,246,237,0.25);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  transition: background 0.15s ease;
+}
+.bp-token-box:hover { background: rgba(253,246,237,0.12); }
+.bp-token-label { font-size: 0.62rem; color: rgba(253,246,237,0.5); letter-spacing: 0.02em; }
+.bp-token {
+  font-family: monospace; font-size: 0.78rem;
+  color: var(--cream); word-break: break-all; line-height: 1.4;
+}
+.bp-token-copy { font-size: 0.6rem; color: rgba(201,151,74,0.8); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── Voucher redeem ── */
+.bp-voucher-side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
+.bp-redeem-btn {
+  padding: 0.4rem 0.9rem !important;
+  font-size: 0.75rem !important;
+  border-color: rgba(88,18,23,0.4) !important;
+  color: var(--maroon) !important;
+  min-height: 36px;
+}
+.bp-redeem-btn:hover { background: var(--maroon) !important; color: var(--cream) !important; }
+.bp-voucher-redeemed { background: rgba(29,158,117,0.08) !important; border-color: rgba(29,158,117,0.3) !important; }
+.bp-redeemed-flash { display: flex; align-items: center; gap: 0.85rem; width: 100%; }
+.bp-redeemed-check {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: #1D9E75; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+  animation: qtyPop 0.25s ease;
+}
+.bp-redeemed-title { font-weight: 800; letter-spacing: 0.12em; color: #1D9E75; font-size: 0.9rem; }
+.bp-redeemed-sub { font-size: 0.75rem; color: rgba(44,44,44,0.55); margin-top: 0.1rem; }
+
+/* ── Floating coffee beans (home) ── */
+.bean-field {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 2;          /* above section backgrounds, beans are near-transparent */
+  overflow: hidden;
+}
+.bean {
+  position: absolute;
+  display: block;
+  will-change: transform;
+}
+.bean svg { width: 100%; height: 100%; display: block; }
+.bean-grogu {
+  pointer-events: auto;   /* the only clickable bean 🤫 */
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.bean-grogu:hover { opacity: 0.9 !important; }
+@media (prefers-reduced-motion: reduce) { .bean { display: none; } }
+@media (max-width: 650px) { .bean-field .bean:nth-child(odd):not(.bean-grogu) { display: none; } }
+
+/* ── Review card 3D tilt ── */
+.review-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transform-style: preserve-3d;
+}
+.review-card:hover { box-shadow: var(--shadow-lg); }

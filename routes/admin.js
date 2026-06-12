@@ -2,12 +2,15 @@ const express = require('express');
 const router  = express.Router();
 const path    = require('path');
 const multer  = require('multer');
+const fs      = require('fs');
 const Admin   = require('../models/Admin');
 const User    = require('../models/User');
 const Event   = require('../models/Event');
 const Drink   = require('../models/Drink');
 const Pastry  = require('../models/Pastry');
+const Special = require('../models/Special');
 const CheckIn = require('../models/CheckIn');
+const ActivityLog = require('../models/ActivityLog');
 const { rateLimit, asString } = require('../utils/security');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
@@ -16,7 +19,12 @@ const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message
 function makeUploader(subfolder) {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, '..', 'public', 'images', subfolder));
+      const dir = path.join(__dirname, '..', 'public', 'images', subfolder);
+      // Empty folders don't survive git/zip transfers — if the folder is
+      // missing, multer fails with ENOENT and the photo silently never saves.
+      // Creating it here makes uploads work on any machine.
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
     },
     filename: (req, file, cb) => {
       // Whitelist the extension from a fixed set — never trust the raw value.
@@ -45,8 +53,17 @@ function makeUploader(subfolder) {
     }
   });
 }
+// Customers' QR encodes "conleche:<token>" — strip the prefix and whitespace
+// so a token pasted from Google Lens or typed by hand always matches.
+function normalizeToken(raw) {
+  let t = String(raw || '').trim();
+  if (t.toLowerCase().startsWith('conleche:')) t = t.slice('conleche:'.length);
+  return t.trim();
+}
+
 const drinkUpload  = makeUploader('drinks');
 const pastryUpload = makeUploader('pastries');
+const specialUpload = makeUploader('specials');
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────
 async function requireAdmin(req, res, next) {
@@ -158,29 +175,40 @@ router.post('/scan', requireAdmin, async (req, res) => {
   let result = { panel };
   try {
     if (panel === 'record') {
-      const user = await User.findOne({ qrCode });
+      const user = await User.findOne({ qrCode: normalizeToken(qrCode) });
       if (!user) {
         result = { panel, success: false, message: 'QR code not found — is the customer registered?' };
       } else {
         const qty = Math.min(20, Math.max(1, parseInt(req.body.quantity) || 1));
-        let newReward = null;
+        const newRewards = [];
         for (let i = 0; i < qty; i++) {
           const reward = user.recordDrink('Drink');
-          if (reward) newReward = reward;
+          if (reward) newRewards.push(reward);
         }
         await user.save();
-        result = { panel, success: true, user, newReward, qty };
+        await ActivityLog.create({
+          type: 'drinks_added', userId: user._id, userName: user.name,
+          adminId: req.admin._id, adminName: req.admin.name,
+          quantity: qty, totalAfter: user.totalDrinks
+        }).catch(() => {});
+        result = { panel, success: true, user, newReward: newRewards[newRewards.length - 1] || null, newRewards, qty };
       }
     } else if (panel === 'confirm') {
-      const user = await User.findOne({ qrCode });
+      const user = await User.findOne({ qrCode: normalizeToken(qrCode) });
       if (!user) {
         result = { panel, success: false, message: 'Customer not found' };
       } else {
-        const confirmed = user.confirmClaim(rewardId, claimCode);
+        const confirmed = user.confirmClaim(rewardId, claimCode, req.admin.name);
         if (!confirmed.ok) {
           result = { panel, success: false, message: confirmed.reason };
         } else {
           await user.save();
+          await ActivityLog.create({
+            type: confirmed.reward.type === 'voucher' ? 'voucher_redeemed' : 'reward_redeemed',
+            userId: user._id, userName: user.name,
+            adminId: req.admin._id, adminName: req.admin.name,
+            rewardType: confirmed.reward.type, rewardDescription: confirmed.reward.description
+          }).catch(() => {});
           result = { panel, success: true, rewardDesc: confirmed.reward.description };
         }
       }
@@ -191,18 +219,56 @@ router.post('/scan', requireAdmin, async (req, res) => {
   res.render('admin/scan', { title: 'Scan QR — Con Leche', admin: req.admin, result });
 });
 
-// Camera scan API
-router.post('/scan-api', requireAdmin, async (req, res) => {
+// Camera scan: step 1 — look the customer up WITHOUT recording anything,
+// so the barista gets a popup to choose the quantity first.
+router.post('/scan-lookup', requireAdmin, async (req, res) => {
   try {
-    const qrCode = asString(req.body.qrCode, 200);
-    const user = await User.findOne({ qrCode });
-    if (!user) return res.json({ success: false, message: 'QR code not found' });
-    const newReward = user.recordDrink('Drink');
-    await user.save();
-    res.json({ success: true, user: { name: user.name, totalDrinks: user.totalDrinks, tier: user.tier }, newReward });
+    const token = normalizeToken(asString(req.body.qrCode, 200));
+    const user = await User.findOne({ qrCode: token });
+    if (!user) return res.json({ success: false, message: 'QR code not found — is the customer registered?' });
+    res.json({ success: true, token, user: { name: user.name, totalDrinks: user.totalDrinks, tier: user.tier } });
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
+});
+
+// Camera scan: step 2 — record the chosen quantity
+router.post('/scan-api', requireAdmin, async (req, res) => {
+  try {
+    const token = normalizeToken(asString(req.body.qrCode, 200));
+    const user = await User.findOne({ qrCode: token });
+    if (!user) return res.json({ success: false, message: 'QR code not found' });
+    const qty = Math.min(20, Math.max(1, parseInt(req.body.quantity) || 1));
+    const newRewards = [];
+    for (let i = 0; i < qty; i++) {
+      const reward = user.recordDrink('Drink');
+      if (reward) newRewards.push(reward);
+    }
+    await user.save();
+    await ActivityLog.create({
+      type: 'drinks_added', userId: user._id, userName: user.name,
+      adminId: req.admin._id, adminName: req.admin.name,
+      quantity: qty, totalAfter: user.totalDrinks
+    }).catch(() => {});
+    res.json({
+      success: true, qty,
+      user: { name: user.name, totalDrinks: user.totalDrinks, tier: user.tier },
+      newRewards
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ─── Activity history (owner/manager) ───
+router.get('/history', ownerManager, async (req, res) => {
+  const type = ['drinks_added', 'reward_redeemed', 'voucher_redeemed'].includes(req.query.type)
+    ? req.query.type : null;
+  const query = type ? { type } : {};
+  const logs = await ActivityLog.find(query).sort({ at: -1 }).limit(200).catch(() => []);
+  res.render('admin/history', {
+    title: 'History — Con Leche Admin', admin: req.admin, logs, activeType: type, msg: null
+  });
 });
 
 // ── EVENTS ────────────────────────────────────────────────────────
@@ -289,6 +355,54 @@ router.post('/drinks/toggle/:id', ownerManager, async (req, res) => {
 router.get('/pastries', ownerManager, async (req, res) => {
   const pastries = await Pastry.find().sort({ order: 1 });
   res.render('admin/pastries', { title: 'Pastries — Con Leche Admin', admin: req.admin, pastries, msg: req.query.msg || null });
+});
+
+// ─── Specials (home-page promo cards) ───
+router.get('/specials', ownerManager, async (req, res) => {
+  const specials = await Special.find().sort({ order: 1, createdAt: -1 });
+  res.render('admin/specials', { title: 'Specials — Con Leche Admin', admin: req.admin, specials, msg: req.query.msg || null });
+});
+
+router.post('/specials/add', ownerManager, specialUpload.single('imageFile'), async (req, res) => {
+  try {
+    const { title, description, price, order } = req.body;
+    const imageFilename = req.file ? req.file.filename : null;
+    await new Special({
+      title, description,
+      price: price ? Number(price) : null,
+      image: imageFilename,
+      order: order || 99,
+      available: true
+    }).save();
+    res.redirect('/admin/specials?msg=Special+added');
+  } catch (err) { res.redirect('/admin/specials?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/specials/edit/:id', ownerManager, specialUpload.single('imageFile'), async (req, res) => {
+  try {
+    const { title, description, price, order, available } = req.body;
+    const update = {
+      title, description,
+      price: price ? Number(price) : null,
+      order: order || 99,
+      available: available === 'true',
+      updatedAt: new Date()
+    };
+    if (req.file) update.image = req.file.filename;
+    await Special.findByIdAndUpdate(req.params.id, update, { runValidators: true });
+    res.redirect('/admin/specials?msg=Special+updated');
+  } catch (err) { res.redirect('/admin/specials?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/specials/delete/:id', ownerManager, async (req, res) => {
+  await Special.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/specials?msg=Special+deleted');
+});
+
+router.post('/specials/toggle/:id', ownerManager, async (req, res) => {
+  const special = await Special.findById(req.params.id);
+  if (special) { special.available = !special.available; await special.save(); }
+  res.redirect('/admin/specials?msg=Updated');
 });
 
 router.post('/pastries/add', ownerManager, pastryUpload.single('imageFile'), async (req, res) => {

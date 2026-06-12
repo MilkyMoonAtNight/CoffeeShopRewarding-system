@@ -12,6 +12,10 @@ const rewardSchema = new mongoose.Schema({
   expiresAt: Date,              // set for vouchers only (7 days), null for free drinks / merch
   claimed: { type: Boolean, default: false },
   claimedAt: Date,
+  claimedBy: String,            // admin who confirmed the claim at the counter
+  redeemed: { type: Boolean, default: false },   // voucher/reward actually used
+  redeemedAt: Date,
+  redeemedBy: String,
   claimCode: String,            // 4-digit code generated when customer taps Claim
   claimCodeGeneratedAt: Date
 });
@@ -131,7 +135,10 @@ userSchema.methods.recordDrink = function (drinkName = 'Coffee') {
 // ── GENERATE CLAIM CODE (customer taps Claim on free drink/merch) ─
 userSchema.methods.generateClaimCode = function (rewardId) {
   const reward = this.rewards.id(rewardId);
-  if (!reward || reward.claimed) return null;
+  if (!reward || reward.redeemed) return null;
+  // Claimables must be unclaimed; vouchers are auto-claimed but redeemable until expiry
+  if (reward.type !== 'voucher' && reward.claimed) return null;
+  if (reward.type === 'voucher' && reward.expiresAt && reward.expiresAt <= new Date()) return null;
   const code = String(Math.floor(1000 + Math.random() * 9000));
   reward.claimCode = code;
   reward.claimCodeGeneratedAt = new Date();
@@ -139,16 +146,36 @@ userSchema.methods.generateClaimCode = function (rewardId) {
 };
 
 // ── CONFIRM CLAIM (barista enters code in admin) ──────────────────
-userSchema.methods.confirmClaim = function (rewardId, code) {
+userSchema.methods.confirmClaim = function (rewardId, code, adminName = null) {
   const reward = this.rewards.id(rewardId);
-  if (!reward || reward.claimed) return { ok: false, reason: 'Already claimed or not found' };
-  if (reward.claimCode !== code) return { ok: false, reason: 'Wrong code' };
+  if (!reward) return { ok: false, reason: 'Reward not found' };
+  if (reward.redeemed) return { ok: false, reason: 'Already redeemed' };
+  if (reward.type !== 'voucher' && reward.claimed) return { ok: false, reason: 'Already claimed' };
+  if (!reward.claimCode || reward.claimCode !== code) return { ok: false, reason: 'Wrong code' };
   // Code expires after 10 minutes
   const age = (Date.now() - new Date(reward.claimCodeGeneratedAt).getTime()) / 1000 / 60;
   if (age > 10) return { ok: false, reason: 'Code expired — ask customer to generate a new one' };
+  const now = new Date();
   reward.claimed = true;
-  reward.claimedAt = new Date();
+  if (!reward.claimedAt) reward.claimedAt = now;
+  if (adminName) reward.claimedBy = adminName;
+  reward.redeemed = true;
+  reward.redeemedAt = now;
+  reward.redeemedBy = adminName || 'Staff';
   reward.claimCode = null;
+  return { ok: true, reward };
+};
+
+// ── CUSTOMER SELF-REDEEMS A VOUCHER (shows screen at counter) ─────
+userSchema.methods.redeemVoucher = function (rewardId) {
+  const reward = this.rewards.id(rewardId);
+  if (!reward) return { ok: false, reason: 'Voucher not found' };
+  if (reward.type !== 'voucher') return { ok: false, reason: 'Not a voucher' };
+  if (reward.redeemed) return { ok: false, reason: 'Already redeemed' };
+  if (reward.expiresAt && reward.expiresAt <= new Date()) return { ok: false, reason: 'Voucher expired' };
+  reward.redeemed = true;
+  reward.redeemedAt = new Date();
+  reward.redeemedBy = 'Self — shown at counter';
   return { ok: true, reward };
 };
 

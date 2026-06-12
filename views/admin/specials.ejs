@@ -1,0 +1,148 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Specials</h1>
+  <p class="admin-page-sub">Upload, edit or remove this week's specials shown on the home page</p>
+</div>
+
+<% if (msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<div class="admin-two-col">
+
+  <!-- Add special -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Add New Special</h3>
+    <form action="/admin/specials/add" method="POST" enctype="multipart/form-data" class="auth-form">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" required placeholder="e.g. 2-for-1 Cappuccinos" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" name="description" placeholder="Short description…" />
+      </div>
+      <div class="form-group">
+        <label>Price (R) — optional</label>
+        <input type="number" name="price" placeholder="e.g. 55" min="0" step="0.50" />
+      </div>
+      <div class="form-group">
+        <label>Photo</label>
+        <div class="upload-zone" id="specialUploadZone" onclick="document.getElementById('specialImageFile').click()">
+          <div class="upload-zone-inner" id="specialUploadInner">
+            <span class="upload-icon">📷</span>
+            <span class="upload-label">Tap to upload photo</span>
+            <span class="upload-hint">JPG, PNG or WebP · max 5MB</span>
+          </div>
+        </div>
+        <input type="file" id="specialImageFile" name="imageFile" accept="image/*" style="display:none;"
+               onchange="previewUpload(this,'specialUploadInner','specialUploadZone')" />
+      </div>
+      <input type="hidden" name="order" value="99" />
+      <button type="submit" class="btn btn-primary btn-full">Add Special</button>
+    </form>
+  </div>
+
+  <!-- Specials list -->
+  <div>
+    <% if (specials.length === 0) { %>
+      <div class="admin-card"><p class="admin-empty">No specials yet — add one and it'll appear on the home page instantly.</p></div>
+    <% } else { %>
+      <% specials.forEach(special => { %>
+      <div class="admin-card admin-drink-row <%= !special.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
+        <div style="display:flex;gap:1rem;align-items:center;">
+          <% const sImg = special.image ? (special.image.startsWith('/') ? special.image : '/images/specials/' + special.image) : null; %>
+          <% if (sImg) { %>
+          <img src="<%= sImg %>" alt="<%= special.title %>"
+               style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
+          <% } else { %>
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--maroon),var(--maroon-light));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--cream);flex-shrink:0;">✦</div>
+          <% } %>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+              <div>
+                <strong style="font-size:0.92rem;"><%= special.title %></strong>
+                <% if (!special.available) { %><span class="admin-item-tag tag-off" style="margin-left:0.3rem;">Off</span><% } %>
+                <p style="font-size:0.75rem;color:rgba(44,44,44,0.45);margin-top:0.1rem;">
+                  <%= special.description || 'No description' %><%= special.price ? ' · R' + special.price : '' %>
+                </p>
+              </div>
+              <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                <form action="/admin/specials/toggle/<%= special._id %>" method="POST" style="display:inline;">
+                  <button type="submit" class="admin-toggle-btn"><%= special.available ? 'Hide' : 'Show' %></button>
+                </form>
+                <button onclick="toggleEdit('sedit-<%= special._id %>')" class="admin-toggle-btn">Edit</button>
+                <form action="/admin/specials/delete/<%= special._id %>" method="POST"
+                      onsubmit="return confirm('Delete <%= special.title %>?')" style="display:inline;">
+                  <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline edit -->
+        <div id="sedit-<%= special._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
+          <form action="/admin/specials/edit/<%= special._id %>" method="POST" enctype="multipart/form-data">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Title</label>
+                <input type="text" name="title" value="<%= special.title %>" required class="scan-input" />
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Description</label>
+                <input type="text" name="description" value="<%= special.description || '' %>" class="scan-input" />
+              </div>
+              <div class="form-group">
+                <label>Price (R) — optional</label>
+                <input type="number" name="price" value="<%= special.price || '' %>" class="scan-input" min="0" step="0.50" />
+              </div>
+              <div class="form-group">
+                <label>Available</label>
+                <select name="available" class="scan-input">
+                  <option value="true"  <%= special.available?'selected':'' %>>Yes</option>
+                  <option value="false" <%= !special.available?'selected':'' %>>No</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Replace photo</label>
+                <div class="upload-zone upload-zone-sm" id="sez-<%= special._id %>"
+                     onclick="document.getElementById('sef-<%= special._id %>').click()">
+                  <div class="upload-zone-inner" id="sei-<%= special._id %>">
+                    <span class="upload-icon" style="font-size:1.2rem;">📷</span>
+                    <span class="upload-label" style="font-size:0.78rem;">Tap to choose new photo</span>
+                  </div>
+                </div>
+                <input type="file" id="sef-<%= special._id %>" name="imageFile" accept="image/*" style="display:none;"
+                       onchange="previewUpload(this,'sei-<%= special._id %>','sez-<%= special._id %>')" />
+              </div>
+              <input type="hidden" name="order" value="<%= special.order %>" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;width:100%;">Save Changes</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+function toggleEdit(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function previewUpload(input, innerId, zoneId) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(innerId).innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    document.getElementById(zoneId).style.border = '2px solid var(--maroon)';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+
+<%- include('./layout-bottom') %>

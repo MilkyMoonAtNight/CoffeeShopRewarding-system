@@ -45,6 +45,57 @@
     </div>
   </section>
 
+  <!-- Specials — placeholders for now, will be managed from /admin/specials -->
+  <section class="section specials-home">
+    <div class="container">
+      <p class="section-eyebrow">Right Now at Con Leche</p>
+      <h2 class="section-title">This Week's <em>Specials</em></h2>
+      <% if (typeof specials !== 'undefined' && specials && specials.length > 0) { %>
+      <div class="specials-grid">
+        <% specials.forEach((special, i) => { %>
+        <div class="special-card">
+          <% if (special.image) { %>
+          <div class="special-card-image" style="background-image:url('<%= special.image %>');"></div>
+          <% } else { %>
+          <div class="special-card-image special-ph-img-<%= (i % 3) + 1 %>"><span class="special-ph-mark">✦</span></div>
+          <% } %>
+          <div class="special-card-body">
+            <h3 class="special-card-title"><%= special.title %></h3>
+            <% if (special.description) { %><p class="special-card-desc"><%= special.description %></p><% } %>
+            <% if (special.price) { %><span class="special-card-price">R<%= special.price %></span><% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } else { %>
+      <!-- Placeholder blocks — replaced automatically once specials are uploaded via the admin page -->
+      <div class="specials-grid">
+        <div class="special-card special-card-placeholder">
+          <div class="special-card-image special-ph-img-1"><span class="special-ph-mark">✦</span></div>
+          <div class="special-card-body">
+            <h3 class="special-card-title">Special Coming Soon</h3>
+            <p class="special-card-desc">Upload this one from the admin panel.</p>
+          </div>
+        </div>
+        <div class="special-card special-card-placeholder">
+          <div class="special-card-image special-ph-img-2"><span class="special-ph-mark">✦</span></div>
+          <div class="special-card-body">
+            <h3 class="special-card-title">Special Coming Soon</h3>
+            <p class="special-card-desc">Upload this one from the admin panel.</p>
+          </div>
+        </div>
+        <div class="special-card special-card-placeholder">
+          <div class="special-card-image special-ph-img-3"><span class="special-ph-mark">✦</span></div>
+          <div class="special-card-body">
+            <h3 class="special-card-title">Special Coming Soon</h3>
+            <p class="special-card-desc">Upload this one from the admin panel.</p>
+          </div>
+        </div>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
   <!-- Battlepass teaser -->
   <section class="section battlepass-teaser">
     <div class="container grid-2">
@@ -113,6 +164,86 @@
     </div>
   </section>
 
+  <!-- Google Reviews — coloured placeholder blocks for now -->
+  <section class="section reviews-home">
+    <div class="container">
+      <p class="section-eyebrow">Don't Take Our Word For It</p>
+      <h2 class="section-title">What Our <em>Regulars</em> Say</h2>
+      <div class="reviews-rating-line">
+        <span class="reviews-stars">★★★★★</span>
+        <% if (typeof googleRating !== 'undefined' && googleRating) { %>
+        <span class="reviews-source"><%= googleRating %> on Google · <%= googleReviewCount %> reviews</span>
+        <% } else { %>
+        <span class="reviews-source">Reviews from Google</span>
+        <% } %>
+      </div>
+
+      <% if (typeof reviews !== 'undefined' && reviews && reviews.length > 0) { %>
+      <!-- Live 5★ Google reviews, dressed in Con Leche colours -->
+      <div class="reviews-grid">
+        <% reviews.slice(0, 6).forEach((review, i) => { %>
+        <div class="review-card review-live review-theme-<%= (i % 3) + 1 %>">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"<%= review.text.length > 220 ? review.text.slice(0, 220).trim() + '…' : review.text %>"</p>
+          <div class="review-live-author">
+            <% if (review.photo) { %>
+            <img src="<%= review.photo %>" alt="" class="review-live-avatar" referrerpolicy="no-referrer" />
+            <% } else { %>
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <% } %>
+            <div>
+              <span class="review-live-name"><%= review.author %></span>
+              <span class="review-live-when"><%= review.when %> · Google</span>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } else { %>
+      <!-- Placeholder review blocks — shown until GOOGLE_PLACES_API_KEY + GOOGLE_PLACE_ID are set in .env -->
+      <div class="reviews-grid">
+        <div class="review-card review-ph-1">
+          <span class="review-ph-stars">★★★★★</span>
+          <div class="review-ph-line review-ph-line-90"></div>
+          <div class="review-ph-line review-ph-line-100"></div>
+          <div class="review-ph-line review-ph-line-70"></div>
+          <div class="review-ph-author">
+            <span class="review-ph-avatar"></span>
+            <span class="review-ph-name"></span>
+          </div>
+        </div>
+        <div class="review-card review-ph-2">
+          <span class="review-ph-stars">★★★★★</span>
+          <div class="review-ph-line review-ph-line-100"></div>
+          <div class="review-ph-line review-ph-line-80"></div>
+          <div class="review-ph-line review-ph-line-90"></div>
+          <div class="review-ph-author">
+            <span class="review-ph-avatar"></span>
+            <span class="review-ph-name"></span>
+          </div>
+        </div>
+        <div class="review-card review-ph-3">
+          <span class="review-ph-stars">★★★★★</span>
+          <div class="review-ph-line review-ph-line-80"></div>
+          <div class="review-ph-line review-ph-line-100"></div>
+          <div class="review-ph-line review-ph-line-60"></div>
+          <div class="review-ph-author">
+            <span class="review-ph-avatar"></span>
+            <span class="review-ph-name"></span>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="reviews-cta">
+        <p class="reviews-cta-text">Had a great visit? Tell the world — it takes 30 seconds.</p>
+        <a href="https://g.page/r/CcRPEqlBsgJXEBM/review" target="_blank" rel="noopener" class="btn btn-primary">
+          ★ Leave Us a Google Review
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Upcoming events — always shown -->
   <section class="section events-home">
     <div class="container">
@@ -140,5 +271,92 @@
     </div>
   </section>
 </main>
+
+<!-- ── Floating coffee beans (subtle, parallax on scroll) ── -->
+<div class="bean-field" id="beanField" aria-hidden="true"></div>
+
+<script>
+// ── Coffee bean drift ─────────────────────────────────────────────
+(function () {
+  const field = document.getElementById('beanField');
+  if (!field) return;
+
+  const BEAN_SVG = (fill) => `
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path fill="${fill}" d="M12 2C7 2 3.5 6.5 3.5 12S7 22 12 22s8.5-4.5 8.5-10S17 2 12 2zm0 2c1.2 0 2.3 2 2.3 2s-2.8 2.6-2.8 6-2.6 6.2-2.6 6.2S6 16.5 6 12c0-4.4 2.7-8 6-8zm3.9 1.5C17.2 6.9 18 9.3 18 12c0 4.4-2.7 8-6 8-.6 0-1.2-.6-1.2-.6s2.7-2.5 2.7-5.9 2.4-6.4 2.4-8z"/>
+    </svg>`;
+
+  // A small green friend hiding among the beans... 👀
+  const GROGU_SVG = `
+    <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="5"  cy="13" rx="5" ry="2.6" fill="#7a9b6d"/>
+      <ellipse cx="27" cy="13" rx="5" ry="2.6" fill="#7a9b6d"/>
+      <ellipse cx="16" cy="13" rx="8" ry="7.5" fill="#8fb07f"/>
+      <circle cx="13" cy="12.5" r="1.7" fill="#1a1a1a"/>
+      <circle cx="19" cy="12.5" r="1.7" fill="#1a1a1a"/>
+      <circle cx="13.5" cy="12" r="0.5" fill="#fff"/>
+      <circle cx="19.5" cy="12" r="0.5" fill="#fff"/>
+      <path d="M14.5 16 q1.5 1 3 0" stroke="#3d5237" stroke-width="0.7" fill="none" stroke-linecap="round"/>
+      <path d="M11 20 q5 2.5 10 0 l-1 3 h-8 z" fill="#cbb9a0"/>
+    </svg>`;
+
+  const beans = [];
+  const COUNT = 12;
+  for (let i = 0; i < COUNT; i++) {
+    const el = document.createElement('span');
+    el.className = 'bean';
+    const isGrogu = i === 7;   // one of them is not like the others
+    const size = isGrogu ? 30 : 16 + Math.random() * 14;
+    const dark = Math.random() > 0.45;
+    el.innerHTML = isGrogu ? GROGU_SVG : BEAN_SVG(dark ? 'rgba(88,18,23,0.8)' : 'rgba(253,246,237,0.8)');
+    el.style.width  = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left   = (3 + Math.random() * 92) + '%';
+    el.style.top    = (8 + Math.random() * 200) + 'vh';
+    el.style.opacity = isGrogu ? 0.45 : 0.1;
+    const rot = Math.floor(Math.random() * 360);
+    el.dataset.speed = (0.04 + Math.random() * 0.1).toFixed(3);
+    el.dataset.rot   = rot;
+    el.dataset.spin  = (Math.random() * 0.03 - 0.015).toFixed(4);
+    el.style.transform = `rotate(${rot}deg)`;
+    if (isGrogu) {
+      el.classList.add('bean-grogu');
+      el.addEventListener('click', () => { window.location = '/the-bean-awakens'; });
+    }
+    field.appendChild(el);
+    beans.push(el);
+  }
+
+  let ticking = false;
+  function update() {
+    const y = window.scrollY;
+    beans.forEach(b => {
+      const drift = -(y * parseFloat(b.dataset.speed));
+      const rot = parseFloat(b.dataset.rot) + y * parseFloat(b.dataset.spin);
+      b.style.transform = `translateY(${drift}px) rotate(${rot}deg)`;
+    });
+    ticking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  update();
+})();
+
+// ── Review card tilt — presses down toward the pointer ────────────
+document.querySelectorAll('.review-card').forEach(card => {
+  const MAX = 7; // degrees
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2)  / (rect.width / 2);   // -1 .. 1
+    const dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+    // The side under the cursor dips away; the opposite side lifts toward you
+    card.style.transform = `perspective(700px) rotateY(${(dx * MAX).toFixed(2)}deg) rotateX(${(-dy * MAX).toFixed(2)}deg) scale(0.99)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(700px) rotateY(0deg) rotateX(0deg) scale(1)';
+  });
+});
+</script>
 
 <%- include('../partials/footer') %>

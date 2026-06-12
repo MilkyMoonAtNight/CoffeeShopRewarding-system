@@ -30,7 +30,7 @@
           <!-- Image — half shown, full on hover -->
           <div class="event-tile-img-wrap">
             <% if (event.image) { %>
-              <img src="/images/events/<%= event.image %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
+              <img src="<%= event.image.startsWith('/') ? event.image : '/images/events/' + event.image %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
             <% } else { %>
               <div class="event-tile-placeholder">
                 <span><%= event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐' %></span>

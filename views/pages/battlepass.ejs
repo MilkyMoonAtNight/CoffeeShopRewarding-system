@@ -5,7 +5,16 @@
 <section class="bp-page">
   <div class="bp-container">
 
-    <!-- QR CARD -->
+    <!-- ── INTERNAL NAV ── -->
+    <div class="bp-tabs">
+      <button class="bp-tab active" data-tab="profile">👤 Profile</button>
+      <button class="bp-tab" data-tab="rewards">🐾 Rewards</button>
+      <button class="bp-tab" data-tab="history">🕘 History</button>
+    </div>
+
+    <!-- ════════════ TAB: PROFILE ════════════ -->
+    <div class="bp-tab-panel" id="tab-profile">
+
       <div class="bp-qr-card">
         <div class="bp-card-logo">
           <img src="/images/logo.png" alt="Con Leche" />
@@ -15,188 +24,278 @@
         <div class="bp-qr-box">
           <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
         </div>
-        
+
         <div class="bp-tier-chip">
           <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
           <%= user.tier %>
         </div>
         <p class="bp-qr-hint">Show this to your barista when ordering</p>
-      </div>
 
-    <!-- STATS ROW -->
-    <div class="bp-stats-row">
-      <div class="bp-stat-box">
-        <span class="bp-stat-num"><%= user.totalDrinks %></span>
-        <span class="bp-stat-lbl">drinks</span>
-      </div>
-      <div class="bp-stat-box">
-        <span class="bp-stat-num"><%= claimableItems.length %></span>
-        <span class="bp-stat-lbl">to claim</span>
-      </div>
-      <div class="bp-stat-box">
-        <span class="bp-stat-num"><%= activeVouchers.length %></span>
-        <span class="bp-stat-lbl">vouchers</span>
-      </div>
-    </div>
-
-    <!-- 9 LIVES -->
-    <div class="bp-section-card">
-      <p class="bp-section-label">9 Lives — every 10th drink is free 🐾</p>
-      <% const livesUsed = user.totalDrinks % 10; %>
-      <div class="lives-row">
-        <% for (let i = 1; i <= 9; i++) { %>
-        <div class="life-dot <%= i <= livesUsed ? 'life-used' : 'life-empty' %>">
-          <span><%= i <= livesUsed ? '🐾' : '' %></span>
-        </div>
-        <% } %>
-        <div class="life-dot life-free">
-          <span>☕</span>
+        <!-- Backup token — works even if the camera scan fails -->
+        <div class="bp-token-box" onclick="copyToken()" title="Tap to copy">
+          <span class="bp-token-label">Backup code — if scanning fails, the barista can type this:</span>
+          <span class="bp-token" id="bpToken"><%= user.qrCode %></span>
+          <span class="bp-token-copy" id="bpTokenCopy">tap to copy</span>
         </div>
       </div>
-      <p class="lives-count"><%= livesUsed %> / 9 — <%= 10 - livesUsed %> drinks to go</p>
-    </div>
 
-    <!-- PROGRESS TO NEXT REWARD -->
-    <% if (next) { %>
-    <div class="bp-section-card">
-      <p class="bp-section-label">Next Reward</p>
-      <div class="bp-next-reward-row">
-        <span class="bp-next-icon">
-          <%= next.type === 'free_drink' ? '☕' : next.type === 'special' ? '✨' : next.type === 'merch' ? '🎁' : next.type === 'store_voucher' ? '💳' : '🎫' %>
-        </span>
-        <div class="bp-next-info">
-          <p class="bp-next-desc"><%= next.description %></p>
-          <p class="bp-next-count"><%= drinksToNext %> drink<%= drinksToNext !== 1 ? 's' : '' %> away</p>
+      <div class="bp-stats-row">
+        <div class="bp-stat-box">
+          <span class="bp-stat-num"><%= user.totalDrinks %></span>
+          <span class="bp-stat-lbl">drinks</span>
+        </div>
+        <div class="bp-stat-box">
+          <span class="bp-stat-num"><%= claimableItems.length %></span>
+          <span class="bp-stat-lbl">to claim</span>
+        </div>
+        <div class="bp-stat-box">
+          <span class="bp-stat-num"><%= activeVouchers.length %></span>
+          <span class="bp-stat-lbl">vouchers</span>
         </div>
       </div>
-      <% const pct = Math.min(100, Math.max(0, progressPct)); %>
-      <div class="bp-prog-track">
-        <div class="bp-prog-fill" data-pct="<%= pct %>"></div>
-      </div>
-    </div>
-    <% } %>
 
-    <!-- UPCOMING MILESTONES -->
-    <% if (upcomingMilestones.length > 0) { %>
-    <div class="bp-section-card">
-      <p class="bp-section-label">Coming Up</p>
-      <div class="bp-ms-list">
-        <% upcomingMilestones.forEach((m, i) => { %>
-        <div class="bp-ms-item <%= i === 0 ? 'bp-ms-next' : '' %>">
-          <span class="bp-ms-icon">
-            <%= m.type === 'free_drink' ? '☕' : m.type === 'special' ? '✨' : m.type === 'merch' ? '🎁' : m.type === 'store_voucher' ? '💳' : '🎫' %>
-          </span>
-          <div class="bp-ms-body">
-            <p class="bp-ms-desc"><%= m.description %></p>
-            <p class="bp-ms-num">Drink #<%= m.drinkNumber %><% if (m.expires) { %> · 7-day voucher<% } %></p>
-          </div>
-          <% if (i === 0) { %><span class="bp-ms-badge">Next</span><% } %>
-        </div>
-        <% }) %>
+      <!-- ── Danger zone ── -->
+      <div class="bp-danger-zone">
+        <p class="bp-danger-label">Danger zone</p>
+        <p class="bp-danger-sub">Permanently delete your Con Leche account. This removes your battlepass, all stamps, rewards, and order history. This cannot be undone.</p>
+        <button class="btn bp-delete-btn" onclick="document.getElementById('deleteAccountOverlay').classList.add('open')">
+          Delete my account
+        </button>
       </div>
-    </div>
-    <% } %>
 
-    <!-- CLAIMABLE REWARDS -->
-    <% if (claimableItems.length > 0) { %>
-    <div class="bp-section-card">
-      <p class="bp-section-label">🎁 Ready to Claim</p>
-      <p class="bp-section-hint">Tap Claim and show the code to your barista.</p>
-      <div class="bp-claim-list">
-        <% claimableItems.forEach(reward => { %>
-        <div class="bp-claim-item" data-reward-id="<%= reward._id %>">
-          <span class="bp-claim-icon">
-            <%= reward.type === 'free_drink' ? '☕' : reward.type === 'special' ? '✨' : reward.type === 'merch' ? '🎁' : '💳' %>
-          </span>
-          <div class="bp-claim-body">
-            <p class="bp-claim-title"><%= reward.description %></p>
-            <p class="bp-claim-earned">Earned at drink #<%= reward.drinkNumber %></p>
-          </div>
-          <div class="bp-claim-action">
-            <% const codeAge = reward.claimCodeGeneratedAt ? (new Date() - new Date(reward.claimCodeGeneratedAt)) / 1000 / 60 : 99; %>
-            <% if (reward.claimCode && codeAge < 10) { %>
-              <div class="bp-code-display">
-                <span class="bp-code"><%= reward.claimCode %></span>
-                <span class="bp-code-hint">Show barista</span>
-              </div>
-            <% } else { %>
-              <button class="btn btn-primary claim-btn" data-id="<%= reward._id %>">Claim</button>
-            <% } %>
-          </div>
-        </div>
-        <% }) %>
-      </div>
     </div>
-    <% } %>
 
-    <!-- ACTIVE VOUCHERS -->
-    <% if (activeVouchers.length > 0) { %>
-    <div class="bp-section-card">
-      <p class="bp-section-label">🎫 Active Vouchers</p>
-      <p class="bp-section-hint">Show these at the counter — auto-applied to your order.</p>
-      <div class="bp-voucher-list">
-        <% activeVouchers.forEach(v => { %>
-        <% const daysLeft = v.expiresAt ? Math.max(0, Math.ceil((new Date(v.expiresAt) - new Date()) / (1000*60*60*24))) : null; %>
-        <div class="bp-voucher-item <%= daysLeft !== null && daysLeft <= 1 ? 'voucher-urgent' : '' %>">
-          <span class="bp-voucher-icon">🎫</span>
-          <div class="bp-voucher-body">
-            <p class="bp-voucher-desc"><%= v.description %></p>
-            <p class="bp-voucher-sub">Earned at drink #<%= v.drinkNumber %></p>
-          </div>
-          <% if (daysLeft !== null) { %>
-          <div class="bp-days-left">
-            <span class="bp-days-num"><%= daysLeft %></span>
-            <span class="bp-days-lbl">day<%= daysLeft !== 1 ? 's' : '' %></span>
+    <!-- ════════════ TAB: REWARDS ════════════ -->
+    <div class="bp-tab-panel hidden" id="tab-rewards">
+
+      <!-- 9 LIVES -->
+      <div class="bp-section-card">
+        <p class="bp-section-label">9 Lives — every 10th drink is free 🐾</p>
+        <% const livesUsed = user.totalDrinks % 10; %>
+        <div class="lives-row">
+          <% for (let i = 1; i <= 9; i++) { %>
+          <div class="life-dot <%= i <= livesUsed ? 'life-used' : 'life-empty' %>">
+            <span><%= i <= livesUsed ? '🐾' : '' %></span>
           </div>
           <% } %>
+          <div class="life-dot life-free">
+            <span>☕</span>
+          </div>
         </div>
-        <% }) %>
+        <p class="lives-count"><%= livesUsed %> / 9 — <%= 10 - livesUsed %> drinks to go</p>
       </div>
-    </div>
-    <% } %>
 
-    <!-- HISTORY -->
-    <% if (claimedItems.length > 0 || expiredVouchers.length > 0) { %>
-    <div class="bp-section-card bp-history-card">
-      <p class="bp-section-label">History</p>
-      <div class="bp-voucher-list">
-        <% claimedItems.forEach(r => { %>
-        <div class="bp-voucher-item bp-item-faded">
-          <span class="bp-voucher-icon">✓</span>
-          <div class="bp-voucher-body">
-            <p class="bp-voucher-desc"><%= r.description %></p>
-            <p class="bp-voucher-sub">Claimed <%= r.claimedAt ? new Date(r.claimedAt).toLocaleDateString('en-ZA') : '' %></p>
+      <!-- PROGRESS TO NEXT REWARD -->
+      <% if (next) { %>
+      <div class="bp-section-card">
+        <p class="bp-section-label">Next Reward</p>
+        <div class="bp-next-reward-row">
+          <span class="bp-next-icon">
+            <%= next.type === 'free_drink' ? '☕' : next.type === 'special' ? '✨' : next.type === 'merch' ? '🎁' : next.type === 'store_voucher' ? '💳' : '🎫' %>
+          </span>
+          <div class="bp-next-info">
+            <p class="bp-next-desc"><%= next.description %></p>
+            <p class="bp-next-count"><%= drinksToNext %> drink<%= drinksToNext !== 1 ? 's' : '' %> away</p>
           </div>
         </div>
-        <% }) %>
-        <% expiredVouchers.forEach(v => { %>
-        <div class="bp-voucher-item bp-item-faded">
-          <span class="bp-voucher-icon">⌛</span>
-          <div class="bp-voucher-body">
-            <p class="bp-voucher-desc"><%= v.description %></p>
-            <p class="bp-voucher-sub">Expired <%= new Date(v.expiresAt).toLocaleDateString('en-ZA') %></p>
-          </div>
+        <% const pct = Math.min(100, Math.max(0, progressPct)); %>
+        <div class="bp-prog-track">
+          <div class="bp-prog-fill" data-pct="<%= pct %>"></div>
         </div>
-        <% }) %>
       </div>
+      <% } %>
+
+      <!-- UPCOMING MILESTONES -->
+      <% if (upcomingMilestones.length > 0) { %>
+      <div class="bp-section-card">
+        <p class="bp-section-label">Coming Up</p>
+        <div class="bp-ms-list">
+          <% upcomingMilestones.forEach((m, i) => { %>
+          <div class="bp-ms-item <%= i === 0 ? 'bp-ms-next' : '' %>">
+            <span class="bp-ms-icon">
+              <%= m.type === 'free_drink' ? '☕' : m.type === 'special' ? '✨' : m.type === 'merch' ? '🎁' : m.type === 'store_voucher' ? '💳' : '🎫' %>
+            </span>
+            <div class="bp-ms-body">
+              <p class="bp-ms-desc"><%= m.description %></p>
+              <p class="bp-ms-num">Drink #<%= m.drinkNumber %><% if (m.expires) { %> · 7-day voucher<% } %></p>
+            </div>
+            <% if (i === 0) { %><span class="bp-ms-badge">Next</span><% } %>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- INVENTORY — banked rewards, kept until claimed -->
+      <% if (claimableItems.length > 0) { %>
+      <div class="bp-section-card">
+        <p class="bp-section-label">🎁 Inventory — Ready to Claim</p>
+        <p class="bp-section-hint">These never expire — claim whenever you like. Tap Claim and show the code to your barista.</p>
+        <div class="bp-claim-list">
+          <% claimableItems.forEach(reward => { %>
+          <div class="bp-claim-item" data-reward-id="<%= reward._id %>">
+            <span class="bp-claim-icon">
+              <%= reward.type === 'free_drink' ? '☕' : reward.type === 'special' ? '✨' : reward.type === 'merch' ? '🎁' : '💳' %>
+            </span>
+            <div class="bp-claim-body">
+              <p class="bp-claim-title"><%= reward.description %></p>
+              <p class="bp-claim-earned">Earned at drink #<%= reward.drinkNumber %></p>
+            </div>
+            <div class="bp-claim-action">
+              <% const codeAge = reward.claimCodeGeneratedAt ? (new Date() - new Date(reward.claimCodeGeneratedAt)) / 1000 / 60 : 99; %>
+              <% if (reward.claimCode && codeAge < 10) { %>
+                <div class="bp-code-display">
+                  <span class="bp-code"><%= reward.claimCode %></span>
+                  <span class="bp-code-hint">Show barista</span>
+                </div>
+              <% } else { %>
+                <button class="btn btn-primary claim-btn" data-id="<%= reward._id %>">Claim</button>
+              <% } %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- ACTIVE VOUCHERS — 7 days, gone once redeemed -->
+      <% if (activeVouchers.length > 0) { %>
+      <div class="bp-section-card">
+        <p class="bp-section-label">🎫 Active Vouchers</p>
+        <p class="bp-section-hint">Valid 7 days from when you earned them. Tap Redeem at the counter — once redeemed, it's used up.</p>
+        <div class="bp-voucher-list">
+          <% activeVouchers.forEach(v => { %>
+          <% const daysLeft = v.expiresAt ? Math.max(0, Math.ceil((new Date(v.expiresAt) - new Date()) / (1000*60*60*24))) : null; %>
+          <div class="bp-voucher-item <%= daysLeft !== null && daysLeft <= 1 ? 'voucher-urgent' : '' %>" id="voucher-<%= v._id %>">
+            <span class="bp-voucher-icon">🎫</span>
+            <div class="bp-voucher-body">
+              <p class="bp-voucher-desc"><%= v.description %></p>
+              <p class="bp-voucher-sub">Earned at drink #<%= v.drinkNumber %></p>
+            </div>
+            <div class="bp-voucher-side">
+              <% if (daysLeft !== null) { %>
+              <div class="bp-days-left">
+                <span class="bp-days-num"><%= daysLeft %></span>
+                <span class="bp-days-lbl">day<%= daysLeft !== 1 ? 's' : '' %></span>
+              </div>
+              <% } %>
+              <button class="btn btn-outline bp-redeem-btn" data-id="<%= v._id %>" data-desc="<%= v.description %>">Redeem</button>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <% if (claimableItems.length === 0 && activeVouchers.length === 0) { %>
+      <div class="bp-section-card" style="text-align:center;">
+        <p style="font-size:2rem;margin-bottom:0.5rem;">🐾</p>
+        <p class="bp-section-label" style="margin-bottom:0.25rem;">Nothing to claim yet</p>
+        <p class="bp-section-hint">Keep sipping — your next reward is on its way.</p>
+      </div>
+      <% } %>
+
     </div>
-    <% } %>
+
+    <!-- ════════════ TAB: HISTORY ════════════ -->
+    <div class="bp-tab-panel hidden" id="tab-history">
+
+      <!-- STAMP HISTORY — when, by whom, how many -->
+      <div class="bp-section-card">
+        <p class="bp-section-label">☕ Stamp History</p>
+        <% if (stampHistory && stampHistory.length > 0) { %>
+        <div class="bp-voucher-list">
+          <% stampHistory.forEach(log => { %>
+          <div class="bp-voucher-item">
+            <span class="bp-voucher-icon">☕</span>
+            <div class="bp-voucher-body">
+              <p class="bp-voucher-desc"><strong><%= log.quantity %></strong> drink<%= log.quantity !== 1 ? 's' : '' %> added<% if (log.totalAfter) { %> · total <%= log.totalAfter %><% } %></p>
+              <p class="bp-voucher-sub">by <%= log.adminName || 'Staff' %> · <%= new Date(log.at).toLocaleString('en-ZA', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } else { %>
+        <p class="bp-section-hint">Your stamps will show up here after your first scan.</p>
+        <% } %>
+      </div>
+
+      <!-- REDEEMED REWARDS -->
+      <% if (claimedItems.length > 0 || redeemedVouchers.length > 0) { %>
+      <div class="bp-section-card">
+        <p class="bp-section-label">✓ Redeemed Rewards</p>
+        <div class="bp-voucher-list">
+          <% claimedItems.forEach(r => { %>
+          <div class="bp-voucher-item bp-item-faded">
+            <span class="bp-voucher-icon">✓</span>
+            <div class="bp-voucher-body">
+              <p class="bp-voucher-desc"><%= r.description %></p>
+              <p class="bp-voucher-sub">
+                Claimed <%= (r.redeemedAt || r.claimedAt) ? new Date(r.redeemedAt || r.claimedAt).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' }) : '' %><% if (r.claimedBy || r.redeemedBy) { %> · confirmed by <%= r.claimedBy || r.redeemedBy %><% } %>
+              </p>
+            </div>
+          </div>
+          <% }) %>
+          <% redeemedVouchers.forEach(v => { %>
+          <div class="bp-voucher-item bp-item-faded">
+            <span class="bp-voucher-icon">🎫</span>
+            <div class="bp-voucher-body">
+              <p class="bp-voucher-desc"><%= v.description %></p>
+              <p class="bp-voucher-sub">Redeemed <%= v.redeemedAt ? new Date(v.redeemedAt).toLocaleString('en-ZA', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '' %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- PAST / EXPIRED -->
+      <% if (expiredVouchers.length > 0) { %>
+      <div class="bp-section-card bp-history-card">
+        <p class="bp-section-label">⌛ Past Rewards</p>
+        <div class="bp-voucher-list">
+          <% expiredVouchers.forEach(v => { %>
+          <div class="bp-voucher-item bp-item-faded">
+            <span class="bp-voucher-icon">⌛</span>
+            <div class="bp-voucher-body">
+              <p class="bp-voucher-desc"><%= v.description %></p>
+              <p class="bp-voucher-sub">Expired <%= new Date(v.expiresAt).toLocaleDateString('en-ZA') %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- PURCHASE HISTORY -->
+      <div class="bp-section-card" style="text-align:center;">
+        <p class="bp-section-label">🛒 Purchase History</p>
+        <p class="bp-section-hint" style="margin-bottom:0.85rem;">Your orders, live status and past slips live on the orders page.</p>
+        <a href="/order/my-orders" class="btn btn-outline" style="border-color:rgba(88,18,23,0.35);color:var(--maroon);">View My Orders →</a>
+      </div>
+
+    </div>
 
   </div><!-- end bp-container -->
-
-  <!-- ── Danger zone ── -->
-  <div class="bp-container" style="margin-top:0;padding-bottom:3rem;">
-    <div class="bp-danger-zone">
-      <p class="bp-danger-label">Danger zone</p>
-      <p class="bp-danger-sub">Permanently delete your Con Leche account. This removes your battlepass, all stamps, rewards, and order history. This cannot be undone.</p>
-      <button class="btn bp-delete-btn" onclick="document.getElementById('deleteAccountOverlay').classList.add('open')">
-        Delete my account
-      </button>
-    </div>
-  </div>
-
 </section>
 </main>
+
+<!-- Voucher redeem confirmation overlay -->
+<div class="modal-overlay" id="redeemOverlay">
+  <div class="modal-sheet" style="max-width:400px;border-radius:var(--radius-lg);">
+    <button class="modal-close" onclick="closeRedeem()">✕</button>
+    <div class="modal-body" style="padding-top:1.75rem;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">🎫</div>
+      <h2 style="font-family:var(--font-nimbus);font-size:1.3rem;margin-bottom:0.5rem;">Redeem this voucher?</h2>
+      <p id="redeemDesc" style="color:rgba(44,44,44,0.7);margin-bottom:0.75rem;font-weight:600;"></p>
+      <p style="color:rgba(44,44,44,0.5);font-size:0.82rem;margin-bottom:1.5rem;">Only tap Redeem <strong>at the counter with your barista watching</strong> — once redeemed it's used up and can't be brought back.</p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button id="redeemConfirmBtn" class="btn btn-primary" style="min-width:150px;" onclick="confirmRedeem()">Redeem now</button>
+        <button type="button" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);" onclick="closeRedeem()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Delete account confirmation overlay -->
 <div class="modal-overlay" id="deleteAccountOverlay">
@@ -206,7 +305,7 @@
       <div style="font-size:2.5rem;margin-bottom:0.75rem;">💔</div>
       <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;">We'll miss you</h2>
       <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">Are you sure you want to delete your account?</p>
-      <p style="color:rgba(44,44,44,0.5);font-size:0.82rem;margin-bottom:1rem;">You have <strong><%= user.totalDrinks %> stamps</strong> and <strong><%= (user.rewards||[]).filter(r=>r.status==='earned').length %> unclaimed rewards</strong>. All of this will be gone forever.</p>
+      <p style="color:rgba(44,44,44,0.5);font-size:0.82rem;margin-bottom:1rem;">You have <strong><%= user.totalDrinks %> stamps</strong> and <strong><%= claimableItems.length %> unclaimed rewards</strong>. All of this will be gone forever.</p>
       <p style="color:rgba(44,44,44,0.45);font-size:0.78rem;margin-bottom:1.5rem;">Type <strong>DELETE</strong> to confirm.</p>
       <input type="text" id="deleteConfirmInput" class="confirm-input"
              placeholder="Type DELETE here" style="text-align:center;margin-bottom:1rem;letter-spacing:0.1em;" />
@@ -221,12 +320,33 @@
 </div>
 
 <script>
-// Set progress bar width via JS to avoid EJS-in-style issue
+// ── Tabs ──────────────────────────────────────────────────────────
+document.querySelectorAll('.bp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.bp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.bp-tab-panel').forEach(p => p.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+// ── Copy token ────────────────────────────────────────────────────
+function copyToken() {
+  const token = document.getElementById('bpToken').textContent.trim();
+  navigator.clipboard.writeText(token).then(() => {
+    const hint = document.getElementById('bpTokenCopy');
+    hint.textContent = '✓ copied';
+    setTimeout(() => { hint.textContent = 'tap to copy'; }, 2000);
+  }).catch(() => {});
+}
+
+// ── Progress bar ──────────────────────────────────────────────────
 document.querySelectorAll('.bp-prog-fill').forEach(el => {
   el.style.width = el.dataset.pct + '%';
 });
 
-// Claim buttons
+// ── Claim buttons (free drinks / merch — 4-digit code flow) ───────
 document.querySelectorAll('.claim-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const id = btn.dataset.id;
@@ -253,6 +373,56 @@ document.querySelectorAll('.claim-btn').forEach(btn => {
     }
   });
 });
+
+// ── Voucher redeem (confirm → mark used → big REDEEMED state) ─────
+let redeemTargetId = null;
+document.querySelectorAll('.bp-redeem-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    redeemTargetId = btn.dataset.id;
+    document.getElementById('redeemDesc').textContent = btn.dataset.desc;
+    document.getElementById('redeemOverlay').classList.add('open');
+  });
+});
+function closeRedeem() {
+  document.getElementById('redeemOverlay').classList.remove('open');
+  redeemTargetId = null;
+}
+async function confirmRedeem() {
+  if (!redeemTargetId) return;
+  const id = redeemTargetId;
+  const btn = document.getElementById('redeemConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Redeeming…';
+  try {
+    const res = await fetch(`/battlepass/redeem-voucher/${id}`, { method: 'POST' });
+    const data = await res.json();
+    btn.disabled = false; btn.textContent = 'Redeem now';
+    if (data.success) {
+      const item = document.getElementById('voucher-' + id);
+      if (item) {
+        const time = new Date(data.redeemedAt).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+        item.innerHTML = `
+          <div class="bp-redeemed-flash">
+            <span class="bp-redeemed-check">✓</span>
+            <div>
+              <p class="bp-redeemed-title">REDEEMED</p>
+              <p class="bp-redeemed-sub">${data.description} · ${time}</p>
+            </div>
+          </div>`;
+        item.classList.add('bp-voucher-redeemed');
+      }
+      closeRedeem();
+    } else {
+      alert(data.message);
+      closeRedeem();
+    }
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Redeem now';
+  }
+}
+document.getElementById('redeemOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeRedeem();
+});
+
 // ── Delete account ────────────────────────────────────────────────
 const deleteInput = document.getElementById('deleteConfirmInput');
 const confirmBtn  = document.getElementById('confirmDeleteBtn');

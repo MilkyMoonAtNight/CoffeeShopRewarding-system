@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>A Long Time Ago…</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050507;
+      color: #FFE81F;
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    /* Starfield */
+    .stars { position: fixed; inset: 0; z-index: 0; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+    .wrap { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    .intro {
+      color: #4bd5ee; text-align: center;
+      font-size: 1.1rem; margin-bottom: 2.5rem;
+      animation: fadeIn 2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Crawl */
+    .crawl-zone { perspective: 350px; overflow: hidden; height: 380px; margin-bottom: 3rem; }
+    .crawl {
+      transform-origin: 50% 100%;
+      transform: rotateX(22deg);
+      animation: crawlUp 45s linear infinite;
+      text-align: justify;
+      font-size: 1.35rem; line-height: 1.9; font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    @keyframes crawlUp {
+      0%   { transform: rotateX(22deg) translateY(380px); }
+      100% { transform: rotateX(22deg) translateY(-160%); }
+    }
+    .crawl h1 { text-align: center; font-size: 1.7rem; margin-bottom: 1.5rem; text-transform: uppercase; }
+
+    .section {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,232,31,0.15);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      color: #e8e6df;
+      animation: fadeIn 1.5s ease;
+    }
+    .section h2 { color: #FFE81F; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 0.75rem; }
+    .section p { font-size: 0.92rem; line-height: 1.7; color: rgba(232,230,223,0.85); }
+    .section .big { font-size: 1.6rem; margin-bottom: 0.5rem; }
+
+    .d20 {
+      display: inline-block; cursor: pointer; user-select: none;
+      font-size: 2.2rem; transition: transform 0.4s ease;
+    }
+    .d20:active { transform: rotate(720deg) scale(1.2); }
+    .roll-result { font-size: 1.1rem; font-weight: 700; color: #4bd5ee; margin-left: 0.75rem; }
+
+    .back {
+      display: inline-block; margin-top: 2rem;
+      color: rgba(232,230,223,0.4); text-decoration: none; font-size: 0.8rem;
+    }
+    .back:hover { color: #FFE81F; }
+    .secret-note { font-size: 0.7rem; color: rgba(232,230,223,0.25); margin-top: 2.5rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <div class="wrap">
+    <p class="intro">A long time ago, in a coffee shop<br/>not so far away….</p>
+
+    <div class="crawl-zone">
+      <div class="crawl">
+        <h1>Episode IV<br/>A New Roast</h1>
+        <p>
+          It is a period of caffeine wars. Rebel baristas, striking from a hidden roastery,
+          have won their first victory against the evil Decaf Empire.
+          During the battle, rebel spies managed to steal secret plans to the Empire's
+          ultimate weapon: the BITTER STAR, an instant-coffee station with enough
+          blandness to destroy an entire palate.
+          Pursued by the Empire's sinister agents, one barista races home aboard his
+          espresso machine, custodian of the stolen beans that can save his people
+          and restore flavour to the galaxy….
+        </p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>⚔️ To Our Fearless Leader</h2>
+      <p class="big">🧔☕</p>
+      <p>
+        The Force is strong with this one. Master of the roast, protector of the realm,
+        keeper of the family name. They say a person's greatness is measured by what
+        they build — and you've built a crew, a shop, and a family that would make
+        any Jedi Council proud. This is the way.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>👨‍👩‍👧‍👦 House Rules</h2>
+      <p>
+        First rule of this establishment: family comes first.<br/>
+        Second rule: coffee comes immediately second.<br/>
+        Third rule: anyone who says decaf counts as coffee is banished to the Outer Rim.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>🎲 Roll for Initiative</h2>
+      <p style="margin-bottom:0.75rem;">A wild order rush approaches. Tap the d20:</p>
+      <span class="d20" id="d20" title="Roll!">🎲</span>
+      <span class="roll-result" id="rollResult"></span>
+      <p id="rollFlavour" style="margin-top:0.75rem;font-style:italic;"></p>
+    </div>
+
+    <div class="section">
+      <h2>⚡ A Wild Cappuccino Appeared!</h2>
+      <p>
+        It used FOAM ART. It's super effective!<br/>
+        You threw a loyalty card… <em>gotcha!</em> CAPPUCCINO was caught!<br/>
+        Your CaféDex is now <strong>1 closer to complete</strong>. Gotta sip 'em all.
+      </p>
+    </div>
+
+    <p class="secret-note">
+      You found the secret page. Tell no one. 🤫<br/>
+      (Especially not the person it's about.)
+    </p>
+
+    <a href="/" class="back">← return to the galaxy</a>
+  </div>
+
+  <script>
+    // Starfield
+    const stars = document.getElementById('stars');
+    for (let i = 0; i < 120; i++) {
+      const s = document.createElement('span');
+      s.className = 'star';
+      const size = Math.random() * 2 + 1;
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.animationDelay = (Math.random() * 3) + 's';
+      stars.appendChild(s);
+    }
+
+    // d20
+    const FLAVOUR = {
+      1:  'Critical fail — the milk frother explodes. Roll a new barista.',
+      20: 'NATURAL 20! Every latte today comes out with perfect foam art. The tavern cheers.'
+    };
+    document.getElementById('d20').addEventListener('click', () => {
+      const n = Math.floor(Math.random() * 20) + 1;
+      document.getElementById('rollResult').textContent = '→ ' + n;
+      document.getElementById('rollFlavour').textContent =
+        FLAVOUR[n] || (n >= 15 ? 'Success! The rush is handled with style.'
+                     : n >= 8  ? 'Partial success. One order of "the usual" from someone you\'ve never seen before.'
+                     : 'The espresso machine makes a noise it has never made before.');
+    });
+  </script>
+</body>
+</html>

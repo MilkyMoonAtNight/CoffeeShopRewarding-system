@@ -1,0 +1,84 @@
+<%
+const STATUS_STEP = { pending: 1, preparing: 2, ready: 3, done: 4 };
+%>
+<% if (!orders || orders.length === 0) { %>
+<div class="myorders-empty">
+  <div style="font-size:3rem;margin-bottom:1rem;">🛒</div>
+  <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;">No orders yet</h2>
+  <p style="color:rgba(44,44,44,0.5);margin-bottom:1.5rem;">Place your first order and it will appear here.</p>
+  <a href="/order" class="btn btn-primary">Order Now →</a>
+</div>
+<% } else { %>
+<% orders.forEach(order => {
+  const step   = STATUS_STEP[order.status] || 1;
+  const isDone = order.status === 'done';
+  const placedDate = new Date(order.placedAt).toLocaleString('en-ZA', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const statusText = order.status === 'ready'     ? '🐾 <strong>Your order is ready!</strong> Come grab it.'
+                   : order.status === 'preparing' ? '☕ We\'re making your order now…'
+                   : order.status === 'done'      ? '✓ Collected — enjoy!'
+                   : '📋 Order received — we\'ll start soon.';
+  const statusColor = order.status === 'ready' ? 'var(--maroon)'
+                    : order.status === 'done'  ? 'rgba(44,44,44,0.4)'
+                    : 'rgba(44,44,44,0.7)';
+%>
+<div class="myorder-card <%= isDone ? 'myorder-done' : '' %> <%= order.status === 'ready' ? 'myorder-ready-pulse' : '' %>">
+  <div class="myorder-header">
+    <div>
+      <p class="myorder-ref"><%= order.ref %></p>
+      <p class="myorder-date"><%= placedDate %></p>
+    </div>
+    <div class="myorder-total-col">
+      <span class="myorder-total">R<%= order.total %></span>
+      <span class="myorder-collection"><%= order.pickupMethod || order.collection || '' %></span>
+    </div>
+  </div>
+
+  <div class="order-tracker">
+    <div class="tracker-steps">
+      <% [['Received',1],['Preparing',2],['Ready',3],['Collected',4]].forEach(([label, n], idx) => { %>
+        <% if (idx > 0) { %><div class="tracker-line <%= step >= n ? 'done' : '' %>"></div><% } %>
+        <div class="tracker-step <%= step >= n ? 'done' : '' %> <%= step === n ? 'active' : '' %>">
+          <div class="tracker-dot"><span><%= step >= n ? '✓' : n %></span></div>
+          <span class="tracker-label"><%= label %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="tracker-status-text" style="color:<%= statusColor %>;"><%- statusText %></div>
+  </div>
+
+  <% if (!isDone) { %>
+  <details class="slip-details">
+    <summary class="slip-summary">Show order slip to barista</summary>
+    <div class="virtual-slip">
+      <div class="slip-header">
+        <img src="/images/logo.png" alt="Con Leche" class="slip-logo" />
+        <div>
+          <p class="slip-ref"><%= order.ref %></p>
+          <p class="slip-date"><%= placedDate %></p>
+        </div>
+      </div>
+      <div class="slip-items">
+        <% (order.items || []).forEach(item => { %>
+        <div class="slip-item">
+          <div class="slip-item-main">
+            <strong><%= item.name %></strong>
+            <% const tags = []; %>
+            <% if (item.size) tags.push(item.size + (item.ml ? ' · ' + item.ml : '')); %>
+            <% if (item.flavour) tags.push(item.flavour); %>
+            <% if (item.milk && item.milk !== 'Full cream') tags.push(item.milk); %>
+            <% if (item.sugar && item.sugar !== 'Regular') tags.push(item.sugar); %>
+            <% if (tags.length) { %><br/><% tags.forEach(t => { %><span class="slip-tag"><%= t %></span><% }) %><% } %>
+          </div>
+          <% if (item.notes) { %><p class="slip-note">"<%= item.notes %>"</p><% } %>
+          <span class="slip-item-price">R<%= item.price %></span>
+        </div>
+        <% }) %>
+      </div>
+      <div class="slip-footer"><span>Total</span><strong>R<%= order.total %></strong></div>
+      <div class="slip-collection">📍 <%= order.pickupMethod || order.collection || '' %></div>
+    </div>
+  </details>
+  <% } %>
+</div>
+<% }) %>
+<% } %>
