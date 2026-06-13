@@ -169,37 +169,7 @@
   </section>
 
   <!-- Google Reviews — coloured placeholder blocks for now -->
-  <section class="section reviews-home" id="reviewsHome">
-    <!-- Background animation: silver pitcher pours a silky stream, milk rises -->
-    <div class="milk-stage" aria-hidden="true">
-      <div class="milk-fill"></div>
-      <div class="milk-stream"></div>
-      <svg class="milk-pitcher" viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"  stop-color="#e8e8ea"/>
-            <stop offset="35%" stop-color="#b9bcc2"/>
-            <stop offset="60%" stop-color="#d8dadf"/>
-            <stop offset="100%" stop-color="#94989f"/>
-          </linearGradient>
-          <linearGradient id="silverDark" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#c4c7cc"/>
-            <stop offset="100%" stop-color="#7e828a"/>
-          </linearGradient>
-        </defs>
-        <!-- body -->
-        <path d="M30 22 L96 22 L88 78 Q87 86 78 86 L46 86 Q37 86 36 78 Z" fill="url(#silver)" stroke="#84878e" stroke-width="1.5"/>
-        <!-- spout -->
-        <path d="M22 14 L34 22 L30 34 Z" fill="url(#silverDark)" stroke="#84878e" stroke-width="1.2"/>
-        <!-- handle -->
-        <path d="M96 30 Q116 34 112 52 Q109 66 90 66" fill="none" stroke="url(#silverDark)" stroke-width="7" stroke-linecap="round"/>
-        <!-- rim -->
-        <path d="M30 22 L96 22" stroke="#f2f3f5" stroke-width="3" stroke-linecap="round"/>
-        <!-- light reflection -->
-        <path d="M44 30 Q42 52 47 74" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round" fill="none"/>
-        <path d="M56 28 Q55 44 57 60" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-      </svg>
-    </div>
+  <section class="section reviews-home">
     <div class="container">
       <p class="section-eyebrow">Don't Take Our Word For It</p>
       <h2 class="section-title">What Our <em>Regulars</em> Say</h2>
@@ -304,16 +274,17 @@
       <a href="/events" class="btn btn-outline">See All Events</a>
     </div>
   </section>
-</main>
 
-<!-- ── Floating coffee beans (subtle, parallax on scroll) ── -->
-<div class="bean-field" id="beanField" aria-hidden="true"></div>
+  <!-- ── Floating coffee beans (behind content, start after the strip) ── -->
+  <div class="bean-field" id="beanField" aria-hidden="true"></div>
+</main>
 
 <script>
 // ── Coffee bean drift ─────────────────────────────────────────────
 (function () {
   const field = document.getElementById('beanField');
   if (!field) return;
+  document.body.classList.add('home-page');
 
   const beans = [];
   const BEAN_COUNT = 24;
@@ -324,69 +295,60 @@
     const el = document.createElement('span');
     el.className = 'bean';
     const isGrogu = i === GROGU_SLOT;
-    const size = 16 + Math.random() * 16;
 
     if (isGrogu) {
       el.innerHTML = `<img src="/images/baby-yoda.png" alt="" class="bean-grogu-img" />`;
       el.classList.add('bean-grogu');
-      el.style.opacity = 0.35;   // visible if you look, easy to scroll past
+      el.style.width = '26px';
+      el.style.height = '26px';
+      el.style.opacity = 0.35;
+      // He floats too — just gentler than the beans
+      el.style.setProperty('--fx', (Math.random() * 8 - 4).toFixed(1) + 'px');
+      el.style.setProperty('--fy', (Math.random() * 8 - 4).toFixed(1) + 'px');
+      el.style.setProperty('--fr', (Math.random() * 6 - 3).toFixed(1) + 'deg');
+      el.style.setProperty('--fd', (10 + Math.random() * 4).toFixed(1) + 's');
       el.addEventListener('click', () => { window.location = '/the-bean-awakens'; });
     } else {
-      // Same bean, different roast — brightness/hue filters give each its own brown
-      const bright = (0.55 + Math.random() * 0.7).toFixed(2);   // dark to light roast
-      const hue    = Math.floor(Math.random() * 26) - 8;        // subtle shade shifts
-      const sat    = (0.7 + Math.random() * 0.6).toFixed(2);
+      // Strong differentiation: size, roast colour, opacity, drift all vary
+      const size = 12 + Math.random() * 22;                     // 12–34px
+      el.style.width  = size + 'px';
+      el.style.height = size + 'px';
+      const bright = (0.5 + Math.random() * 0.8).toFixed(2);    // dark to light roast
+      const hue    = Math.floor(Math.random() * 30) - 10;
+      const sat    = (0.65 + Math.random() * 0.7).toFixed(2);
       el.innerHTML = `<img src="/images/coffee-bean.png" alt="" class="bean-img"
         style="filter: brightness(${bright}) saturate(${sat}) hue-rotate(${hue}deg);" />`;
-      // Some fainter, some stronger — never loud
-      el.style.opacity = (0.06 + Math.random() * 0.16).toFixed(2);
+      el.style.opacity = (0.05 + Math.random() * 0.2).toFixed(2);   // 0.05–0.25
+      // Free idle movement — each bean drifts on its own rhythm
+      el.style.setProperty('--fx', (Math.random() * 28 - 14).toFixed(1) + 'px');
+      el.style.setProperty('--fy', (Math.random() * 28 - 14).toFixed(1) + 'px');
+      el.style.setProperty('--fr', (Math.random() * 20 - 10).toFixed(1) + 'deg');
+      el.style.setProperty('--fd', (6 + Math.random() * 8).toFixed(1) + 's');
     }
+    el.style.setProperty('--fdel', (-Math.random() * 10).toFixed(1) + 's'); // desync starts
 
-    el.style.width  = size + 'px';
-    el.style.height = size + 'px';
-    el.style.left   = (2 + Math.random() * 94) + '%';
-    el.style.top    = (4 + (i / total) * 240 + Math.random() * 20) + 'vh';
+    el.style.left = (2 + Math.random() * 94) + '%';
+    el.style.top  = (Math.random() * 100) + '%';   // scattered across the fixed field
     const rot = Math.floor(Math.random() * 360);   // every bean its own angle
-    el.dataset.speed = (0.04 + Math.random() * 0.12).toFixed(3);
     el.dataset.rot   = rot;
-    el.dataset.spin  = (Math.random() * 0.04 - 0.02).toFixed(4);
     el.style.transform = `rotate(${rot}deg)`;
     field.appendChild(el);
     beans.push(el);
   }
 
-  let ticking = false;
-  function update() {
-    const y = window.scrollY;
-    beans.forEach(b => {
-      const drift = -(y * parseFloat(b.dataset.speed));
-      const rot = parseFloat(b.dataset.rot) + y * parseFloat(b.dataset.spin);
-      b.style.transform = `translateY(${drift}px) rotate(${rot}deg)`;
-    });
-    ticking = false;
+  // Beans only appear once the hero + strip have scrolled past
+  const strip = document.querySelector('.strip-section');
+  function revealCheck() {
+    const triggerY = strip ? (strip.offsetTop + strip.offsetHeight) : 400;
+    if (window.scrollY + window.innerHeight * 0.4 > triggerY) {
+      field.classList.add('beans-visible');
+    } else {
+      field.classList.remove('beans-visible');
+    }
   }
-  window.addEventListener('scroll', () => {
-    if (!ticking) { requestAnimationFrame(update); ticking = true; }
-  }, { passive: true });
-  update();
-})();
-
-// ── Milk pour — starts once when the reviews section scrolls into view ──
-(function () {
-  const section = document.getElementById('reviewsHome');
-  if (!section || !('IntersectionObserver' in window)) {
-    if (section) section.classList.add('pouring');
-    return;
-  }
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        section.classList.add('pouring');
-        obs.disconnect();
-      }
-    });
-  }, { threshold: 0.25 });
-  obs.observe(section);
+  revealCheck();
+  window.addEventListener('scroll', revealCheck, { passive: true });
+  window.addEventListener('resize', revealCheck);
 })();
 
 // ── Review card tilt — presses down toward the pointer ────────────

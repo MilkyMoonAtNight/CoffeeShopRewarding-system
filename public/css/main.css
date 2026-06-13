@@ -3169,14 +3169,33 @@ button.detail-pill.detail-pill-active {
 
 /* ── Floating coffee beans (home) ── */
 .bean-field {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   pointer-events: none;
-  z-index: 0;          /* the very back — behind every panel and all text */
+  z-index: 0;                 /* behind all content, above the body bg */
   overflow: hidden;
+  opacity: 0;                 /* hidden until the hero/strip is scrolled past */
+  transition: opacity 0.6s ease;
 }
-/* Everything content-related stacks above the bean field */
-main .container { position: relative; z-index: 1; }
+.bean-field.beans-visible { opacity: 1; }
 .bean-grogu-img, .bean-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Beans live behind the page content. Post-strip sections drop their opaque
+   fill so beans show through; the hero + strip stay opaque to hide them up top. */
+body.home-page { background: var(--cream); }
+body.home-page main { position: relative; z-index: auto; }
+body.home-page main .container,
+body.home-page .hero-content { position: relative; z-index: 2; }
+/* Hero and strip keep solid backgrounds so no beans appear before them */
+body.home-page .hero,
+body.home-page .strip-section { position: relative; z-index: 3; }
+/* Everything after the strip becomes see-through so beans drift behind it */
+body.home-page .specials-home,
+body.home-page .battlepass-teaser,
+body.home-page .menu-preview,
+body.home-page .reviews-home,
+body.home-page .events-home,
+body.home-page .home-duo { background: transparent !important; background-color: transparent !important; }
 .bean {
   position: absolute;
   display: block;
@@ -3210,108 +3229,6 @@ main .container { position: relative; z-index: 1; }
 .home-duo .specials-home,
 .home-duo .battlepass-teaser { background: none; }
 
-/* ════════ REVIEWS — charcoal + rising milk ════════ */
-:root { --milk: #f8f4ec; }
-
-.reviews-home {
-  position: relative;
-  background: #2c2c2c;          /* charcoal grey */
-  border-top: none;
-  overflow: hidden;
-}
-.reviews-home .container { position: relative; z-index: 2; }
-
-/* Header text needs to read on charcoal */
-.reviews-home .section-eyebrow { color: rgba(201, 151, 74, 0.85); }
-.reviews-home .section-title { color: var(--cream); }
-.reviews-home .section-title em { color: rgba(201, 151, 74, 0.9); }
-.reviews-home .reviews-stars { color: rgba(201, 151, 74, 0.95); }
-.reviews-home .reviews-source { color: rgba(253, 246, 237, 0.55); }
-
-/* ── Milk stage (background animation layer) ── */
-.milk-stage { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-
-.milk-fill {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: 12.5%;                 /* starts at 1/8 */
-  background:
-    linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 70%),
-    linear-gradient(180deg, #fffdf9 0%, var(--milk) 18%, #f1ebe0 100%);
-  background-size: 300% 100%, 100% 100%;
-  box-shadow: 0 -6px 18px rgba(255, 252, 245, 0.25);
-}
-.milk-fill::before {             /* silky surface line */
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 7px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-}
-.reviews-home.pouring .milk-fill {
-  animation:
-    milkRise 10s cubic-bezier(0.25, 0.1, 0.25, 1) forwards,
-    milkSheen 6s linear infinite;
-}
-@keyframes milkRise  { from { height: 12.5%; } to { height: 78%; } }
-@keyframes milkSheen { from { background-position: 150% 0, 0 0; } to { background-position: -150% 0, 0 0; } }
-
-/* ── Pouring stream ── */
-.milk-stream {
-  position: absolute;
-  top: 86px; right: 17%;
-  width: 11px; bottom: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0.65), #fffdf9 45%, rgba(240,234,224,0.9));
-  border-radius: 6px;
-  opacity: 0;
-  transform-origin: top center;
-}
-.reviews-home.pouring .milk-stream {
-  opacity: 1;
-  animation: streamWobble 0.9s ease-in-out infinite, streamEnd 10s linear forwards;
-}
-@keyframes streamWobble { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(0.78); } }
-@keyframes streamEnd { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
-
-/* ── Silver pitcher ── */
-.milk-pitcher {
-  position: absolute;
-  top: 8px; right: calc(17% - 64px);
-  width: 130px; height: 100px;
-  opacity: 0;
-  transform: rotate(0deg);
-  transform-origin: 30% 70%;
-}
-.reviews-home.pouring .milk-pitcher {
-  opacity: 1;
-  animation: pitcherPour 10s ease-in-out forwards;
-}
-@keyframes pitcherPour {
-  0%       { transform: rotate(18deg) translateY(-8px); opacity: 0; }
-  6%       { transform: rotate(-32deg); opacity: 1; }
-  88%      { transform: rotate(-32deg); opacity: 1; }
-  100%     { transform: rotate(10deg) translateY(-6px); opacity: 0; }
-}
-
-/* ── Review cards recoloured: must read on charcoal AND on milk ── */
-.review-theme-1 { background: var(--maroon); border: none; }
-.review-theme-2 { background: #fffdf9; border: 1px solid rgba(44,44,44,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
-.review-theme-3 { background: #1c1c1c; border: 1px solid rgba(253,246,237,0.14); }
-.review-ph-1 { background: var(--maroon); }
-.review-ph-2 { background: #fffdf9; border: 1px solid rgba(44,44,44,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
-.review-ph-3 { background: #1c1c1c; border: 1px solid rgba(253,246,237,0.14); }
-.review-ph-2 .review-ph-stars { color: var(--maroon); }
-.review-ph-2 .review-ph-line,
-.review-ph-2 .review-ph-avatar,
-.review-ph-2 .review-ph-name { background: rgba(44,44,44,0.12); }
-
-/* CTA box on charcoal/milk */
-.reviews-cta {
-  background: rgba(253, 246, 237, 0.94);
-  border: 1px dashed rgba(88,18,23,0.35);
-}
-
-/* ════════ EVENTS — continues seamlessly from the milk ════════ */
-.events-home { background: var(--milk); }
-
 /* ════════ ABOUT — hero + origin share one background ════════ */
 .about-top {
   background-image: url('../images/backgrounds/bloop.png');
@@ -3336,3 +3253,75 @@ main .container { position: relative; z-index: 1; }
 }
 .admin-filter-bar input[type="text"] { flex: 1; min-width: 0; }
 .admin-filter-bar select { width: auto; max-width: 45%; }
+
+/* ── Beans: under the strip too, gentle idle float ── */
+.strip-section .strip-inner { position: relative; z-index: 1; }
+@keyframes beanFloat {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  50%      { translate: var(--fx, 8px) var(--fy, -10px); rotate: var(--fr, 6deg); }
+}
+.bean > img, .bean > svg {
+  animation: beanFloat var(--fd, 9s) ease-in-out infinite;
+  animation-delay: var(--fdel, 0s);
+}
+
+/* ── Battlepass teaser: text + card always the same overall size ── */
+.battlepass-teaser .grid-2 { align-items: stretch; }
+.battlepass-teaser .bp-text,
+.battlepass-teaser .bp-visual { width: 100%; min-width: 0; }
+.battlepass-teaser .bp-visual { display: flex; }
+.battlepass-teaser .bp-card-preview { width: 100%; height: 100%; max-width: none; }
+@media (max-width: 900px) {
+  .battlepass-teaser .bp-card-preview { height: auto; min-height: 340px; }
+}
+
+/* ── Orders: count badges + auto-refresh toggle ── */
+.ofb-count {
+  display: inline-block; min-width: 18px; padding: 0 5px;
+  background: var(--maroon); color: var(--cream);
+  border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+  margin-left: 0.25rem; vertical-align: middle;
+}
+.order-filter-btn[data-filter="new"] .ofb-count { background: #EF9F27; color: #2c2c2c; }
+.orders-auto {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.78rem; color: rgba(44,44,44,0.55); cursor: pointer;
+}
+.orders-auto input { width: auto; }
+
+/* ── Orders: cash / trust controls ── */
+.order-cash-pill {
+  display: inline-block; background: #EF9F27; color: #2c2c2c;
+  font-size: 0.62rem; font-weight: 700; padding: 0.05rem 0.4rem;
+  border-radius: 999px; margin-left: 0.25rem;
+}
+.od-cash-box {
+  background: rgba(239,159,39,0.08); border: 1px solid rgba(239,159,39,0.3);
+  border-radius: 10px; padding: 0.85rem; margin-bottom: 1rem;
+}
+.od-cash-line { font-size: 0.86rem; margin-bottom: 0.35rem; }
+.od-pay-status { text-transform: capitalize; font-weight: 700; }
+.od-pay-pending { color: #EF9F27; }
+.od-pay-paid { color: #1D9E75; }
+.od-pay-no_show { color: #c83232; }
+.od-trust { font-size: 0.78rem; color: rgba(44,44,44,0.6); margin-bottom: 0.6rem; }
+.od-settle-btns { display: flex; gap: 0.5rem; }
+.od-settle-btn {
+  flex: 1; padding: 0.55rem; border-radius: 8px; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600; border: 1.5px solid;
+}
+.od-settle-paid { background: #fff; border-color: #1D9E75; color: #1D9E75; }
+.od-settle-paid:hover { background: #1D9E75; color: #fff; }
+.od-settle-noshow { background: #fff; border-color: #c83232; color: #c83232; }
+.od-settle-noshow:hover { background: #c83232; color: #fff; }
+.od-settled { font-size: 0.8rem; color: rgba(44,44,44,0.5); text-transform: capitalize; }
+
+/* ── Dashboard tier banner ── */
+.dash-tier-card { background: linear-gradient(135deg, var(--maroon), #3d0d11); color: var(--cream); margin-bottom: 1rem; }
+.dash-tier-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+.dash-tier-chip { background: var(--cream); color: var(--maroon); font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 999px; }
+.dash-tier-name { font-family: var(--font-nimbus); font-size: 1.3rem; margin-left: 0.5rem; }
+.dash-tier-stats { display: flex; gap: 1rem; font-size: 0.82rem; opacity: 0.9; }
+.dash-tier-bar { height: 8px; background: rgba(253,246,237,0.2); border-radius: 999px; margin-top: 1rem; overflow: hidden; }
+.dash-tier-fill { height: 100%; background: var(--cream); border-radius: 999px; transition: width 0.6s ease; }
+.dash-tier-next { font-size: 0.78rem; opacity: 0.8; margin-top: 0.5rem; }

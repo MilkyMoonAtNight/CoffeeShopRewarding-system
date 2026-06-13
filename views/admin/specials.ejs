@@ -28,6 +28,16 @@
         <input type="number" name="price" placeholder="e.g. 55" min="0" step="0.50" />
       </div>
       <div class="form-group">
+        <label>Category</label>
+        <select name="category" class="scan-input">
+          <option value="general">✦ General</option>
+          <option value="drink">☕ Drink</option>
+          <option value="pastry">🥐 Pastry</option>
+          <option value="combo">🍽 Combo</option>
+          <option value="seasonal">🍂 Seasonal</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Photo</label>
         <div class="upload-zone" id="specialUploadZone" onclick="document.getElementById('specialImageFile').click()">
           <div class="upload-zone-inner" id="specialUploadInner">
@@ -46,11 +56,22 @@
 
   <!-- Specials list -->
   <div>
+    <div class="admin-card admin-filter-bar">
+      <input type="text" id="specialSearch" class="scan-input" placeholder="🔍 Search specials…" oninput="filterAdminList()" />
+      <select id="specialCatFilter" class="scan-input" onchange="filterAdminList()">
+        <option value="">All categories</option>
+        <option value="general">✦ General</option>
+        <option value="drink">☕ Drink</option>
+        <option value="pastry">🥐 Pastry</option>
+        <option value="combo">🍽 Combo</option>
+        <option value="seasonal">🍂 Seasonal</option>
+      </select>
+    </div>
     <% if (specials.length === 0) { %>
       <div class="admin-card"><p class="admin-empty">No specials yet — add one and it'll appear on the home page instantly.</p></div>
     <% } else { %>
       <% specials.forEach(special => { %>
-      <div class="admin-card admin-drink-row <%= !special.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
+      <div class="admin-card admin-drink-row filterable-row <%= !special.available ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;" data-name="<%= (special.title || '').toLowerCase() %>" data-cat="<%= special.category || 'general' %>">
         <div style="display:flex;gap:1rem;align-items:center;">
           <% const sImg = special.image ? (special.image.startsWith('/') ? special.image : '/images/specials/' + special.image) : null; %>
           <% if (sImg) { %>
@@ -106,6 +127,17 @@
                 </select>
               </div>
               <div class="form-group" style="grid-column:span 2;">
+                <label>Category</label>
+                <select name="category" class="scan-input">
+                  <% const scat = special.category || 'general'; %>
+                  <option value="general"  <%= scat==='general'?'selected':'' %>>✦ General</option>
+                  <option value="drink"    <%= scat==='drink'?'selected':'' %>>☕ Drink</option>
+                  <option value="pastry"   <%= scat==='pastry'?'selected':'' %>>🥐 Pastry</option>
+                  <option value="combo"    <%= scat==='combo'?'selected':'' %>>🍽 Combo</option>
+                  <option value="seasonal" <%= scat==='seasonal'?'selected':'' %>>🍂 Seasonal</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
                 <label>Replace photo</label>
                 <div class="upload-zone upload-zone-sm" id="sez-<%= special._id %>"
                      onclick="document.getElementById('sef-<%= special._id %>').click()">
@@ -133,6 +165,15 @@
 function toggleEdit(id) {
   const el = document.getElementById(id);
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function filterAdminList() {
+  const q   = (document.getElementById('specialSearch')?.value || '').toLowerCase().trim();
+  const cat = document.getElementById('specialCatFilter')?.value || '';
+  document.querySelectorAll('.filterable-row').forEach(row => {
+    const matchQ   = !q   || (row.dataset.name || '').includes(q);
+    const matchCat = !cat || (row.dataset.cat || '') === cat;
+    row.style.display = (matchQ && matchCat) ? '' : 'none';
+  });
 }
 function previewUpload(input, innerId, zoneId) {
   if (!input.files || !input.files[0]) return;

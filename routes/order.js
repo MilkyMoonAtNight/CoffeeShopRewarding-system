@@ -123,20 +123,35 @@ router.post('/place', requireUser, async (req, res) => {
     const name       = cleanText(body.name, 100);
     const phone      = asString(body.phone, 30).replace(/[^\d+()\s-]/g, '');
     const email      = asString(body.email, 200).toLowerCase();
+    const paymentMethod = body.paymentMethod === 'cash' ? 'cash' : 'online';
+
+    // Trust gate: a customer whose trust index has dropped too low can't place
+    // another unpaid cash order — they must pay online instead.
+    const TRUST_MIN = 40;
+    if (paymentMethod === 'cash') {
+      const u = await User.findById(req.session.userId).select('trustIndex').lean();
+      if (u && typeof u.trustIndex === 'number' && u.trustIndex < TRUST_MIN) {
+        return res.json({ ok: false, error: 'trust_low',
+          message: 'Pay-in-store is temporarily unavailable on your account due to past no-shows. Please pay online for this order.' });
+      }
+    }
 
     const ref   = 'CL-' + Date.now().toString(36).toUpperCase();
     const order = {
       ref, items, total,
       pickupMethod: collection, notes,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'cash' ? 'pending' : 'pending',
       status: 'pending', placedAt: new Date(),
     };
     if (phone) order.phone = phone;
     if (email) order.email = email;
 
-    // Save to user
-    const user = await User.findByIdAndUpdate(req.session.userId, {
-      $push: { pastOrders: { $each: [order], $position: 0 } }
-    }, { new: false }).select('name email').lean();
+    // Save to user (and count cash orders for the trust profile)
+    const userUpdate = { $push: { pastOrders: { $each: [order], $position: 0 } } };
+    if (paymentMethod === 'cash') userUpdate.$inc = { cashOrdersPlaced: 1 };
+    const user = await User.findByIdAndUpdate(req.session.userId, userUpdate,
+      { new: false }).select('name email').lean();
 
     // Email all checked-in staff ─────────────────────────────────
     const checkedInStaff = await Admin.find({ checkedIn: true, active: true }).select('email').lean();
@@ -195,16 +210,46 @@ router.post('/status/:userId/:ref', async (req, res) => {
   }
 });
 
+// ── Settle a cash order: mark paid (collected) or no-show (admin only) ──
+// Honoured cash orders nudge trust back up; no-shows drop it.
+router.post('/settle/:userId/:ref', async (req, res) => {
+  if (!req.session.adminId) return res.json({ ok: false, error: 'Unauthorised' });
+  try {
+    const outcome = asString(req.body.outcome, 20); // 'paid' | 'no_show'
+    if (!['paid', 'no_show'].includes(outcome)) return res.json({ ok: false, error: 'Invalid outcome' });
+
+    const setOps = { 'pastOrders.$.paymentStatus': outcome };
+    if (outcome === 'paid') setOps['pastOrders.$.status'] = 'done';
+    const incOps = outcome === 'paid'
+      ? { trustIndex: 5,  cashOrdersHonored: 1 }
+      : { trustIndex: -25, cashNoShows: 1 };
+
+    await User.updateOne(
+      { _id: req.params.userId, 'pastOrders.ref': req.params.ref },
+      { $set: setOps, $inc: incOps }
+    );
+    // Clamp trust index to 0–100
+    const u = await User.findById(req.params.userId).select('trustIndex').lean();
+    if (u) {
+      const clamped = Math.max(0, Math.min(100, u.trustIndex));
+      if (clamped !== u.trustIndex) await User.updateOne({ _id: req.params.userId }, { $set: { trustIndex: clamped } });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false });
+  }
+});
+
 // ── Admin feed ────────────────────────────────────────────────────
 router.get('/admin-feed', async (req, res) => {
   if (!req.session.adminId) return res.json({ ok: false });
   try {
     const users = await User.find({ 'pastOrders.0': { $exists: true } })
-      .select('name email pastOrders').lean();
+      .select('name email pastOrders trustIndex').lean();
     const orders = [];
     users.forEach(u => {
       u.pastOrders.forEach(o => {
-        orders.push({ ...o, userName: u.name, userEmail: u.email, userId: u._id });
+        orders.push({ ...o, userName: u.name, userEmail: u.email, userId: u._id, trustIndex: u.trustIndex });
       });
     });
     orders.sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));

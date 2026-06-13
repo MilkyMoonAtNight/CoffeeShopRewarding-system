@@ -5,6 +5,28 @@
   <p class="admin-page-sub">Welcome back, <%= admin.name %></p>
 </div>
 
+<% if (tierInfo) { %>
+<div class="admin-card dash-tier-card">
+  <div class="dash-tier-top">
+    <div>
+      <span class="dash-tier-chip">Tier <%= tierInfo.tier %></span>
+      <span class="dash-tier-name"><%= tierInfo.name %></span>
+    </div>
+    <div class="dash-tier-stats">
+      <span><strong><%= tierInfo.hours %></strong>h worked</span>
+      <span><strong><%= myXp %></strong> XP</span>
+      <span><strong><%= myPuzzles %></strong> 🧩</span>
+    </div>
+  </div>
+  <% if (tierInfo.nextName) { %>
+  <div class="dash-tier-bar"><div class="dash-tier-fill" style="width:<%= tierInfo.progressPct %>%"></div></div>
+  <p class="dash-tier-next"><%= tierInfo.hoursToNext %>h to <strong><%= tierInfo.nextName %></strong></p>
+  <% } else { %>
+  <p class="dash-tier-next">Top tier reached — Coffee Deity status 🏆</p>
+  <% } %>
+</div>
+<% } %>
+
 <!-- Stats -->
 <div class="admin-stats-grid-new">
   <div class="admin-stat-card">

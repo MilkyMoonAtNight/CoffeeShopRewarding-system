@@ -1,0 +1,384 @@
+# ─────────────────────────────────────────────────────────────────────
+#  CON LECHE — DAILY PUZZLE WORD LIST
+# ─────────────────────────────────────────────────────────────────────
+#  One word per line.  Format:   WORD,difficulty,hint
+#    • WORD       must be exactly 5 letters, A–Z
+#    • difficulty must be: easy | medium | hard   (drives XP earned)
+#                  easy = 15 XP, medium = 30 XP, hard = 50 XP
+#    • hint       a short, friendly clue shown after the puzzle is solved/failed
+#
+#  HOW THE POOL WORKS
+#    • Each day one unused word is picked at random.
+#    • If nobody solves a day's word, it goes back into the pool for later.
+#    • Lines starting with # are ignored. Blank lines are ignored.
+#
+#  EDIT FREELY — add your own Con Leche in-jokes, regulars' names (5 letters!),
+#  menu items, etc. Keep them 5 letters. The system reloads this file on
+#  restart, so just save and restart the server.
+# ─────────────────────────────────────────────────────────────────────
+
+BEANS,easy,Coffee, our daily bread
+LATTE,easy,Espresso + steamed milk
+MOCHA,easy,Chocolate coffee
+CREMA,easy,Golden foam on espresso
+ROAST,easy,Light, medium or dark
+GRIND,easy,Beans become this
+STEAM,easy,Frothing the milk
+FROTH,easy,Milky foam
+CUPPA,easy,Slang for a hot drink
+DECAF,easy,Coffee without the buzz
+BREWS,easy,Makes coffee
+DRIPS,easy,Slow pour-over does this
+CHAIS,easy,Spiced tea lattes
+SUGAR,easy,Sweetener
+CREAM,easy,Goes in coffee
+SCONE,easy,Bakery treat
+TREAT,easy,A little reward
+TASTY,easy,Delicious
+SWEET,easy,Sugary
+BLEND,easy,Mix of beans
+ORDER,easy,What a customer places
+MENUS,easy,Lists of what we serve
+SERVE,easy,Bring to the table
+TABLE,easy,Where you sit
+CHAIR,easy,You sit on it
+TILLS,easy,Cash registers
+SHIFT,easy,Your work period
+BREAK,easy,Lunch pause
+CLOCK,easy,Clock in and out
+STAMP,easy,Loyalty mark
+LOYAL,easy,A returning regular
+GUEST,easy,A visitor
+SMILE,easy,Greet with one
+CLEAN,easy,Wipe it down
+FRESH,easy,Just made
+DAILY,easy,Every day
+APRON,easy,Barista wears one
+TOWEL,easy,For wiping
+SPOON,easy,To stir
+PLATE,easy,Holds the pastry
+GLASS,easy,Holds cold drinks
+STRAW,easy,Sip cold drinks
+FOAMY,easy,Full of froth
+KITTY,easy,A little cat
+PURRS,easy,Happy cat sound
+MEOWS,easy,Cat calls
+TABBY,easy,Striped cat
+CLAWS,easy,Cat's nails
+WHISK,easy,Froth it up
+DOUGH,easy,Pastry base
+WHEAT,easy,Grain in bread
+FLOUR,easy,Bakery staple
+YEAST,easy,Makes dough rise
+CRUST,easy,Bread's edge
+FLAKY,easy,Like a croissant
+HONEY,easy,Natural sweetener
+TOAST,easy,Warm bread
+SYRUP,easy,Flavour shot
+BARNS,easy,Where milk starts
+VENTI,easy,Big size, Italian for twenty
+DOPIO,easy,Double shot (It.)
+LECHE,easy,Spanish for milk
+CAFES,easy,Coffee shops
+KIOSK,easy,Small serving stand
+TRUCK,easy,Mobile coffee unit
+HOUSE,easy,Everyday word
+PLANT,easy,Everyday word
+WATER,easy,Everyday word
+LIGHT,easy,Everyday word
+HAPPY,easy,Everyday word
+HEART,easy,Everyday word
+MUSIC,easy,Everyday word
+PEACE,easy,Everyday word
+SHINE,easy,Everyday word
+SMART,easy,Everyday word
+QUICK,easy,Everyday word
+BRAVE,easy,Everyday word
+GREEN,easy,Everyday word
+BROWN,easy,Everyday word
+WHITE,easy,Everyday word
+BLACK,easy,Everyday word
+APPLE,easy,Everyday word
+LEMON,easy,Everyday word
+BERRY,easy,Everyday word
+PEACH,easy,Everyday word
+GRAPE,easy,Everyday word
+OLIVE,easy,Everyday word
+MANGO,easy,Everyday word
+MELON,easy,Everyday word
+SPICE,easy,Everyday word
+BASIL,easy,Everyday word
+MINTY,easy,Everyday word
+TODAY,easy,Everyday word
+MONTH,easy,Everyday word
+HOURS,easy,Everyday word
+EARLY,easy,Everyday word
+LATER,easy,Everyday word
+FIRST,easy,Everyday word
+EVERY,easy,Everyday word
+ABOUT,easy,Everyday word
+QUIET,easy,Everyday word
+RELAX,easy,Everyday word
+DREAM,easy,Everyday word
+SLEEP,easy,Everyday word
+AWAKE,easy,Everyday word
+ALERT,easy,Everyday word
+FOCUS,easy,Everyday word
+LEARN,easy,Everyday word
+TEACH,easy,Everyday word
+WRITE,easy,Everyday word
+SPELL,easy,Everyday word
+WORDS,easy,Everyday word
+SPEAK,easy,Everyday word
+THINK,easy,Everyday word
+SHARE,easy,Everyday word
+TRUST,easy,Everyday word
+HELPS,easy,Everyday word
+GIVES,easy,Everyday word
+DANCE,easy,Everyday word
+LAUGH,easy,Everyday word
+ENJOY,easy,Everyday word
+PARTY,easy,Everyday word
+MERRY,easy,Everyday word
+CHEER,easy,Everyday word
+PROUD,easy,Everyday word
+RIVER,easy,Everyday word
+OCEAN,easy,Everyday word
+BEACH,easy,Everyday word
+FIELD,easy,Everyday word
+GRASS,easy,Everyday word
+BLOOM,easy,Everyday word
+PETAL,easy,Everyday word
+ROSES,easy,Everyday word
+TULIP,easy,Everyday word
+CLOUD,easy,Everyday word
+STORM,easy,Everyday word
+RAINY,easy,Everyday word
+SUNNY,easy,Everyday word
+FROST,easy,Everyday word
+SNOWY,easy,Everyday word
+WINDY,easy,Everyday word
+CHILL,easy,Everyday word
+TIGER,easy,Everyday word
+ZEBRA,easy,Everyday word
+HORSE,easy,Everyday word
+EAGLE,easy,Everyday word
+ROBIN,easy,Everyday word
+GOOSE,easy,Everyday word
+SHEEP,easy,Everyday word
+MOUSE,easy,Everyday word
+PUPPY,easy,Everyday word
+BUNNY,easy,Everyday word
+PANDA,easy,Everyday word
+KOALA,easy,Everyday word
+OTTER,easy,Everyday word
+SMOKE,easy,Everyday word
+FLAME,easy,Everyday word
+TORCH,easy,Everyday word
+CANDY,easy,Everyday word
+FUDGE,easy,Everyday word
+JELLY,easy,Everyday word
+COCOA,easy,Everyday word
+PIZZA,easy,Everyday word
+SALAD,easy,Everyday word
+BREAD,easy,Common word
+COOKY,easy,Common word
+CAKES,easy,Common word
+DONUT,easy,Common word
+BAGEL,easy,Common word
+WRAPS,easy,Common word
+JUICE,easy,Common word
+SODAS,easy,Common word
+HELLO,easy,Common word
+THANK,easy,Common word
+SORRY,easy,Common word
+GREET,easy,Common word
+WAVES,easy,Common word
+NODSS,easy,Common word
+CHATS,easy,Common word
+HANDS,easy,Common word
+FEETS,easy,Common word
+HEADS,easy,Common word
+EYESS,easy,Common word
+HAIRS,easy,Common word
+HUGSS,easy,Common word
+CARES,easy,Common word
+LOVES,easy,Common word
+BONDS,easy,Common word
+PHONE,easy,Common word
+EMAIL,easy,Common word
+NOTES,easy,Common word
+BOARD,easy,Common word
+CHALK,easy,Common word
+SIGNS,easy,Common word
+FLAGS,easy,Common word
+LAMPS,easy,Common word
+BULBS,easy,Common word
+DECOR,easy,Common word
+SHELF,easy,Common word
+CRATE,easy,Common word
+BOXES,easy,Common word
+BAGSS,easy,Common word
+CARTS,easy,Common word
+WHEEL,easy,Common word
+DOORS,easy,Common word
+LOCKS,easy,Common word
+KEYSS,easy,Common word
+ALARM,easy,Common word
+AROMA,medium,A word worth knowing
+SAVOR,medium,A word worth knowing
+GUSTO,medium,A word worth knowing
+DELVE,medium,A word worth knowing
+NICHE,medium,A word worth knowing
+VERVE,medium,A word worth knowing
+CRISP,medium,A word worth knowing
+ZESTY,medium,A word worth knowing
+TANGY,medium,A word worth knowing
+EMBER,medium,A word worth knowing
+GLEAN,medium,A word worth knowing
+VIVID,medium,A word worth knowing
+LUCID,medium,A word worth knowing
+MIRTH,medium,A word worth knowing
+ELATE,medium,A word worth knowing
+ADORN,medium,A word worth knowing
+GRACE,medium,A word worth knowing
+NOBLE,medium,A word worth knowing
+WORTH,medium,A word worth knowing
+MERIT,medium,A word worth knowing
+VALUE,medium,A word worth knowing
+STEAD,medium,A word worth knowing
+AVAIL,medium,A word worth knowing
+ADEPT,medium,A word worth knowing
+SKILL,medium,A word worth knowing
+CRAFT,medium,A word worth knowing
+TEMPO,medium,A word worth knowing
+RHYME,medium,A word worth knowing
+VENUE,medium,A word worth knowing
+GENRE,medium,A word worth knowing
+MOTIF,medium,A word worth knowing
+DRAFT,medium,A word worth knowing
+TIMER,medium,A word worth knowing
+GAUGE,medium,A word worth knowing
+TALLY,medium,A word worth knowing
+QUELL,medium,A word worth knowing
+HEDGE,medium,A word worth knowing
+PLUMB,medium,A word worth knowing
+RINSE,medium,A word worth knowing
+SCOUR,medium,A word worth knowing
+SLEEK,medium,A word worth knowing
+GLOSS,medium,A word worth knowing
+SHEEN,medium,A word worth knowing
+BRISK,medium,A word worth knowing
+DEFTY,medium,A word worth knowing
+HUMID,medium,A word worth knowing
+THYME,medium,A word worth knowing
+COZYS,medium,A word worth knowing
+CHARM,medium,A word worth knowing
+EAGER,medium,A word worth knowing
+JOLLY,medium,A word worth knowing
+KEENS,medium,A word worth knowing
+LIVEN,medium,A word worth knowing
+PERKY,medium,A word worth knowing
+CRAVE,medium,A word worth knowing
+FEAST,medium,A word worth knowing
+SPARK,medium,Flavour & motion
+GLEAM,medium,Flavour & motion
+GLOWS,medium,Flavour & motion
+BEAMY,medium,Flavour & motion
+BLAZE,medium,Flavour & motion
+PRISM,medium,Flavour & motion
+AMBER,medium,Flavour & motion
+TAUPE,medium,Flavour & motion
+SEPIA,medium,Flavour & motion
+UMBER,medium,Flavour & motion
+OCHRE,medium,Flavour & motion
+CREME,medium,Flavour & motion
+HASTE,medium,Flavour & motion
+SWIFT,medium,Flavour & motion
+RAPID,medium,Flavour & motion
+AGILE,medium,Flavour & motion
+READY,medium,Flavour & motion
+QUIRK,hard,A trickier one
+ZILCH,hard,A trickier one
+JAZZY,hard,A trickier one
+FJORD,hard,A trickier one
+GLYPH,hard,A trickier one
+NYMPH,hard,A trickier one
+WALTZ,hard,A trickier one
+VEXED,hard,A trickier one
+KNELL,hard,A trickier one
+QUASH,hard,A trickier one
+WRYLY,hard,A trickier one
+DROLL,hard,A trickier one
+CHARY,hard,A trickier one
+SUAVE,hard,A trickier one
+DEIGN,hard,A trickier one
+ELUDE,hard,A trickier one
+FACET,hard,A trickier one
+WANED,hard,A trickier one
+YIELD,hard,A trickier one
+AZURE,hard,A trickier one
+EBONY,hard,A trickier one
+IVORY,hard,A trickier one
+MAUVE,hard,A trickier one
+BEIGE,hard,A trickier one
+WAXEN,hard,A trickier one
+GAUDY,hard,A trickier one
+OPINE,hard,A trickier one
+PARSE,hard,A trickier one
+TROVE,hard,A trickier one
+MAVEN,hard,A trickier one
+GUILE,hard,A trickier one
+PIQUE,hard,A trickier one
+VOGUE,hard,A trickier one
+VOUCH,hard,A trickier one
+WIELD,hard,A trickier one
+PLUSH,hard,A trickier one
+LIONS,easy,Everyday word
+BEARS,easy,Everyday word
+WOLFS,easy,Everyday word
+FOXES,easy,Everyday word
+DEERS,easy,Everyday word
+DUCKS,easy,Everyday word
+CRABS,easy,Everyday word
+WHALE,easy,Everyday word
+SHARK,easy,Everyday word
+SEALS,easy,Everyday word
+MAPLE,easy,Everyday word
+BIRCH,easy,Everyday word
+CEDAR,easy,Everyday word
+ELDER,easy,Everyday word
+FERNS,easy,Everyday word
+MOSSY,easy,Everyday word
+VINES,easy,Everyday word
+REEDS,easy,Everyday word
+BUSHY,easy,Everyday word
+LEAFY,easy,Everyday word
+SCARF,easy,Everyday word
+GLOVE,easy,Everyday word
+BOOTS,easy,Everyday word
+DRESS,easy,Everyday word
+SHIRT,easy,Everyday word
+JEANS,easy,Everyday word
+SOCKS,easy,Everyday word
+WATCH,easy,Everyday word
+RINGS,easy,Everyday word
+BEADS,easy,Everyday word
+PIANO,easy,Everyday word
+DRUMS,easy,Everyday word
+FLUTE,easy,Everyday word
+VIOLA,easy,Everyday word
+BUGLE,easy,Everyday word
+CHORD,easy,Everyday word
+TUNES,easy,Everyday word
+OPERA,easy,Everyday word
+BANDS,easy,Everyday word
+TRAIN,easy,Everyday word
+PLANE,easy,Everyday word
+BOATS,easy,Everyday word
+BIKES,easy,Everyday word
+TAXIS,easy,Everyday word
+ROADS,easy,Everyday word
+PATHS,easy,Everyday word
+PARKS,easy,Everyday word
+PLAZA,easy,Everyday word

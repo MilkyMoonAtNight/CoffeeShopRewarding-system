@@ -39,12 +39,24 @@ const userSchema = new mongoose.Schema({
   resetToken:      { type: String, default: null },
   resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
+
+  // ── Cash / pay-in-store trust tracking ──
+  // Starts at 100. Goes down when a cash order is marked no-show, up when one is
+  // collected. If it drops below the threshold, the app stops offering "pay in store"
+  // and requires online payment instead.
+  trustIndex:        { type: Number, default: 100 },
+  cashOrdersPlaced:  { type: Number, default: 0 },
+  cashOrdersHonored: { type: Number, default: 0 },
+  cashNoShows:       { type: Number, default: 0 },
+
   pastOrders: [{
     ref:          String,
     items:        mongoose.Schema.Types.Mixed,
     total:        Number,
     pickupMethod: String,
     notes:        String,
+    paymentMethod:{ type: String, default: 'online' },   // 'online' | 'cash'
+    paymentStatus:{ type: String, default: 'pending' },  // pending | paid | no_show | refunded
     status:       { type: String, default: 'pending' },
     placedAt:     { type: Date, default: Date.now }
   }]

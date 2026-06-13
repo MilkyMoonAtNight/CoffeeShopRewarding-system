@@ -153,7 +153,7 @@ function getFormData() {
   return { name, phone, email };
 }
 
-async function placeOrder() {
+async function placeOrder(paymentMethod) {
   const { name, phone, email } = getFormData();
   if (!name) { alert('Please enter your name.'); return null; }
   if (!cart.length) { alert('Your cart is empty.'); return null; }
@@ -166,6 +166,7 @@ async function placeOrder() {
       collection: colMethod,
       notes: document.getElementById('cfNotes').value.trim(),
       items: cart,
+      paymentMethod: paymentMethod || 'online',
       total: cart.reduce((s,i) => s+i.price, 0)
     })
   });
@@ -177,9 +178,9 @@ document.getElementById('payInstoreBtn').addEventListener('click', async () => {
   const btn = document.getElementById('payInstoreBtn');
   btn.disabled = true; btn.innerHTML = '<span class="pay-btn-icon">⏳</span><div><span class="pay-btn-main">Placing order…</span></div>';
 
-  const data = await placeOrder();
+  const data = await placeOrder('cash');
   if (!data || !data.ok) {
-    alert(data ? data.error : 'Something went wrong.');
+    alert(data ? (data.message || data.error) : 'Something went wrong.');
     btn.disabled = false;
     btn.innerHTML = '<span class="pay-btn-icon">🏪</span><div><span class="pay-btn-main">Pay in store</span><span class="pay-btn-sub">Cash or card at collection</span></div>';
     return;
@@ -201,7 +202,7 @@ document.getElementById('payOnlineBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.innerHTML = '<span class="pay-btn-icon">⏳</span><div><span class="pay-btn-main">Processing…</span></div>';
 
-  const data = await placeOrder();
+  const data = await placeOrder('online');
   if (!data || !data.ok) {
     alert(data ? data.error : 'Something went wrong.');
     btn.disabled = false;

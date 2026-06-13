@@ -7,7 +7,7 @@
 
 <div class="admin-scan-tabs" style="margin-bottom:1rem;">
   <a href="/admin/history" class="admin-scan-tab <%= !activeType ? 'active' : '' %>" style="text-decoration:none;">All</a>
-  <a href="/admin/history?type=drinks_added" class="admin-scan-tab <%= activeType === 'drinks_added' ? 'active' : '' %>" style="text-decoration:none;">☕ Drinks Added</a>
+  <a href="/admin/history?type=drinks_added" class="admin-scan-tab <%= activeType === 'drinks_added' ? 'active' : '' %>" style="text-decoration:none;">☕ Stamps Given</a>
   <a href="/admin/history?type=reward_redeemed" class="admin-scan-tab <%= activeType === 'reward_redeemed' ? 'active' : '' %>" style="text-decoration:none;">🎁 Rewards</a>
   <a href="/admin/history?type=voucher_redeemed" class="admin-scan-tab <%= activeType === 'voucher_redeemed' ? 'active' : '' %>" style="text-decoration:none;">🎫 Vouchers</a>
 </div>
@@ -24,7 +24,7 @@
     <div class="history-body">
       <% if (log.type === 'drinks_added') { %>
         <p class="history-main">
-          <strong><%= log.quantity %> drink<%= log.quantity !== 1 ? 's' : '' %></strong> added for
+          <strong><%= log.quantity %> stamp<%= log.quantity !== 1 ? 's' : '' %></strong> given to
           <strong><%= log.userName %></strong>
           <% if (log.totalAfter !== null) { %><span class="history-total">→ <%= log.totalAfter %> total</span><% } %>
         </p>

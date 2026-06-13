@@ -4,6 +4,7 @@ const specialSchema = new mongoose.Schema({
   title:       { type: String, required: true, trim: true },
   description: { type: String, trim: true },
   price:       { type: Number, default: null },   // optional — some specials are "2-for-1" style
+  category:    { type: String, default: 'general', trim: true },  // drink | pastry | combo | seasonal | general
   image:       { type: String, default: null },   // filename inside /public/images/specials/
   available:   { type: Boolean, default: true },
   order:       { type: Number, default: 99 },

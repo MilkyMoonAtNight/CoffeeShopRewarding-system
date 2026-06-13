@@ -1,0 +1,254 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Insights</h1>
+  <p class="admin-page-sub">Owner-only — sales, loyalty, products and staff at a glance</p>
+</div>
+
+<!-- Range selector -->
+<div class="ins-range-row">
+  <% [['day','Today'],['week','7 Days'],['month','30 Days'],['quarter','3 Months']].forEach(([val, label]) => { %>
+  <a href="/admin/insights?range=<%= val %>" class="ins-range-pill <%= range === val ? 'active' : '' %>"><%= label %></a>
+  <% }) %>
+</div>
+
+<!-- Summary cards -->
+<div class="ins-summary-grid">
+  <div class="ins-sum-card"><span class="ins-sum-num">R<%= payload.summary.totalSales.toLocaleString('en-ZA') %></span><span class="ins-sum-lbl">Sales</span></div>
+  <div class="ins-sum-card"><span class="ins-sum-num"><%= payload.summary.totalOrders %></span><span class="ins-sum-lbl">Orders</span></div>
+  <div class="ins-sum-card"><span class="ins-sum-num">R<%= payload.summary.avgOrder %></span><span class="ins-sum-lbl">Avg Order</span></div>
+  <div class="ins-sum-card"><span class="ins-sum-num"><%= payload.summary.totalStamps %></span><span class="ins-sum-lbl">Stamps Given</span></div>
+  <div class="ins-sum-card"><span class="ins-sum-num"><%= payload.summary.totalRedemptions %></span><span class="ins-sum-lbl">Redemptions</span></div>
+  <div class="ins-sum-card"><span class="ins-sum-num"><%= payload.summary.newUsers %></span><span class="ins-sum-lbl">New Members</span></div>
+</div>
+
+<!-- Category tabs so everything is easy to find -->
+<div class="ins-tabs">
+  <button class="ins-tab active" data-ins="overview">📈 Overview</button>
+  <button class="ins-tab" data-ins="sales">💰 Sales</button>
+  <button class="ins-tab" data-ins="products">🛒 Products</button>
+  <button class="ins-tab" data-ins="loyalty">🐾 Loyalty</button>
+  <button class="ins-tab" data-ins="staff">⏱ Staff</button>
+</div>
+
+<!-- ════ OVERVIEW ════ -->
+<div class="ins-panel" id="ins-overview">
+  <div class="ins-chart-card">
+    <h3>Sales (R)</h3>
+    <div class="ins-canvas-wrap"><canvas id="chOverviewSales"></canvas></div>
+  </div>
+  <div class="ins-chart-card">
+    <h3>Stamps Given</h3>
+    <div class="ins-canvas-wrap"><canvas id="chOverviewStamps"></canvas></div>
+  </div>
+</div>
+
+<!-- ════ SALES ════ -->
+<div class="ins-panel hidden" id="ins-sales">
+  <div class="ins-chart-card">
+    <h3>Revenue (R)</h3>
+    <div class="ins-canvas-wrap"><canvas id="chSales"></canvas></div>
+  </div>
+  <div class="ins-chart-card">
+    <h3>Orders per <%= range === 'day' ? 'Hour' : 'Day' %></h3>
+    <div class="ins-canvas-wrap"><canvas id="chOrders"></canvas></div>
+  </div>
+  <div class="ins-chart-card">
+    <h3>Revenue by Category</h3>
+    <div class="ins-canvas-wrap ins-canvas-doughnut"><canvas id="chCategory"></canvas></div>
+  </div>
+</div>
+
+<!-- ════ PRODUCTS ════ -->
+<div class="ins-panel hidden" id="ins-products">
+  <div class="ins-chart-card">
+    <h3>Top Products (qty sold)</h3>
+    <div class="ins-canvas-wrap ins-canvas-tall"><canvas id="chProducts"></canvas></div>
+  </div>
+  <div class="ins-chart-card">
+    <h3>Detailed Report</h3>
+    <div class="ins-table-wrap">
+      <table class="ins-table">
+        <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Revenue</th></tr></thead>
+        <tbody>
+          <% payload.products.forEach(p => { %>
+          <tr><td><%= p.name %></td><td><span class="ins-cat-chip ins-cat-<%= p.category.toLowerCase() %>"><%= p.category %></span></td><td><%= p.qty %></td><td>R<%= Math.round(p.revenue) %></td></tr>
+          <% }) %>
+          <% if (payload.products.length === 0) { %>
+          <tr><td colspan="4" style="text-align:center;color:rgba(44,44,44,0.4);">No sales in this period yet</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ LOYALTY ════ -->
+<div class="ins-panel hidden" id="ins-loyalty">
+  <div class="ins-chart-card">
+    <h3>Stamps Given</h3>
+    <div class="ins-canvas-wrap"><canvas id="chStamps"></canvas></div>
+  </div>
+  <div class="ins-chart-card">
+    <h3>Rewards & Vouchers Redeemed</h3>
+    <div class="ins-canvas-wrap"><canvas id="chRedemptions"></canvas></div>
+  </div>
+</div>
+
+<!-- ════ STAFF ════ -->
+<div class="ins-panel hidden" id="ins-staff">
+  <div class="ins-chart-card">
+    <h3>Hours Worked per Person</h3>
+    <div class="ins-canvas-wrap ins-canvas-tall"><canvas id="chStaff"></canvas></div>
+    <p class="form-hint" style="margin-top:0.5rem;">Pulled from the Time Clock for the selected period. Full weekly detail lives on the <a href="/admin/timeclock">Time Clock</a> page.</p>
+  </div>
+</div>
+
+<style>
+.ins-range-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ins-range-pill {
+  padding: 0.45rem 1rem; border-radius: 999px; text-decoration: none;
+  font-size: 0.8rem; font-weight: 600;
+  background: var(--white); color: rgba(44,44,44,0.6);
+  border: 1px solid rgba(44,44,44,0.12);
+}
+.ins-range-pill.active { background: var(--maroon); color: var(--cream); border-color: var(--maroon); }
+.ins-summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem; margin-bottom: 1rem;
+}
+.ins-sum-card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 0.85rem; text-align: center; box-shadow: var(--shadow);
+}
+.ins-sum-num { display: block; font-size: 1.25rem; font-weight: 800; color: var(--maroon); }
+.ins-sum-lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(44,44,44,0.5); }
+.ins-tabs {
+  display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.25rem;
+  margin-bottom: 1rem; -webkit-overflow-scrolling: touch;
+}
+.ins-tab {
+  padding: 0.55rem 1rem; border-radius: 10px; border: none; cursor: pointer;
+  background: rgba(44,44,44,0.05); color: rgba(44,44,44,0.6);
+  font-size: 0.82rem; font-weight: 600; white-space: nowrap; min-height: 42px;
+}
+.ins-tab.active { background: var(--charcoal); color: var(--cream); }
+.ins-panel { display: flex; flex-direction: column; gap: 0.85rem; }
+.ins-panel.hidden { display: none; }
+.ins-chart-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem 1.25rem; box-shadow: var(--shadow);
+}
+.ins-chart-card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(44,44,44,0.6); margin-bottom: 0.75rem; }
+.ins-canvas-wrap { position: relative; height: 240px; }
+.ins-canvas-tall { height: 320px; }
+.ins-canvas-doughnut { height: 260px; max-width: 420px; margin: 0 auto; }
+.ins-table-wrap { overflow-x: auto; }
+.ins-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.ins-table th { text-align: left; padding: 0.5rem 0.6rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(44,44,44,0.5); border-bottom: 2px solid rgba(44,44,44,0.08); }
+.ins-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(44,44,44,0.05); }
+.ins-cat-chip { font-size: 0.66rem; padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 700; }
+.ins-cat-drinks { background: rgba(88,18,23,0.1); color: var(--maroon); }
+.ins-cat-pastries { background: rgba(201,151,74,0.15); color: #8a6420; }
+.ins-cat-other { background: rgba(44,44,44,0.08); color: rgba(44,44,44,0.6); }
+@media (min-width: 916px) {
+  .ins-panel { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .ins-panel.hidden { display: none; }
+  #ins-overview .ins-chart-card:first-child { grid-column: span 2; }
+  #ins-products .ins-chart-card:last-child { grid-column: span 2; }
+  #ins-staff .ins-chart-card { grid-column: span 2; }
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const DATA = <%- JSON.stringify(payload) %>;
+
+// ── Tabs ──
+document.querySelectorAll('.ins-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ins-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ins-panel').forEach(p => p.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('ins-' + tab.dataset.ins).classList.remove('hidden');
+  });
+});
+
+// ── Modern chart defaults ──
+const MAROON = '#581217', GOLD = '#c9974a', CHARCOAL = '#2c2c2c', GREEN = '#1D9E75';
+Chart.defaults.font.family = "'Trebuchet MS', 'Segoe UI', sans-serif";
+Chart.defaults.color = 'rgba(44,44,44,0.55)';
+Chart.defaults.plugins.legend.display = false;
+const GRID = { color: 'rgba(44,44,44,0.06)' };
+
+function gradient(ctx, hex, alphaTop = 0.35) {
+  const g = ctx.createLinearGradient(0, 0, 0, 240);
+  g.addColorStop(0, hex + Math.round(alphaTop * 255).toString(16).padStart(2, '0'));
+  g.addColorStop(1, hex + '00');
+  return g;
+}
+function lineChart(id, data, hex) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const ctx = el.getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels: DATA.labels, datasets: [{
+      data, borderColor: hex, backgroundColor: gradient(ctx, hex),
+      fill: true, tension: 0.4, borderWidth: 2.5,
+      pointRadius: DATA.labels.length > 35 ? 0 : 3,
+      pointBackgroundColor: hex, pointBorderColor: '#fff', pointBorderWidth: 1.5
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+                y: { beginAtZero: true, grid: GRID, ticks: { maxTicksLimit: 5 } } },
+      plugins: { tooltip: { backgroundColor: CHARCOAL, cornerRadius: 8, padding: 10 } }
+    }
+  });
+}
+function barChart(id, labels, data, hex, horizontal = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  new Chart(el, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: hex + 'cc', hoverBackgroundColor: hex, borderRadius: 7, borderSkipped: false }]},
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: horizontal ? { beginAtZero: true, grid: GRID } : { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+                y: horizontal ? { grid: { display: false } } : { beginAtZero: true, grid: GRID, ticks: { maxTicksLimit: 5 } } },
+      plugins: { tooltip: { backgroundColor: CHARCOAL, cornerRadius: 8, padding: 10 } }
+    }
+  });
+}
+
+// Overview
+lineChart('chOverviewSales', DATA.sales, MAROON);
+barChart('chOverviewStamps', DATA.labels, DATA.stamps, GOLD);
+// Sales
+lineChart('chSales', DATA.sales, MAROON);
+barChart('chOrders', DATA.labels, DATA.orders, CHARCOAL);
+const catEl = document.getElementById('chCategory');
+if (catEl) new Chart(catEl, {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(DATA.categorySplit),
+    datasets: [{ data: Object.values(DATA.categorySplit).map(v => Math.round(v)),
+      backgroundColor: [MAROON, GOLD, 'rgba(44,44,44,0.35)'], borderWidth: 3, borderColor: '#fff', hoverOffset: 8 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 16 } },
+               tooltip: { backgroundColor: CHARCOAL, cornerRadius: 8, padding: 10,
+                 callbacks: { label: c => ' R' + c.parsed.toLocaleString() } } } }
+});
+// Products
+barChart('chProducts', DATA.products.slice(0, 10).map(p => p.name), DATA.products.slice(0, 10).map(p => p.qty), MAROON, true);
+// Loyalty
+barChart('chStamps', DATA.labels, DATA.stamps, GOLD);
+lineChart('chRedemptions', DATA.redemptions, GREEN);
+// Staff
+barChart('chStaff', DATA.staffHours.map(s => s.name), DATA.staffHours.map(s => s.hours), CHARCOAL, true);
+</script>
+
+<%- include('./layout-bottom') %>

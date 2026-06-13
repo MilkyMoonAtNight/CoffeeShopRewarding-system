@@ -11,6 +11,11 @@ const Pastry  = require('../models/Pastry');
 const Special = require('../models/Special');
 const CheckIn = require('../models/CheckIn');
 const ActivityLog = require('../models/ActivityLog');
+const TimeClock   = require('../models/TimeClock');
+const PuzzleDay   = require('../models/PuzzleDay');
+const PuzzleAttempt = require('../models/PuzzleAttempt');
+const { pickWordForDay, xpForDifficulty } = require('../utils/puzzle');
+const crypto      = require('crypto');
 const { rateLimit, asString } = require('../utils/security');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
@@ -156,6 +161,9 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
   res.render('admin/dashboard', {
     title: 'Dashboard — Con Leche Admin',
     admin: req.admin,
+    tierInfo: req.admin.tierInfo ? req.admin.tierInfo() : null,
+    myXp: req.admin.xp || 0,
+    myPuzzles: req.admin.puzzlesCompleted || 0,
     stats: { totalUsers, totalScans: scanResult[0]?.total || 0 },
     recentUsers,
     upcomingEvents
@@ -258,6 +266,409 @@ router.post('/scan-api', requireAdmin, async (req, res) => {
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
+});
+
+
+// ═══════════════════ TIME CLOCK ═══════════════════
+// Verification, either of:
+//  1) Daily code (shown to owner/manager) + request must come from the store network
+//  2) NFC tag in the store opens /admin/timeclock/nfc?key=… (its physical location IS the verification)
+
+// 6-digit code that changes every day, derived from CLOCK_SECRET — nothing to store or rotate manually
+function dailyClockCode() {
+  const secret = process.env.CLOCK_SECRET || 'change-me-in-env';
+  const day = new Date().toISOString().slice(0, 10);
+  const h = crypto.createHmac('sha256', secret).update(day).digest('hex');
+  return String(parseInt(h.slice(0, 8), 16) % 1000000).padStart(6, '0');
+}
+
+// Store-network check: STORE_NETWORK_IPS is a comma list of IPs or prefixes
+// e.g. "196.21.45.10" (store's public IP) or "10.0.0." (LAN prefix when self-hosted).
+// Unset ⇒ check is skipped (flagged on the page so you remember to set it).
+function fromStoreNetwork(req) {
+  const allow = (process.env.STORE_NETWORK_IPS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (allow.length === 0) return { ok: true, enforced: false };
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
+  const clean = ip.replace('::ffff:', '');
+  return { ok: allow.some(a => clean === a || clean.startsWith(a)), enforced: true, ip: clean };
+}
+
+function startOfWeek(d = new Date()) {        // Monday 00:00 — weekly totals reset here
+  const x = new Date(d);
+  const day = (x.getDay() + 6) % 7;
+  x.setHours(0, 0, 0, 0);
+  x.setDate(x.getDate() - day);
+  return x;
+}
+
+function shiftMinutes(s, now = new Date()) {  // worked minutes incl. live shifts
+  const end = s.clockOut || now;
+  let lunch = s.lunchMinutes || 0;
+  if (s.lunchOut && !s.lunchIn && !s.clockOut) lunch = Math.round((now - s.lunchOut) / 60000);
+  return Math.max(0, Math.round((end - s.clockIn) / 60000) - lunch);
+}
+
+router.get('/timeclock', requireAdmin, async (req, res) => {
+  const now = new Date();
+  const openShift = await TimeClock.findOne({ adminId: req.admin._id, clockOut: null }).sort({ clockIn: -1 });
+  const myShifts  = await TimeClock.find({ adminId: req.admin._id, clockIn: { $gte: new Date(now - 14 * 864e5) } })
+    .sort({ clockIn: -1 }).limit(30);
+
+  const weekStart = startOfWeek(now);
+  const myWeekShifts = await TimeClock.find({ adminId: req.admin._id, clockIn: { $gte: weekStart } });
+  const myWeekMinutes = myWeekShifts.reduce((sum, s) => sum + shiftMinutes(s, now), 0);
+
+  // Owner/manager extras: this week's per-person summary + today's code
+  let staffWeek = null, todayCode = null;
+  if (['owner', 'manager'].includes(req.admin.role)) {
+    todayCode = dailyClockCode();
+    const all = await TimeClock.find({ clockIn: { $gte: weekStart } });
+    const admins = await Admin.find({ active: true }).select('name role weeklyTargetHours');
+    staffWeek = admins.map(a => {
+      const shifts = all.filter(s => String(s.adminId) === String(a._id));
+      const mins   = shifts.reduce((sum, s) => sum + shiftMinutes(s, now), 0);
+      const lunch  = shifts.reduce((sum, s) => sum + (s.lunchMinutes || 0), 0);
+      const target = (a.weeklyTargetHours || 40) * 60;
+      return {
+        id: a._id, name: a.name, role: a.role,
+        shifts: shifts.length, minutes: mins, lunchMinutes: lunch,
+        targetHours: a.weeklyTargetHours || 40,
+        leftMinutes: Math.max(0, target - mins),
+        live: shifts.some(s => !s.clockOut)
+      };
+    });
+  }
+
+  const net = fromStoreNetwork(req);
+  const nfcVerified = req.session.nfcVerifiedUntil && new Date(req.session.nfcVerifiedUntil) > now;
+
+  res.render('admin/timeclock', {
+    title: 'Time Clock — Con Leche Admin', admin: req.admin,
+    openShift, myShifts, myWeekMinutes,
+    staffWeek, todayCode,
+    networkEnforced: net.enforced, nfcVerified,
+    weekStart,
+    msg: req.query.msg || null
+  });
+});
+
+// NFC tag in the store points here (write the full URL incl. key onto the tag)
+router.get('/timeclock/nfc', requireAdmin, (req, res) => {
+  if (!process.env.NFC_TAG_KEY || req.query.key !== process.env.NFC_TAG_KEY) {
+    return res.redirect('/admin/timeclock?msg=Error:+Invalid+NFC+tag');
+  }
+  req.session.nfcVerifiedUntil = new Date(Date.now() + 3 * 60 * 1000); // 3-minute window
+  res.redirect('/admin/timeclock?msg=NFC+verified+—+you+can+clock+now');
+});
+
+router.post('/timeclock/action', requireAdmin, async (req, res) => {
+  const action = String(req.body.action || '');
+  const code   = String(req.body.code || '').trim();
+  const now    = new Date();
+
+  // ── verification ──
+  const nfcOk = req.session.nfcVerifiedUntil && new Date(req.session.nfcVerifiedUntil) > now;
+  let method = 'nfc';
+  if (!nfcOk) {
+    method = 'code';
+    if (code !== dailyClockCode())
+      return res.redirect('/admin/timeclock?msg=Error:+Wrong+code+—+ask+the+manager+for+today%27s+code');
+    const net = fromStoreNetwork(req);
+    if (!net.ok)
+      return res.redirect('/admin/timeclock?msg=Error:+You+must+be+on+the+store+network+to+clock+with+a+code');
+  }
+
+  const openShift = await TimeClock.findOne({ adminId: req.admin._id, clockOut: null }).sort({ clockIn: -1 });
+
+  try {
+    if (action === 'clock_in') {
+      if (openShift) throw new Error('You already have an open shift');
+      await TimeClock.create({ adminId: req.admin._id, adminName: req.admin.name, clockIn: now, method });
+      await Admin.findByIdAndUpdate(req.admin._id, { checkedIn: true });
+      return res.redirect('/admin/timeclock?msg=Shift+started+—+have+a+good+one+☕');
+    }
+    if (!openShift) throw new Error('No open shift — clock in first');
+
+    if (action === 'lunch_out') {
+      if (openShift.lunchOut && !openShift.lunchIn) throw new Error('Already on lunch');
+      if (openShift.lunchIn) throw new Error('Lunch already taken this shift');
+      openShift.lunchOut = now;
+      await openShift.save();
+      return res.redirect('/admin/timeclock?msg=Lunch+started+—+enjoy+🥪');
+    }
+    if (action === 'lunch_in') {
+      if (!openShift.lunchOut || openShift.lunchIn) throw new Error('You are not on lunch');
+      openShift.lunchIn = now;
+      openShift.lunchMinutes = Math.round((now - openShift.lunchOut) / 60000);
+      await openShift.save();
+      return res.redirect('/admin/timeclock?msg=Welcome+back+—+lunch+was+' + openShift.lunchMinutes + '+min');
+    }
+    if (action === 'clock_out') {
+      if (openShift.lunchOut && !openShift.lunchIn) {
+        openShift.lunchIn = now;
+        openShift.lunchMinutes = Math.round((now - openShift.lunchOut) / 60000);
+      }
+      openShift.clockOut = now;
+      openShift.totalMinutes = Math.max(0, Math.round((now - openShift.clockIn) / 60000) - (openShift.lunchMinutes || 0));
+      await openShift.save();
+      // Lifetime hours drive the tier system; XP = 1 per minute worked (checking in
+      // is the biggest XP source, as intended)
+      await Admin.findByIdAndUpdate(req.admin._id, {
+        checkedIn: false,
+        $inc: { totalMinutesWorked: openShift.totalMinutes, xp: openShift.totalMinutes }
+      });
+      const h = Math.floor(openShift.totalMinutes / 60), m = openShift.totalMinutes % 60;
+      return res.redirect('/admin/timeclock?msg=Clocked+out+—+' + h + 'h+' + m + 'm+worked+today');
+    }
+    throw new Error('Unknown action');
+  } catch (err) {
+    return res.redirect('/admin/timeclock?msg=Error:+' + encodeURIComponent(err.message));
+  }
+});
+
+// Owner: adjust someone's weekly target hours
+router.post('/timeclock/target/:adminId', ownerOnly, async (req, res) => {
+  const hours = Math.min(80, Math.max(0, parseInt(req.body.hours) || 40));
+  await Admin.findByIdAndUpdate(req.params.adminId, { weeklyTargetHours: hours });
+  res.redirect('/admin/timeclock?msg=Target+updated');
+});
+
+
+// ═══════════════════ DAILY PUZZLE + LEADERBOARD (all admin) ═══════════════════
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+// Get or create today's puzzle word
+async function getTodayPuzzle() {
+  const date = todayStr();
+  let pd = await PuzzleDay.findOne({ date });
+  if (!pd) {
+    const pick = await pickWordForDay(date, PuzzleDay);
+    if (!pick) return null;
+    pd = await PuzzleDay.create({
+      date, word: pick.word, difficulty: pick.difficulty,
+      hint: pick.hint, recycled: !!pick.recycled
+    });
+  }
+  return pd;
+}
+
+// Compute Wordle-style tile colours for a guess vs answer
+function scoreGuess(guess, answer) {
+  guess = guess.toUpperCase(); answer = answer.toUpperCase();
+  const res = Array(5).fill('absent');
+  const counts = {};
+  for (const ch of answer) counts[ch] = (counts[ch] || 0) + 1;
+  for (let i = 0; i < 5; i++) if (guess[i] === answer[i]) { res[i] = 'correct'; counts[guess[i]]--; }
+  for (let i = 0; i < 5; i++) {
+    if (res[i] === 'correct') continue;
+    if (counts[guess[i]] > 0) { res[i] = 'present'; counts[guess[i]]--; }
+  }
+  return res;
+}
+
+router.get('/puzzle', requireAdmin, async (req, res) => {
+  const date = todayStr();
+  const pd = await getTodayPuzzle();
+  if (!pd) return res.render('admin/puzzle', { title: 'Daily Puzzle — Con Leche', admin: req.admin, noPool: true, attempt: null, board: [], leaderboard: [], rows: [], finished: false, solved: false, hint: '', answer: '', maxGuesses: 5, msg: null });
+
+  let attempt = await PuzzleAttempt.findOne({ date, adminId: req.admin._id });
+  if (!attempt) {
+    attempt = await PuzzleAttempt.create({ date, adminId: req.admin._id, adminName: req.admin.name, guesses: [] });
+  }
+
+  const rows = attempt.guesses.map(g => ({ guess: g, score: scoreGuess(g, pd.word) }));
+
+  // Leaderboard — puzzles completed (solved) all-time, then XP
+  const leaderboard = await Admin.find({ active: true })
+    .select('name role puzzlesCompleted xp totalMinutesWorked')
+    .sort({ puzzlesCompleted: -1, xp: -1 }).limit(50).lean();
+
+  res.render('admin/puzzle', {
+    title: 'Daily Puzzle — Con Leche', admin: req.admin, noPool: false,
+    attempt, rows,
+    finished: attempt.finished, solved: attempt.solved,
+    hint: (attempt.finished ? pd.hint : ''),
+    answer: (attempt.finished && !attempt.solved ? pd.word : ''),
+    difficulty: pd.difficulty,
+    maxGuesses: 5,
+    leaderboard,
+    msg: req.query.msg || null
+  });
+});
+
+router.post('/puzzle/guess', requireAdmin, async (req, res) => {
+  try {
+    const date = todayStr();
+    const pd = await getTodayPuzzle();
+    if (!pd) return res.json({ ok: false, message: 'No puzzle today' });
+
+    let attempt = await PuzzleAttempt.findOne({ date, adminId: req.admin._id });
+    if (!attempt) attempt = await PuzzleAttempt.create({ date, adminId: req.admin._id, adminName: req.admin.name, guesses: [] });
+    if (attempt.finished) return res.json({ ok: false, message: 'Already finished today', finished: true });
+
+    const guess = String(req.body.guess || '').trim().toUpperCase();
+    if (!/^[A-Z]{5}$/.test(guess)) return res.json({ ok: false, message: 'Enter a 5-letter word' });
+
+    attempt.guesses.push(guess);
+    const score = scoreGuess(guess, pd.word);
+    const solved = guess === pd.word;
+
+    let xpAwarded = 0, tierUp = null;
+    if (solved) {
+      attempt.solved = true;
+      attempt.finished = true;
+      attempt.solvedAt = new Date();
+      xpAwarded = xpForDifficulty(pd.difficulty);
+      // Fewer guesses → small bonus
+      if (attempt.guesses.length <= 2) xpAwarded += 10;
+      else if (attempt.guesses.length <= 3) xpAwarded += 5;
+      attempt.xpAwarded = xpAwarded;
+      if (!pd.solvedBy.some(id => String(id) === String(req.admin._id))) {
+        pd.solvedBy.push(req.admin._id);
+        await pd.save();
+      }
+      const before = await Admin.findById(req.admin._id).select('xp');
+      await Admin.findByIdAndUpdate(req.admin._id, { $inc: { xp: xpAwarded, puzzlesCompleted: 1 } });
+    } else if (attempt.guesses.length >= 5) {
+      attempt.finished = true;
+    }
+    await attempt.save();
+
+    res.json({
+      ok: true, score, solved,
+      finished: attempt.finished,
+      guessCount: attempt.guesses.length,
+      xp: xpAwarded,
+      hint: attempt.finished ? pd.hint : '',
+      answer: (attempt.finished && !solved) ? pd.word : ''
+    });
+  } catch (err) {
+    res.json({ ok: false, message: err.message });
+  }
+});
+
+router.get('/leaderboard', requireAdmin, async (req, res) => {
+  const admins = await Admin.find({ active: true })
+    .select('name role puzzlesCompleted xp totalMinutesWorked').lean();
+  const board = admins.map(a => {
+    const hrs = (a.totalMinutesWorked || 0) / 60;
+    let tier = Admin.TIER_TABLE[0];
+    for (const t of Admin.TIER_TABLE) if (hrs >= t.hours) tier = t;
+    return { name: a.name, role: a.role, puzzles: a.puzzlesCompleted || 0, xp: a.xp || 0, tierName: tier.name, tier: tier.tier };
+  }).sort((x, y) => y.puzzles - x.puzzles || y.xp - x.xp);
+  res.render('admin/leaderboard', { title: 'Leaderboard — Con Leche', admin: req.admin, board, tierTable: Admin.TIER_TABLE, msg: null });
+});
+
+// ═══════════════════ INSIGHTS DASHBOARD (owner only) ═══════════════════
+router.get('/insights', ownerOnly, async (req, res) => {
+  const range = ['day', 'week', 'month', 'quarter'].includes(req.query.range) ? req.query.range : 'week';
+  const now = new Date();
+
+  // ── time window + bucket labels ──
+  let since, buckets = [], keyOf, labelOf;
+  if (range === 'day') {
+    since = new Date(now); since.setHours(0, 0, 0, 0);
+    for (let h = 0; h <= now.getHours(); h++) buckets.push(h);
+    keyOf   = d => new Date(d).getHours();
+    labelOf = h => String(h).padStart(2, '0') + ':00';
+  } else {
+    const days = range === 'week' ? 7 : range === 'month' ? 30 : 90;
+    since = new Date(now - (days - 1) * 864e5); since.setHours(0, 0, 0, 0);
+    for (let i = 0; i < days; i++) {
+      const d = new Date(since.getTime() + i * 864e5);
+      buckets.push(d.toISOString().slice(0, 10));
+    }
+    keyOf   = d => new Date(d).toISOString().slice(0, 10);
+    labelOf = k => {
+      const d = new Date(k);
+      return range === 'quarter'
+        ? d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })
+        : d.toLocaleDateString('en-ZA', { weekday: range === 'week' ? 'short' : undefined, day: 'numeric', month: 'short' });
+    };
+  }
+  const series = () => Object.fromEntries(buckets.map(b => [b, 0]));
+
+  // ── loyalty: stamps + redemptions from the activity log ──
+  const logs = await ActivityLog.find({ at: { $gte: since } }).catch(() => []);
+  const stamps = series(), redemptions = series();
+  let totalStamps = 0, totalRedemptions = 0;
+  logs.forEach(l => {
+    const k = keyOf(l.at);
+    if (!(k in stamps)) return;
+    if (l.type === 'drinks_added') { stamps[k] += l.quantity || 0; totalStamps += l.quantity || 0; }
+    else { redemptions[k] += 1; totalRedemptions += 1; }
+  });
+
+  // ── sales: orders live inside users.pastOrders ──
+  const orderDocs = await User.aggregate([
+    { $unwind: '$pastOrders' },
+    { $match: { 'pastOrders.placedAt': { $gte: since } } },
+    { $project: { _id: 0, total: '$pastOrders.total', items: '$pastOrders.items', placedAt: '$pastOrders.placedAt' } }
+  ]).catch(() => []);
+
+  const sales = series(), orderCounts = series();
+  let totalSales = 0, totalOrders = 0;
+  const productMap = {};
+  orderDocs.forEach(o => {
+    const k = keyOf(o.placedAt);
+    if (k in sales) { sales[k] += o.total || 0; orderCounts[k] += 1; }
+    totalSales += o.total || 0; totalOrders += 1;
+    (Array.isArray(o.items) ? o.items : []).forEach(it => {
+      const name = it && it.name ? String(it.name) : 'Unknown';
+      if (!productMap[name]) productMap[name] = { qty: 0, revenue: 0 };
+      productMap[name].qty += it.qty || 1;
+      productMap[name].revenue += it.price || 0;
+    });
+  });
+
+  // ── product detail + category split (matched against the menu collections) ──
+  const [drinkNames, pastryNames] = await Promise.all([
+    Drink.find().select('name').then(r => new Set(r.map(d => d.name))).catch(() => new Set()),
+    Pastry.find().select('name').then(r => new Set(r.map(p => p.name))).catch(() => new Set())
+  ]);
+  const products = Object.entries(productMap)
+    .map(([name, v]) => ({
+      name, qty: v.qty, revenue: v.revenue,
+      category: drinkNames.has(name) ? 'Drinks' : pastryNames.has(name) ? 'Pastries' : 'Other'
+    }))
+    .sort((a, b) => b.qty - a.qty);
+  const categorySplit = { Drinks: 0, Pastries: 0, Other: 0 };
+  products.forEach(p => { categorySplit[p.category] += p.revenue; });
+
+  // ── staff hours (time clock) ──
+  const shifts = await TimeClock.find({ clockIn: { $gte: since } }).catch(() => []);
+  const staffHours = {};
+  shifts.forEach(s => {
+    const end = s.clockOut || now;
+    let lunch = s.lunchMinutes || 0;
+    if (s.lunchOut && !s.lunchIn && !s.clockOut) lunch = Math.round((now - s.lunchOut) / 60000);
+    const mins = Math.max(0, Math.round((end - s.clockIn) / 60000) - lunch);
+    staffHours[s.adminName || 'Staff'] = (staffHours[s.adminName || 'Staff'] || 0) + mins;
+  });
+
+  // ── signups ──
+  const newUsers = await User.countDocuments({ createdAt: { $gte: since } }).catch(() => 0);
+
+  res.render('admin/insights', {
+    title: 'Insights — Con Leche Admin', admin: req.admin, range, msg: null,
+    payload: {
+      range,
+      labels: buckets.map(labelOf),
+      stamps: buckets.map(b => stamps[b]),
+      redemptions: buckets.map(b => redemptions[b]),
+      sales: buckets.map(b => Math.round(sales[b])),
+      orders: buckets.map(b => orderCounts[b]),
+      products: products.slice(0, 25),
+      categorySplit,
+      staffHours: Object.entries(staffHours).map(([name, mins]) => ({ name, hours: +(mins / 60).toFixed(1) }))
+        .sort((a, b) => b.hours - a.hours),
+      summary: {
+        totalStamps, totalRedemptions, totalSales: Math.round(totalSales), totalOrders,
+        avgOrder: totalOrders ? Math.round(totalSales / totalOrders) : 0,
+        newUsers
+      }
+    }
+  });
 });
 
 // ─── Activity history (owner/manager) ───
@@ -379,11 +790,12 @@ router.get('/specials', ownerManager, async (req, res) => {
 
 router.post('/specials/add', ownerManager, specialUpload.single('imageFile'), async (req, res) => {
   try {
-    const { title, description, price, order } = req.body;
+    const { title, description, price, order, category } = req.body;
     const imageFilename = req.file ? req.file.filename : null;
     await new Special({
       title, description,
       price: price ? Number(price) : null,
+      category: category || 'general',
       image: imageFilename,
       order: order || 99,
       available: true
@@ -394,10 +806,11 @@ router.post('/specials/add', ownerManager, specialUpload.single('imageFile'), as
 
 router.post('/specials/edit/:id', ownerManager, specialUpload.single('imageFile'), async (req, res) => {
   try {
-    const { title, description, price, order, available } = req.body;
+    const { title, description, price, order, available, category } = req.body;
     const update = {
       title, description,
       price: price ? Number(price) : null,
+      ...(category && { category }),
       order: order || 99,
       available: available === 'true',
       updatedAt: new Date()
@@ -421,19 +834,20 @@ router.post('/specials/toggle/:id', ownerManager, async (req, res) => {
 
 router.post('/pastries/add', ownerManager, pastryUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, description, price, image, order } = req.body;
+    const { name, description, price, image, order, category } = req.body;
     const imageFilename = req.file ? req.file.filename : (image || null);
-    await new Pastry({ name, description, price: Number(price), image: imageFilename, order: order || 99, available: true }).save();
+    await new Pastry({ name, description, price: Number(price), category: category || 'other', image: imageFilename, order: order || 99, available: true }).save();
     res.redirect('/admin/pastries?msg=Pastry+added');
   } catch (err) { res.redirect('/admin/pastries?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
 router.post('/pastries/edit/:id', ownerManager, pastryUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, description, price, image, available, order } = req.body;
+    const { name, description, price, image, available, order, category } = req.body;
     const imageFilename = req.file ? req.file.filename : (image || null);
     await Pastry.findByIdAndUpdate(req.params.id, {
       name, description, price: Number(price),
+      ...(category && { category }),
       ...(imageFilename && { image: imageFilename }),
       available: available !== 'false',
       order: Number(order) || 99,

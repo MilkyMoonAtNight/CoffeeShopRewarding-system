@@ -6,12 +6,12 @@
 </div>
 
 <div class="orders-filter-row">
-  <button class="order-filter-btn active" data-filter="all">All</button>
-  <button class="order-filter-btn" data-filter="pending">Pending</button>
-  <button class="order-filter-btn" data-filter="preparing">Preparing</button>
-  <button class="order-filter-btn" data-filter="ready">Ready</button>
-  <button class="order-filter-btn" data-filter="done">Done</button>
-  <button class="order-filter-btn" id="refreshBtn" style="margin-left:auto;">↻ Refresh</button>
+  <button class="order-filter-btn active" data-filter="new">🔔 New <span class="ofb-count" id="cntNew">0</span></button>
+  <button class="order-filter-btn" data-filter="progress">⏳ In Progress <span class="ofb-count" id="cntProg">0</span></button>
+  <button class="order-filter-btn" data-filter="finished">✓ Finished</button>
+  <button class="order-filter-btn" data-filter="all">All</button>
+  <label class="orders-auto"><input type="checkbox" id="autoRefresh" checked /> Auto-refresh</label>
+  <button class="order-filter-btn" id="refreshBtn">↻</button>
 </div>
 
 <div id="ordersWrap"><div class="admin-empty" style="padding:2rem 0;">Loading orders…</div></div>
@@ -56,8 +56,16 @@ const STATUS_NEXT   = { pending:['preparing','done'], preparing:['ready','done']
 const STATUS_COLORS = { pending:'#EF9F27', preparing:'#1D9E75', ready:'rgb(88,18,23)', done:'rgba(44,44,44,0.3)' };
 
 let orders = [];
-let currentFilter = 'all';
+let currentFilter = 'new';
 let currentOrder  = null;
+
+// Map the named tabs to underlying statuses
+const FILTER_MAP = {
+  new:      o => o.status === 'pending',
+  progress: o => o.status === 'preparing' || o.status === 'ready',
+  finished: o => o.status === 'done',
+  all:      () => true
+};
 
 // Filter buttons
 document.querySelectorAll('.order-filter-btn[data-filter]').forEach(btn => {
@@ -90,9 +98,15 @@ async function loadOrders() {
 
 function renderOrders() {
   const wrap = document.getElementById('ordersWrap');
-  const visible = currentFilter === 'all' ? orders : orders.filter(o => o.status === currentFilter);
+  // Update count badges
+  document.getElementById('cntNew').textContent  = orders.filter(FILTER_MAP.new).length;
+  document.getElementById('cntProg').textContent = orders.filter(FILTER_MAP.progress).length;
+
+  const visible = orders.filter(FILTER_MAP[currentFilter] || (() => true))
+    .sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
   if (!visible.length) {
-    wrap.innerHTML = `<div class="admin-empty" style="padding:2rem 0;">No ${currentFilter==='all'?'':currentFilter+' '}orders yet.</div>`;
+    const labels = { new: 'new ', progress: 'in-progress ', finished: 'finished ', all: '' };
+    wrap.innerHTML = `<div class="admin-empty" style="padding:2rem 0;">No ${labels[currentFilter]||''}orders right now.</div>`;
     return;
   }
   wrap.innerHTML = `<div class="orders-list">${visible.map((o,i) => {
@@ -105,7 +119,7 @@ function renderOrders() {
       </div>
       <div class="order-row-mid">
         <p class="order-customer">${esc(o.userName)}</p>
-        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${esc(o.pickupMethod)}</p>
+        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${esc(o.pickupMethod)}${o.paymentMethod==='cash'?' · <span class="order-cash-pill">🏪 CASH'+(o.paymentStatus==='no_show'?' · no-show':o.paymentStatus==='paid'?' · paid':'')+'</span>':''}</p>
       </div>
       <div class="order-row-right">
         <span class="order-total-pill">R${esc(o.total)}</span>
@@ -150,12 +164,31 @@ function openOrderDetail(idx) {
   document.getElementById('odNotes').textContent = o.notes ? `"${o.notes}"` : '';
 
   const nexts = STATUS_NEXT[o.status] || [];
-  document.getElementById('odStatusBtns').innerHTML = nexts.length
+  // Cash orders get a payment line + settle controls
+  let payHtml = '';
+  if (o.paymentMethod === 'cash') {
+    const ti = (typeof o.trustIndex === 'number') ? o.trustIndex : 100;
+    const tiColor = ti >= 70 ? '#1D9E75' : ti >= 40 ? '#EF9F27' : '#c83232';
+    payHtml = `<div class="od-section-label">Payment</div>
+      <div class="od-cash-box">
+        <p class="od-cash-line">🏪 <strong>Pay in store (cash/card)</strong> · status:
+          <span class="od-pay-status od-pay-${esc(o.paymentStatus||'pending')}">${esc(o.paymentStatus||'pending')}</span></p>
+        <p class="od-trust">Customer trust index: <strong style="color:${tiColor}">${ti}</strong>/100</p>
+        ${(o.paymentStatus==='pending') ? `<div class="od-settle-btns">
+          <button class="od-settle-btn od-settle-paid" data-outcome="paid">✓ Collected & paid</button>
+          <button class="od-settle-btn od-settle-noshow" data-outcome="no_show">✕ No-show</button>
+        </div>` : `<p class="od-settled">Settled — ${esc(o.paymentStatus)}</p>`}
+      </div>`;
+  }
+  document.getElementById('odStatusBtns').innerHTML = (payHtml || '') + (nexts.length
     ? nexts.map(s => `<button class="od-status-btn" data-status="${s}" style="border-color:${STATUS_COLORS[s]};color:${STATUS_COLORS[s]};">${STATUS_LABELS[s]}</button>`).join('')
-    : '<p style="font-size:0.85rem;opacity:0.4;">Order complete</p>';
+    : '<p style="font-size:0.85rem;opacity:0.4;">Order complete</p>');
 
   document.querySelectorAll('.od-status-btn').forEach(btn => {
     btn.addEventListener('click', () => updateStatus(btn.dataset.status));
+  });
+  document.querySelectorAll('.od-settle-btn').forEach(btn => {
+    btn.addEventListener('click', () => settleCash(btn.dataset.outcome));
   });
 
   document.getElementById('orderDetailOverlay').classList.add('open');
@@ -174,6 +207,19 @@ async function updateStatus(newStatus) {
   } catch(e) { alert('Could not update status'); }
 }
 
+async function settleCash(outcome) {
+  const o = currentOrder;
+  if (outcome === 'no_show' && !confirm('Mark this as a no-show? This lowers the customer\'s trust index.')) return;
+  try {
+    await fetch(`/order/settle/${o.userId}/${o.ref}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ outcome })
+    });
+    document.getElementById('orderDetailOverlay').classList.remove('open');
+    loadOrders();
+  } catch(e) { alert('Could not settle the cash order'); }
+}
+
 loadOrders();
-setInterval(loadOrders, 20000);
+let autoTimer = setInterval(() => { if (document.getElementById('autoRefresh').checked) loadOrders(); }, 15000);
 </script>

@@ -1,0 +1,207 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Time Clock</h1>
+  <p class="admin-page-sub">Begin shift, take lunch, clock out — verified by today's code or the in-store NFC tag</p>
+</div>
+
+<% if (msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<%
+  const state = openShift ? openShift.state() : 'off';
+  const fmtT  = d => new Date(d).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+  const fmtD  = d => new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+  const hm    = mins => Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+%>
+
+<div class="admin-two-col">
+
+  <!-- ── MY SHIFT ── -->
+  <div>
+    <div class="admin-card tc-status-card tc-<%= state %>">
+      <% if (state === 'off') { %>
+        <div class="tc-state-icon">🌙</div>
+        <h3 class="tc-state-title">Off the clock</h3>
+        <p class="tc-state-sub">Start your shift when you're ready.</p>
+      <% } else if (state === 'working') { %>
+        <div class="tc-state-icon">☕</div>
+        <h3 class="tc-state-title">On shift</h3>
+        <p class="tc-state-sub">Since <%= fmtT(openShift.clockIn) %><% if (openShift.lunchMinutes) { %> · lunch taken: <%= openShift.lunchMinutes %> min<% } %></p>
+        <p class="tc-live" data-since="<%= openShift.clockIn.toISOString() %>" data-lunch="<%= openShift.lunchMinutes || 0 %>">—</p>
+      <% } else if (state === 'on_lunch') { %>
+        <div class="tc-state-icon">🥪</div>
+        <h3 class="tc-state-title">On lunch</h3>
+        <p class="tc-state-sub">Since <%= fmtT(openShift.lunchOut) %></p>
+        <p class="tc-live tc-live-lunch" data-since="<%= openShift.lunchOut.toISOString() %>">—</p>
+      <% } %>
+
+      <form action="/admin/timeclock/action" method="POST" class="tc-action-form">
+        <% if (!nfcVerified) { %>
+        <div class="form-group">
+          <label>Today's code <span style="font-weight:400;opacity:0.6;">(ask the manager — or tap the NFC tag to skip this)</span></label>
+          <input type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                 placeholder="6-digit code" class="scan-input tc-code-input"
+                 <%= state === 'off' || state === 'working' || state === 'on_lunch' ? 'required' : '' %> />
+          <% if (networkEnforced) { %>
+          <span class="form-hint">Code entry only works from the store network.</span>
+          <% } else { %>
+          <span class="form-hint" style="color:#b8860b;">⚠ STORE_NETWORK_IPS not set in .env — network check is currently off.</span>
+          <% } %>
+        </div>
+        <% } else { %>
+        <p class="tc-nfc-ok">✓ NFC verified — no code needed for the next few minutes</p>
+        <% } %>
+
+        <% if (state === 'off') { %>
+          <button type="submit" name="action" value="clock_in" class="btn btn-primary btn-full">▶ Begin Shift</button>
+        <% } else if (state === 'working') { %>
+          <div class="tc-btn-row">
+            <% if (!openShift.lunchIn) { %>
+            <button type="submit" name="action" value="lunch_out" class="btn btn-outline tc-btn-secondary">🥪 Lunch Out</button>
+            <% } %>
+            <button type="submit" name="action" value="clock_out" class="btn btn-primary">⏹ Clock Out</button>
+          </div>
+        <% } else if (state === 'on_lunch') { %>
+          <div class="tc-btn-row">
+            <button type="submit" name="action" value="lunch_in" class="btn btn-primary">↩ Back from Lunch</button>
+            <button type="submit" name="action" value="clock_out" class="btn btn-outline tc-btn-secondary">⏹ Clock Out</button>
+          </div>
+        <% } %>
+      </form>
+    </div>
+
+    <div class="admin-card" style="margin-top:0.75rem;">
+      <h3 class="admin-card-title">This Week (since <%= fmtD(weekStart) %>)</h3>
+      <p class="tc-week-total"><%= hm(myWeekMinutes) %> <span>worked</span></p>
+    </div>
+
+    <% if (todayCode) { %>
+    <div class="admin-card tc-code-card" style="margin-top:0.75rem;">
+      <h3 class="admin-card-title">Today's Clock Code</h3>
+      <p class="tc-big-code"><%= todayCode %></p>
+      <p class="form-hint">Changes automatically at midnight. Share it with staff who are clocking in — it only works from the store network.</p>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ── HISTORY + STAFF WEEK ── -->
+  <div>
+    <% if (staffWeek) { %>
+    <div class="admin-card" style="margin-bottom:0.75rem;">
+      <h3 class="admin-card-title">Staff Hours — This Week</h3>
+      <p class="form-hint" style="margin-bottom:0.75rem;">Resets every Monday. "Left" = weekly target minus hours worked.</p>
+      <div class="tc-staff-table">
+        <% staffWeek.forEach(s => { %>
+        <div class="tc-staff-row">
+          <div class="tc-staff-main">
+            <strong><%= s.name %></strong>
+            <% if (s.live) { %><span class="tc-live-dot" title="On shift now"></span><% } %>
+            <span class="tc-staff-role"><%= s.role %></span>
+          </div>
+          <div class="tc-staff-nums">
+            <span title="Worked"><strong><%= hm(s.minutes) %></strong></span>
+            <span title="Lunch total">🥪 <%= s.lunchMinutes %>m</span>
+            <span title="Hours left of <%= s.targetHours %>h target">left: <strong><%= hm(s.leftMinutes) %></strong></span>
+          </div>
+          <% if (admin.role === 'owner') { %>
+          <form action="/admin/timeclock/target/<%= s.id %>" method="POST" class="tc-target-form">
+            <input type="number" name="hours" value="<%= s.targetHours %>" min="0" max="80" class="scan-input" />
+            <button type="submit" class="admin-toggle-btn">Set</button>
+          </form>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="admin-card">
+      <h3 class="admin-card-title">My Recent Shifts</h3>
+      <% if (myShifts.length === 0) { %>
+        <p class="admin-empty">No shifts yet — your history shows up here.</p>
+      <% } else { %>
+        <% myShifts.forEach(s => { %>
+        <div class="tc-shift-row">
+          <span class="tc-shift-date"><%= fmtD(s.clockIn) %></span>
+          <span class="tc-shift-times">
+            <%= fmtT(s.clockIn) %> → <%= s.clockOut ? fmtT(s.clockOut) : '…' %>
+            <% if (s.lunchMinutes) { %><em>· 🥪 <%= s.lunchMinutes %>m</em><% } %>
+          </span>
+          <span class="tc-shift-total">
+            <% if (s.clockOut) { %><%= hm(s.totalMinutes) %><% } else { %><span class="tc-live-dot"></span> live<% } %>
+          </span>
+        </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.tc-status-card { text-align: center; padding-top: 1.75rem; }
+.tc-state-icon { font-size: 2.6rem; margin-bottom: 0.4rem; }
+.tc-state-title { font-family: var(--font-nimbus); font-size: 1.35rem; }
+.tc-state-sub { font-size: 0.82rem; color: rgba(44,44,44,0.55); margin-top: 0.2rem; }
+.tc-live { font-size: 1.9rem; font-weight: 800; color: var(--maroon); margin: 0.6rem 0 0.2rem; font-variant-numeric: tabular-nums; }
+.tc-live-lunch { color: #b8860b; }
+.tc-working { border-top: 4px solid var(--maroon); }
+.tc-on_lunch { border-top: 4px solid #b8860b; }
+.tc-action-form { margin-top: 1.25rem; text-align: left; }
+.tc-btn-row { display: flex; gap: 0.6rem; }
+.tc-btn-row .btn { flex: 1; }
+.tc-btn-secondary { border-color: rgba(44,44,44,0.25) !important; color: var(--charcoal) !important; }
+.tc-code-input { letter-spacing: 0.35em; font-size: 1.1rem; text-align: center; }
+.tc-nfc-ok { color: #1D9E75; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.75rem; text-align: center; }
+.tc-week-total { font-size: 1.7rem; font-weight: 800; color: var(--maroon); }
+.tc-week-total span { font-size: 0.8rem; font-weight: 400; color: rgba(44,44,44,0.5); }
+.tc-code-card { border: 1px dashed rgba(88,18,23,0.35); }
+.tc-big-code { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.3em; color: var(--maroon); font-variant-numeric: tabular-nums; }
+.tc-staff-row {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+  padding: 0.65rem 0; border-bottom: 1px solid rgba(44,44,44,0.06);
+}
+.tc-staff-row:last-child { border-bottom: none; }
+.tc-staff-main { flex: 1; min-width: 140px; display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; }
+.tc-staff-role { font-size: 0.68rem; color: rgba(44,44,44,0.45); text-transform: capitalize; }
+.tc-staff-nums { display: flex; gap: 0.9rem; font-size: 0.78rem; color: rgba(44,44,44,0.65); flex-wrap: wrap; }
+.tc-target-form { display: flex; gap: 0.3rem; align-items: center; }
+.tc-target-form input { width: 64px; padding: 0.3rem 0.4rem; font-size: 0.8rem; }
+.tc-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; display: inline-block;
+  animation: tcPulse 1.6s ease infinite;
+}
+@keyframes tcPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.tc-shift-row {
+  display: flex; gap: 0.75rem; align-items: baseline;
+  padding: 0.55rem 0; border-bottom: 1px solid rgba(44,44,44,0.06);
+  font-size: 0.84rem;
+}
+.tc-shift-row:last-child { border-bottom: none; }
+.tc-shift-date { width: 64px; color: rgba(44,44,44,0.5); font-size: 0.76rem; flex-shrink: 0; }
+.tc-shift-times { flex: 1; }
+.tc-shift-times em { font-style: normal; color: rgba(44,44,44,0.45); font-size: 0.76rem; }
+.tc-shift-total { font-weight: 700; color: var(--maroon); display: flex; gap: 0.3rem; align-items: center; }
+</style>
+
+<script>
+// Live ticking timer for the open shift / lunch
+(function () {
+  const el = document.querySelector('.tc-live');
+  if (!el) return;
+  const since = new Date(el.dataset.since).getTime();
+  const lunchTaken = parseInt(el.dataset.lunch || 0);
+  function tick() {
+    let mins = Math.floor((Date.now() - since) / 60000);
+    if (!el.classList.contains('tc-live-lunch')) mins -= lunchTaken;
+    if (mins < 0) mins = 0;
+    el.textContent = Math.floor(mins / 60) + 'h ' + String(mins % 60).padStart(2, '0') + 'm';
+  }
+  tick();
+  setInterval(tick, 15000);
+})();
+</script>
+
+<%- include('./layout-bottom') %>

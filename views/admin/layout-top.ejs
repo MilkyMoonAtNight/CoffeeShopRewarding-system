@@ -33,6 +33,15 @@
       <a href="/admin/scan" class="admin-nav-item <%= title.includes('Scan') ? 'active' : '' %>">
         <span class="admin-nav-icon">📷</span> Scan QR
       </a>
+      <a href="/admin/timeclock" class="admin-nav-item <%= title.includes('Time Clock') ? 'active' : '' %>">
+        <span class="admin-nav-icon">⏱</span> Time Clock
+      </a>
+      <a href="/admin/puzzle" class="admin-nav-item <%= title.includes('Puzzle') ? 'active' : '' %>">
+        <span class="admin-nav-icon">🧩</span> Daily Puzzle
+      </a>
+      <a href="/admin/leaderboard" class="admin-nav-item <%= title.includes('Leaderboard') ? 'active' : '' %>">
+        <span class="admin-nav-icon">🏆</span> Leaderboard
+      </a>
       <% if (admin.role === 'owner' || admin.role === 'manager') { %>
       <a href="/admin/events" class="admin-nav-item <%= title.includes('Events') ? 'active' : '' %>">
         <span class="admin-nav-icon">📅</span> Events
@@ -54,6 +63,9 @@
       </a>
       <% } %>
       <% if (admin.role === 'owner') { %>
+      <a href="/admin/insights" class="admin-nav-item <%= title.includes('Insights') ? 'active' : '' %>">
+        <span class="admin-nav-icon">📊</span> Insights
+      </a>
       <a href="/admin/staff" class="admin-nav-item <%= title.includes('Staff') ? 'active' : '' %>">
         <span class="admin-nav-icon">👥</span> Staff
       </a>

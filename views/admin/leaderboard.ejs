@@ -1,0 +1,67 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Leaderboard</h1>
+  <p class="admin-page-sub">Puzzles, XP and tiers across the whole crew</p>
+</div>
+
+<div class="admin-card">
+  <h3 class="admin-card-title">🏆 The Crew</h3>
+  <div class="lb-table">
+    <div class="lb-head">
+      <span class="lb-rank">#</span>
+      <span class="lb-name">Name</span>
+      <span class="lb-tier">Tier</span>
+      <span class="lb-puz">Puzzles</span>
+      <span class="lb-xp">XP</span>
+    </div>
+    <% board.forEach((p, i) => { %>
+    <div class="lb-row <%= String(p.name) === String(admin.name) ? 'lb-me' : '' %>">
+      <span class="lb-rank">
+        <% if (i === 0) { %>🥇<% } else if (i === 1) { %>🥈<% } else if (i === 2) { %>🥉<% } else { %><%= i + 1 %><% } %>
+      </span>
+      <span class="lb-name"><%= p.name %> <span class="lb-role"><%= p.role %></span></span>
+      <span class="lb-tier"><span class="lb-tier-chip">T<%= p.tier %></span> <%= p.tierName %></span>
+      <span class="lb-puz"><%= p.puzzles %> 🧩</span>
+      <span class="lb-xp"><%= p.xp %></span>
+    </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="admin-card" style="margin-top:1rem;">
+  <h3 class="admin-card-title">Tier Ladder</h3>
+  <p class="form-hint" style="margin-bottom:0.75rem;">Tiers are earned by lifetime hours worked. Keep clocking in to climb.</p>
+  <div class="lb-tiers">
+    <% tierTable.forEach(t => { %>
+    <div class="lb-tier-row">
+      <span class="lb-tier-num">T<%= t.tier %></span>
+      <span class="lb-tier-name"><%= t.name %></span>
+      <span class="lb-tier-hrs"><%= t.hours %>h</span>
+    </div>
+    <% }) %>
+  </div>
+</div>
+
+<style>
+.lb-head, .lb-row { display: grid; grid-template-columns: 36px 1fr 1.3fr 80px 56px; gap: 0.5rem; align-items: center; padding: 0.6rem 0.4rem; }
+.lb-head { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(44,44,44,0.5); border-bottom: 2px solid rgba(44,44,44,0.08); }
+.lb-row { border-bottom: 1px solid rgba(44,44,44,0.05); font-size: 0.85rem; }
+.lb-me { background: var(--maroon-pale); border-radius: 8px; }
+.lb-rank { text-align: center; font-weight: 700; }
+.lb-role { font-size: 0.65rem; color: rgba(44,44,44,0.4); text-transform: capitalize; }
+.lb-tier-chip { background: var(--maroon); color: var(--cream); font-size: 0.62rem; padding: 0.1rem 0.4rem; border-radius: 6px; font-weight: 700; }
+.lb-tier { font-size: 0.78rem; }
+.lb-puz, .lb-xp { text-align: right; }
+.lb-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.4rem; }
+.lb-tier-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.6rem; background: rgba(44,44,44,0.03); border-radius: 8px; font-size: 0.8rem; }
+.lb-tier-num { font-weight: 800; color: var(--maroon); width: 28px; }
+.lb-tier-name { flex: 1; }
+.lb-tier-hrs { color: rgba(44,44,44,0.5); font-size: 0.75rem; }
+@media (max-width: 600px) {
+  .lb-head, .lb-row { grid-template-columns: 28px 1fr 56px 44px; }
+  .lb-tier { display: none; }
+}
+</style>
+
+<%- include('./layout-bottom') %>

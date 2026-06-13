@@ -282,11 +282,11 @@ async function seed() {
     console.log('\nSeeding pastries...');
     await Pastry.deleteMany({});
     const pastries = [
-      { name: 'Butter Croissant',  description: 'Flaky, golden, layered to perfection',          price: 38, image: '655847140_122106598179267672_2803138726600608537_n.jpg', order: 1 },
-      { name: 'Chocolate Pain',    description: 'Dark chocolate wrapped in buttery pastry',       price: 42, image: '656193104_122106598269267672_5884950660951476565_n.jpg', order: 2 },
-      { name: 'Almond Croissant',  description: 'Twice-baked with frangipane & toasted almonds', price: 48, image: '656498474_122106598353267672_4790678177011394174_n.jpg', order: 3 },
-      { name: 'Morning Bun',       description: 'Orange sugar-dusted swirled pastry',             price: 40, image: '657364639_122106598305267672_3332752999638859901_n.jpg', order: 4 },
-      { name: 'Cinnamon Danish',   description: 'Cream cheese & cinnamon in a fluted shell',     price: 44, image: '657891931_122106598221267672_8131615443921352503_n.jpg', order: 5 },
+      { name: 'Butter Croissant',  description: 'Flaky, golden, layered to perfection',          price: 38, category: 'croissant', image: '655847140_122106598179267672_2803138726600608537_n.jpg', order: 1 },
+      { name: 'Chocolate Pain',    description: 'Dark chocolate wrapped in buttery pastry',       price: 42, category: 'croissant', image: '656193104_122106598269267672_5884950660951476565_n.jpg', order: 2 },
+      { name: 'Almond Croissant',  description: 'Twice-baked with frangipane & toasted almonds', price: 48, category: 'croissant', image: '656498474_122106598353267672_4790678177011394174_n.jpg', order: 3 },
+      { name: 'Morning Bun',       description: 'Orange sugar-dusted swirled pastry',             price: 40, category: 'cake', image: '657364639_122106598305267672_3332752999638859901_n.jpg', order: 4 },
+      { name: 'Cinnamon Danish',   description: 'Cream cheese & cinnamon in a fluted shell',     price: 44, category: 'cake', image: '657891931_122106598221267672_8131615443921352503_n.jpg', order: 5 },
     ];
     const createdPastries = await Pastry.insertMany(pastries);
     console.log(`  ✓ Created ${createdPastries.length} pastries`);

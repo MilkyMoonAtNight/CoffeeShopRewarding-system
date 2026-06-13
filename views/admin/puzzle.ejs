@@ -1,0 +1,159 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Daily Puzzle</h1>
+  <p class="admin-page-sub">One word a day · 5 tries · earn XP for the leaderboard</p>
+</div>
+
+<% if (noPool) { %>
+<div class="admin-card"><p class="admin-empty">No word pool found. Add words to <code>data/puzzle-words.txt</code> and restart.</p></div>
+<% } else { %>
+
+<div class="puz-layout">
+
+  <!-- Board -->
+  <div class="admin-card puz-card">
+    <div class="puz-diff puz-diff-<%= difficulty %>"><%= difficulty.toUpperCase() %></div>
+    <div class="puz-grid" id="puzGrid"></div>
+
+    <div class="puz-input-row" id="puzInputRow" <%= finished ? 'style=display:none;' : '' %>>
+      <input type="text" id="puzInput" maxlength="5" autocomplete="off" autocapitalize="characters"
+             placeholder="GUESS" class="puz-input" />
+      <button id="puzSubmit" class="btn btn-primary">Enter</button>
+    </div>
+
+    <div id="puzResult" class="puz-result" <%= finished ? '' : 'style=display:none;' %>>
+      <% if (finished && solved) { %>
+        <p class="puz-win">🎉 Solved! <span class="puz-xp">+<%= attempt.xpAwarded %> XP</span></p>
+      <% } else if (finished && !solved) { %>
+        <p class="puz-lose">Out of tries — the word was <strong><%= answer %></strong></p>
+      <% } %>
+      <% if (hint) { %><p class="puz-hint">💡 <%= hint %></p><% } %>
+      <p class="puz-comeback">Come back tomorrow for a new word ☕</p>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="admin-card puz-board-card">
+    <h3 class="admin-card-title">🏆 Leaderboard</h3>
+    <p class="form-hint" style="margin-bottom:0.75rem;">Ranked by puzzles completed. <a href="/admin/leaderboard">Full board →</a></p>
+    <div class="puz-lb">
+      <% leaderboard.slice(0, 10).forEach((p, i) => { %>
+      <div class="puz-lb-row <%= String(p._id) === String(admin._id) ? 'puz-lb-me' : '' %>">
+        <span class="puz-lb-rank"><%= i + 1 %></span>
+        <span class="puz-lb-name"><%= p.name %><% if (String(p._id) === String(admin._id)) { %> <em>(you)</em><% } %></span>
+        <span class="puz-lb-puz"><%= p.puzzlesCompleted || 0 %> 🧩</span>
+        <span class="puz-lb-xp"><%= p.xp || 0 %> XP</span>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+</div>
+<% } %>
+
+<style>
+.puz-layout { display: grid; gap: 1rem; }
+@media (min-width: 916px) { .puz-layout { grid-template-columns: 1fr 1fr; align-items: start; } }
+.puz-card { text-align: center; position: relative; }
+.puz-diff { position: absolute; top: 1rem; right: 1.25rem; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; padding: 0.2rem 0.6rem; border-radius: 999px; }
+.puz-diff-easy { background: rgba(29,158,117,0.15); color: #1D9E75; }
+.puz-diff-medium { background: rgba(201,151,74,0.18); color: #8a6420; }
+.puz-diff-hard { background: rgba(88,18,23,0.12); color: var(--maroon); }
+.puz-grid { display: grid; grid-template-rows: repeat(5, 1fr); gap: 7px; max-width: 280px; margin: 1.25rem auto; }
+.puz-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.puz-tile {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 800; text-transform: uppercase;
+  border: 2px solid rgba(44,44,44,0.15); border-radius: 8px; color: var(--charcoal);
+  transition: transform 0.15s ease;
+}
+.puz-tile.correct { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.puz-tile.present { background: #c9974a; border-color: #c9974a; color: #fff; }
+.puz-tile.absent  { background: #6b6b6b; border-color: #6b6b6b; color: #fff; }
+.puz-tile.pop { transform: scale(1.08); }
+.puz-input-row { display: flex; gap: 0.5rem; max-width: 280px; margin: 0 auto; }
+.puz-input { flex: 1; text-transform: uppercase; letter-spacing: 0.35em; text-align: center; font-size: 1.2rem; font-weight: 700; }
+.puz-result { margin-top: 1rem; }
+.puz-win { font-size: 1.2rem; font-weight: 800; color: #1D9E75; }
+.puz-lose { font-size: 1rem; color: var(--maroon); }
+.puz-xp { background: var(--maroon); color: var(--cream); padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.85rem; margin-left: 0.4rem; }
+.puz-hint { margin-top: 0.5rem; color: rgba(44,44,44,0.6); font-style: italic; }
+.puz-comeback { margin-top: 0.5rem; font-size: 0.8rem; color: rgba(44,44,44,0.4); }
+.puz-lb-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(44,44,44,0.05); font-size: 0.85rem; }
+.puz-lb-row:last-child { border-bottom: none; }
+.puz-lb-me { background: var(--maroon-pale); border-radius: 8px; padding-left: 0.5rem; padding-right: 0.5rem; }
+.puz-lb-rank { width: 22px; font-weight: 800; color: var(--maroon); }
+.puz-lb-name { flex: 1; }
+.puz-lb-name em { color: rgba(44,44,44,0.45); font-size: 0.75rem; }
+.puz-lb-puz { font-size: 0.8rem; }
+.puz-lb-xp { font-size: 0.75rem; color: rgba(44,44,44,0.5); width: 64px; text-align: right; }
+</style>
+
+<% if (!noPool) { %>
+<script>
+const MAX = <%= maxGuesses %>;
+let rows = <%- JSON.stringify(rows) %>;
+let finished = <%= finished ? 'true' : 'false' %>;
+
+const grid = document.getElementById('puzGrid');
+function render() {
+  grid.innerHTML = '';
+  for (let r = 0; r < MAX; r++) {
+    const row = document.createElement('div');
+    row.className = 'puz-row';
+    const data = rows[r];
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement('div');
+      tile.className = 'puz-tile';
+      if (data) {
+        tile.textContent = data.guess[c] || '';
+        tile.classList.add(data.score[c]);
+      }
+      row.appendChild(tile);
+    }
+    grid.appendChild(row);
+  }
+}
+render();
+
+const input = document.getElementById('puzInput');
+const submit = document.getElementById('puzSubmit');
+
+async function sendGuess() {
+  if (finished) return;
+  const guess = (input.value || '').trim().toUpperCase();
+  if (!/^[A-Z]{5}$/.test(guess)) { input.classList.add('puz-shake'); setTimeout(()=>input.classList.remove('puz-shake'),400); return; }
+  submit.disabled = true;
+  try {
+    const res = await fetch('/admin/puzzle/guess', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guess })
+    });
+    const data = await res.json();
+    submit.disabled = false;
+    if (!data.ok) { alert(data.message || 'Try again'); return; }
+    rows.push({ guess, score: data.score });
+    render();
+    input.value = '';
+    if (data.finished) {
+      finished = true;
+      document.getElementById('puzInputRow').style.display = 'none';
+      const box = document.getElementById('puzResult');
+      box.style.display = 'block';
+      let html = '';
+      if (data.solved) html += `<p class="puz-win">🎉 Solved! <span class="puz-xp">+${data.xp} XP</span></p>`;
+      else html += `<p class="puz-lose">Out of tries — the word was <strong>${data.answer}</strong></p>`;
+      if (data.hint) html += `<p class="puz-hint">💡 ${data.hint}</p>`;
+      html += `<p class="puz-comeback">Come back tomorrow for a new word ☕</p>`;
+      box.innerHTML = html;
+      if (data.solved) setTimeout(() => location.reload(), 1500); // refresh leaderboard
+    }
+  } catch (e) { submit.disabled = false; }
+}
+if (submit) submit.addEventListener('click', sendGuess);
+if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') sendGuess(); });
+</script>
+<% } %>
+
+<%- include('./layout-bottom') %>
