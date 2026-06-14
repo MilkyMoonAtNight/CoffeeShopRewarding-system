@@ -17,6 +17,22 @@ if (toggle && drawer) {
     });
   });
 }
+
+// Accordion groups — click label to expand/collapse
+document.querySelectorAll('.admin-nav-group-label').forEach(label => {
+  label.addEventListener('click', () => {
+    const group = label.parentElement;
+    // Close siblings
+    document.querySelectorAll('.admin-nav-group').forEach(g => {
+      if (g !== group) g.classList.remove('open');
+    });
+    group.classList.toggle('open');
+  });
+});
+// Auto-open the group that contains the active link (JS fallback for browsers without :has())
+document.querySelectorAll('.admin-nav-group').forEach(group => {
+  if (group.querySelector('.admin-nav-item.active')) group.classList.add('open');
+});
 </script>
 <script src="/js/main.js"></script>
 </body></html>

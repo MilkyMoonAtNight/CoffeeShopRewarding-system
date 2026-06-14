@@ -261,9 +261,8 @@ ul { list-style: none; }
 .section-body { font-size: 1.05rem; line-height: 1.75; color: rgba(44,44,44,0.8); max-width: 520px; }
 
 /* ====== BATTLEPASS TEASER ====== */
-.battlepass-teaser { 
-  background: url('../images/backgrounds/bloop.png');
-  background-size: cover;
+.battlepass-teaser {
+  /* background intentionally removed — home-duo wrapper carries the shared bloop */
 }
 .battlepass-teaser .grid-2 {
   grid-template-columns: 1fr 1fr;
@@ -289,8 +288,8 @@ ul { list-style: none; }
   border-radius: 50px; font-size: 0.82rem; font-weight: 500;
   width: fit-content;
 }
-.pill-voucher { background: rgba(88, 18, 23, 0.12); color: var(--maroon); border: 1px solid rgba(88, 18, 23, 0.3); }
-.pill-drink { background: rgba(88, 18, 23, 0.08); color: var(--maroon); border: 1px solid rgba(88, 18, 23, 0.2); }
+.pill-voucher { background: rgba(201, 151, 74, 0.15); color: #7a5010; border: 1px solid rgba(201, 151, 74, 0.45); }
+.pill-drink   { background: rgba(201, 151, 74, 0.12); color: #7a5010; border: 1px solid rgba(201, 151, 74, 0.35); }
 .pill-merch { background: var(--black); color: var(--cream); border: 1px solid rgba(88, 18, 23, 0.4); }
 
 .bp-visual { display: flex; align-items: stretch; justify-content: center; }
@@ -1370,7 +1369,7 @@ ul { list-style: none; }
 .drinks-panel.hidden { display: none; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .drinks-size-legend {
-  display: flex; align-items: center; gap: 0.75rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
   font-size: 0.78rem; color: rgba(44,44,44,0.4);
   text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem;
 }
@@ -3180,22 +3179,16 @@ button.detail-pill.detail-pill-active {
 .bean-field.beans-visible { opacity: 1; }
 .bean-grogu-img, .bean-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
-/* Beans live behind the page content. Post-strip sections drop their opaque
-   fill so beans show through; the hero + strip stay opaque to hide them up top. */
+/* Bean field sits ABOVE section backgrounds but BELOW all content (text, cards,
+   images), so the sections keep their normal colours and the faint beans simply
+   drift over them. Content is lifted to z-index 2; the bean layer is z-index 1. */
+/* Bean field sits behind every section's background-color naturally.
+   Only hero + strip need explicit z-index in case of stacking edge-cases. */
 body.home-page { background: var(--cream); }
-body.home-page main { position: relative; z-index: auto; }
-body.home-page main .container,
-body.home-page .hero-content { position: relative; z-index: 2; }
-/* Hero and strip keep solid backgrounds so no beans appear before them */
-body.home-page .hero,
-body.home-page .strip-section { position: relative; z-index: 3; }
-/* Everything after the strip becomes see-through so beans drift behind it */
-body.home-page .specials-home,
-body.home-page .battlepass-teaser,
-body.home-page .menu-preview,
-body.home-page .reviews-home,
-body.home-page .events-home,
-body.home-page .home-duo { background: transparent !important; background-color: transparent !important; }
+body.home-page main { position: relative; }
+body.home-page .bean-field { z-index: 0 !important; }
+body.home-page .hero { position: relative; z-index: 1; }
+body.home-page .strip-section { position: relative; z-index: 1; }
 .bean {
   position: absolute;
   display: block;
@@ -3226,8 +3219,9 @@ body.home-page .home-duo { background: transparent !important; background-color:
   background-position: center top;
   background-color: var(--cream);
 }
-.home-duo .specials-home,
-.home-duo .battlepass-teaser { background: none; }
+/* Both sections inside home-duo are see-through so the wrapper bloop + bg shows */
+.home-duo .specials-home { background: transparent; }
+.home-duo .battlepass-teaser { background: transparent; }
 
 /* ════════ ABOUT — hero + origin share one background ════════ */
 .about-top {
@@ -3325,3 +3319,37 @@ body.home-page .home-duo { background: transparent !important; background-color:
 .dash-tier-bar { height: 8px; background: rgba(253,246,237,0.2); border-radius: 999px; margin-top: 1rem; overflow: hidden; }
 .dash-tier-fill { height: 100%; background: var(--cream); border-radius: 999px; transition: width 0.6s ease; }
 .dash-tier-next { font-size: 0.78rem; opacity: 0.8; margin-top: 0.5rem; }
+
+/* ── Admin nav: grouped categories ── */
+.admin-nav-group { border-bottom: 1px solid rgba(201,151,74,0.08); }
+.admin-nav-group:last-of-type { border-bottom: none; }
+
+.admin-nav-group-label {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(201,151,74,0.75);
+  cursor: pointer; user-select: none;
+  transition: color 0.15s ease;
+}
+.admin-nav-group-label:hover { color: rgba(201,151,74,1); }
+.admin-nav-group-arrow {
+  font-size: 1rem; font-weight: 400; line-height: 1;
+  transition: transform 0.2s ease; color: rgba(201,151,74,0.5);
+}
+.admin-nav-group.open .admin-nav-group-arrow { transform: rotate(90deg); }
+
+.admin-nav-group-items {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.admin-nav-group.open .admin-nav-group-items { max-height: 300px; }
+
+.admin-nav-item.admin-nav-sub {
+  padding-left: 2rem;
+  font-size: 0.82rem;
+}
+
+/* Auto-expand group containing the active page */
+.admin-nav-group:has(.admin-nav-item.active) .admin-nav-group-items { max-height: 300px; }
+.admin-nav-group:has(.admin-nav-item.active) .admin-nav-group-arrow { transform: rotate(90deg); }

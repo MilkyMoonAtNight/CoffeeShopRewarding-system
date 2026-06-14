@@ -9,9 +9,8 @@
         <span class="admin-header-name">Con Leche <span class="admin-header-sub">Admin</span></span>
       </div>
       <div class="admin-header-right">
-        <!-- Check-in toggle -->
         <button class="checkin-btn <%= admin.checkedIn ? 'checkin-in' : 'checkin-out' %>" id="checkinBtn"
-                title="<%= admin.checkedIn ? 'You are checked in — click to check out' : 'Click to check in for your shift' %>">
+                title="<%= admin.checkedIn ? 'You are checked in' : 'Not clocked in' %>">
           <span class="checkin-dot"></span>
           <span class="checkin-label"><%= admin.checkedIn ? 'On shift' : 'Off shift' %></span>
         </button>
@@ -22,19 +21,24 @@
       </div>
     </div>
 
-    <!-- Collapsible nav -->
+    <!-- Collapsible nav drawer -->
     <nav class="admin-nav-drawer" id="adminNavDrawer">
+
+      <!-- Dashboard — everyone -->
       <a href="/admin/dashboard" class="admin-nav-item <%= title.includes('Dashboard') ? 'active' : '' %>">
         <span class="admin-nav-icon">⬛</span> Dashboard
       </a>
+
+      <% if (admin.role === 'barista') { %>
+      <!-- ── BARISTA: flat list, no categories ── -->
       <a href="/admin/orders" class="admin-nav-item <%= title.includes('Orders') ? 'active' : '' %>">
         <span class="admin-nav-icon">📋</span> Orders
       </a>
       <a href="/admin/scan" class="admin-nav-item <%= title.includes('Scan') ? 'active' : '' %>">
-        <span class="admin-nav-icon">📷</span> Scan QR
+        <span class="admin-nav-icon">📷</span> Stamp
       </a>
       <a href="/admin/timeclock" class="admin-nav-item <%= title.includes('Time Clock') ? 'active' : '' %>">
-        <span class="admin-nav-icon">⏱</span> Time Clock
+        <span class="admin-nav-icon">⏱</span> Clock In
       </a>
       <a href="/admin/puzzle" class="admin-nav-item <%= title.includes('Puzzle') ? 'active' : '' %>">
         <span class="admin-nav-icon">🧩</span> Daily Puzzle
@@ -42,34 +46,95 @@
       <a href="/admin/leaderboard" class="admin-nav-item <%= title.includes('Leaderboard') ? 'active' : '' %>">
         <span class="admin-nav-icon">🏆</span> Leaderboard
       </a>
-      <% if (admin.role === 'owner' || admin.role === 'manager') { %>
-      <a href="/admin/events" class="admin-nav-item <%= title.includes('Events') ? 'active' : '' %>">
-        <span class="admin-nav-icon">📅</span> Events
-      </a>
-      <a href="/admin/drinks" class="admin-nav-item <%= title.includes('Drinks') ? 'active' : '' %>">
-        <span class="admin-nav-icon">☕</span> Drinks
-      </a>
-      <a href="/admin/pastries" class="admin-nav-item <%= title.includes('Pastries') ? 'active' : '' %>">
-        <span class="admin-nav-icon">🥐</span> Pastries
-      </a>
-      <a href="/admin/specials" class="admin-nav-item <%= title.includes('Specials') ? 'active' : '' %>">
-        <span class="admin-nav-icon">✦</span> Specials
-      </a>
-      <a href="/admin/history" class="admin-nav-item <%= title.includes('History') ? 'active' : '' %>">
-        <span class="admin-nav-icon">🕘</span> History
-      </a>
-      <a href="/admin/users" class="admin-nav-item <%= title.includes('Members') ? 'active' : '' %>">
-        <span class="admin-nav-icon">🐱</span> Members
-      </a>
+
+      <% } else { %>
+      <!-- ── OWNER / MANAGER: grouped categories ── -->
+
+      <!-- Stamp (Orders + Scan + Insights) -->
+      <div class="admin-nav-group">
+        <div class="admin-nav-group-label">
+          <span>Stamp</span>
+          <span class="admin-nav-group-arrow">›</span>
+        </div>
+        <div class="admin-nav-group-items">
+          <a href="/admin/orders" class="admin-nav-item admin-nav-sub <%= title.includes('Orders') ? 'active' : '' %>">
+            <span class="admin-nav-icon">📋</span> Orders
+          </a>
+          <a href="/admin/scan" class="admin-nav-item admin-nav-sub <%= title.includes('Scan') ? 'active' : '' %>">
+            <span class="admin-nav-icon">📷</span> Scan
+          </a>
+          <% if (admin.role === 'owner') { %>
+          <a href="/admin/insights" class="admin-nav-item admin-nav-sub <%= title.includes('Insights') ? 'active' : '' %>">
+            <span class="admin-nav-icon">📊</span> Insights
+          </a>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Clock In (Time Clock + Daily Puzzle + Leaderboard) -->
+      <div class="admin-nav-group">
+        <div class="admin-nav-group-label">
+          <span>Clock In</span>
+          <span class="admin-nav-group-arrow">›</span>
+        </div>
+        <div class="admin-nav-group-items">
+          <a href="/admin/timeclock" class="admin-nav-item admin-nav-sub <%= title.includes('Time Clock') ? 'active' : '' %>">
+            <span class="admin-nav-icon">⏱</span> Check In
+          </a>
+          <a href="/admin/puzzle" class="admin-nav-item admin-nav-sub <%= title.includes('Puzzle') ? 'active' : '' %>">
+            <span class="admin-nav-icon">🧩</span> Daily Puzzle
+          </a>
+          <a href="/admin/leaderboard" class="admin-nav-item admin-nav-sub <%= title.includes('Leaderboard') ? 'active' : '' %>">
+            <span class="admin-nav-icon">🏆</span> Leaderboard
+          </a>
+        </div>
+      </div>
+
+      <!-- Products (Drinks + Events + Pastries + Specials) -->
+      <div class="admin-nav-group">
+        <div class="admin-nav-group-label">
+          <span>Products</span>
+          <span class="admin-nav-group-arrow">›</span>
+        </div>
+        <div class="admin-nav-group-items">
+          <a href="/admin/drinks" class="admin-nav-item admin-nav-sub <%= title.includes('Drinks') ? 'active' : '' %>">
+            <span class="admin-nav-icon">☕</span> Drinks
+          </a>
+          <a href="/admin/events" class="admin-nav-item admin-nav-sub <%= title.includes('Events') ? 'active' : '' %>">
+            <span class="admin-nav-icon">📅</span> Events
+          </a>
+          <a href="/admin/pastries" class="admin-nav-item admin-nav-sub <%= title.includes('Pastries') ? 'active' : '' %>">
+            <span class="admin-nav-icon">🥐</span> Pastries
+          </a>
+          <a href="/admin/specials" class="admin-nav-item admin-nav-sub <%= title.includes('Specials') ? 'active' : '' %>">
+            <span class="admin-nav-icon">✦</span> Specials
+          </a>
+        </div>
+      </div>
+
+      <!-- Crew (History + Members + Staff) -->
+      <div class="admin-nav-group">
+        <div class="admin-nav-group-label">
+          <span>Crew</span>
+          <span class="admin-nav-group-arrow">›</span>
+        </div>
+        <div class="admin-nav-group-items">
+          <a href="/admin/history" class="admin-nav-item admin-nav-sub <%= title.includes('History') ? 'active' : '' %>">
+            <span class="admin-nav-icon">🕘</span> History
+          </a>
+          <a href="/admin/users" class="admin-nav-item admin-nav-sub <%= title.includes('Members') ? 'active' : '' %>">
+            <span class="admin-nav-icon">🐱</span> Members
+          </a>
+          <% if (admin.role === 'owner') { %>
+          <a href="/admin/staff" class="admin-nav-item admin-nav-sub <%= title.includes('Staff') ? 'active' : '' %>">
+            <span class="admin-nav-icon">👥</span> Staff
+          </a>
+          <% } %>
+        </div>
+      </div>
+
       <% } %>
-      <% if (admin.role === 'owner') { %>
-      <a href="/admin/insights" class="admin-nav-item <%= title.includes('Insights') ? 'active' : '' %>">
-        <span class="admin-nav-icon">📊</span> Insights
-      </a>
-      <a href="/admin/staff" class="admin-nav-item <%= title.includes('Staff') ? 'active' : '' %>">
-        <span class="admin-nav-icon">👥</span> Staff
-      </a>
-      <% } %>
+
       <a href="/admin/logout" class="admin-nav-item admin-nav-logout">
         <span class="admin-nav-icon">→</span> Sign Out
       </a>
