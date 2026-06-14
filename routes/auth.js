@@ -43,8 +43,14 @@ router.post('/register', loginLimiter, async (req, res) => {
       if (!isNaN(d.getTime()) && d < new Date()) birthday = d;
     }
 
+    const emailPreferences = {
+      specials: req.body.notifySpecials !== 'false',
+      events:   req.body.notifyEvents   !== 'false',
+      birthday: req.body.notifyBirthday !== 'false',
+    };
+
     const qrToken = crypto.randomBytes(16).toString('hex');
-    const user = new User({ name, email, password, qrCode: qrToken, birthday });
+    const user = new User({ name, email, password, qrCode: qrToken, birthday, emailPreferences });
     await user.save();
     req.session.userId   = user._id;
     req.session.userName = user.name;

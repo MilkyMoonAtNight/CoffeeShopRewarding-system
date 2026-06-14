@@ -157,6 +157,9 @@
   </div>
 
   <script>
+    // He was found — clear the flag so the next home visit rolls fresh
+    sessionStorage.removeItem('grogu_clicked');
+
     // Starfield
     const stars = document.getElementById('stars');
     for (let i = 0; i < 120; i++) {

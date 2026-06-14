@@ -1,0 +1,240 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Notifications</h1>
+  <p class="admin-page-sub">Schedule emails to opted-in members — specials, events, and new arrivals. Birthday emails go out automatically each morning.</p>
+</div>
+
+<% if (locals.msg && msg) { %>
+<div class="admin-alert <%= msg.toLowerCase().includes('error') || msg.toLowerCase().includes('missing') || msg.toLowerCase().includes('invalid') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<!-- ── Stats bar ── -->
+<div class="admin-stats-row" style="margin-bottom:1.5rem;">
+  <div class="admin-stat-card">
+    <span class="admin-stat-num"><%= userCount %></span>
+    <span class="admin-stat-lbl">registered members</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num"><%= notifications.filter(n => n.active && !n.sentAt).length %></span>
+    <span class="admin-stat-lbl">pending</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num"><%= notifications.filter(n => n.sentAt || (n.sentCount > 0)).length %></span>
+    <span class="admin-stat-lbl">sent</span>
+  </div>
+</div>
+
+<!-- ── Create new notification ── -->
+<div class="admin-card" style="margin-bottom:1.5rem;">
+  <h2 class="admin-section-title" style="margin-bottom:1.25rem;">Schedule a new notification</h2>
+  <form action="/admin/notifications/create" method="POST" class="admin-form-grid">
+
+    <div class="admin-form-row">
+      <div class="admin-form-group" style="flex:2;">
+        <label class="admin-form-label">Subject / Title *</label>
+        <input type="text" name="title" required placeholder="e.g. This week's special — Biscoff Latte" class="admin-input" maxlength="200" />
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Category *</label>
+        <select name="category" class="admin-input" required>
+          <option value="specials">✨ Specials &amp; drinks</option>
+          <option value="events">📍 Events &amp; locations</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="admin-form-group">
+      <label class="admin-form-label">Message body *</label>
+      <textarea name="body" required rows="5" placeholder="Write your message here. Keep it short — members will see this in their inbox." class="admin-input admin-textarea" maxlength="2000"></textarea>
+    </div>
+
+    <div class="admin-form-row">
+      <div class="admin-form-group">
+        <label class="admin-form-label">Send at *</label>
+        <input type="datetime-local" name="sendAt" required class="admin-input" />
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Repeat</label>
+        <select name="repeat" class="admin-input">
+          <option value="none">One-time only</option>
+          <option value="weekly">Weekly (same day)</option>
+          <option value="monthly">Monthly (same date)</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary">Schedule notification</button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Existing notifications ── -->
+<div class="admin-card" style="padding:0;overflow:hidden;">
+  <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(44,44,44,0.08);">
+    <h2 class="admin-section-title" style="margin:0;">Scheduled &amp; sent</h2>
+  </div>
+
+  <% if (notifications.length === 0) { %>
+    <p class="admin-empty" style="padding:2rem;">No notifications yet. Create one above.</p>
+  <% } else { %>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Send at</th>
+          <th>Repeat</th>
+          <th>Status</th>
+          <th>Sent to</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% notifications.forEach(n => { %>
+        <%
+          const isPast    = n.sendAt < new Date();
+          const wasSent   = n.sentCount > 0;
+          const isActive  = n.active;
+          let statusLabel, statusClass;
+          if (!isActive)              { statusLabel = 'Paused';    statusClass = 'badge-grey'; }
+          else if (wasSent && n.repeat === 'none') { statusLabel = 'Sent'; statusClass = 'badge-green'; }
+          else if (wasSent)           { statusLabel = 'Repeating'; statusClass = 'badge-blue'; }
+          else if (isPast)            { statusLabel = 'Pending';   statusClass = 'badge-orange'; }
+          else                        { statusLabel = 'Scheduled'; statusClass = 'badge-blue'; }
+        %>
+        <tr id="nrow-<%= n._id %>">
+          <td style="font-weight:600;max-width:220px;">
+            <%= n.title %>
+            <div style="font-size:0.72rem;color:rgba(44,44,44,0.45);margin-top:2px;font-weight:400;white-space:pre-wrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;"><%= n.body.slice(0, 80) %><%= n.body.length > 80 ? '…' : '' %></div>
+          </td>
+          <td>
+            <span class="admin-badge"><%= n.category === 'specials' ? '✨ Specials' : '📍 Events' %></span>
+          </td>
+          <td class="admin-td-sub">
+            <%= n.sendAt.toLocaleString('en-ZA', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) %>
+          </td>
+          <td class="admin-td-sub"><%= n.repeat === 'none' ? '—' : n.repeat %></td>
+          <td><span class="admin-badge <%= statusClass %>"><%= statusLabel %></span></td>
+          <td class="admin-td-num"><%= n.sentCount > 0 ? n.sentCount : '—' %></td>
+          <td>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="admin-toggle-btn" onclick="openEdit('<%= n._id %>')" style="font-size:0.75rem;">Edit</button>
+              <form action="/admin/notifications/<%= n._id %>/toggle" method="POST" style="display:inline;">
+                <button type="submit" class="admin-toggle-btn" style="font-size:0.75rem;">
+                  <%= isActive ? 'Pause' : 'Resume' %>
+                </button>
+              </form>
+              <% if (admin.role === 'owner') { %>
+              <form action="/admin/notifications/<%= n._id %>/delete" method="POST" style="display:inline;"
+                    onsubmit="return confirm('Delete this notification?')">
+                <button type="submit" class="admin-toggle-btn admin-delete-btn" style="font-size:0.75rem;color:#c83232;border-color:#c83232;">Delete</button>
+              </form>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- ── Birthday info card ── -->
+<div class="admin-card" style="margin-top:1.5rem;background:linear-gradient(135deg,#fdf6ed 0%,#fff 100%);border:1px solid rgba(88,18,23,0.1);">
+  <div style="display:flex;gap:1rem;align-items:flex-start;">
+    <span style="font-size:2rem;line-height:1;">🎂</span>
+    <div>
+      <h3 style="margin:0 0 0.4rem;font-size:1rem;color:var(--maroon);">Birthday emails are automatic</h3>
+      <p style="margin:0;font-size:0.85rem;color:rgba(44,44,44,0.6);line-height:1.6;">
+        Every morning the system checks for members whose birthday is today and sends them a free cookie + 10% off email — no action needed. Members who opted out of birthday emails won't receive them. You can't manually trigger birthday emails from here.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit modal ── -->
+<div class="modal-overlay" id="editNotifOverlay">
+  <div class="modal-sheet" style="max-width:540px;border-radius:var(--radius-lg);">
+    <button class="modal-close" onclick="closeEdit()">✕</button>
+    <div class="modal-body" style="padding-top:1.5rem;">
+      <h2 style="font-family:var(--font-nimbus);font-size:1.25rem;margin-bottom:1.25rem;color:var(--charcoal);">Edit notification</h2>
+      <form id="editNotifForm" method="POST" class="admin-form-grid">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Title</label>
+          <input type="text" name="title" id="editTitle" class="admin-input" maxlength="200" />
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Message body</label>
+          <textarea name="body" id="editBody" rows="5" class="admin-input admin-textarea" maxlength="2000"></textarea>
+        </div>
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-form-label">Category</label>
+            <select name="category" id="editCategory" class="admin-input">
+              <option value="specials">✨ Specials &amp; drinks</option>
+              <option value="events">📍 Events &amp; locations</option>
+            </select>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">Repeat</label>
+            <select name="repeat" id="editRepeat" class="admin-input">
+              <option value="none">One-time only</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Send at (leave blank to keep current)</label>
+          <input type="datetime-local" name="sendAt" id="editSendAt" class="admin-input" />
+        </div>
+        <div style="display:flex;gap:0.75rem;">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);" onclick="closeEdit()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Populate the notifications data for the edit modal
+const NOTIFS = <%- JSON.stringify(notifications.map(n => ({
+  id:       n._id,
+  title:    n.title,
+  body:     n.body,
+  category: n.category,
+  repeat:   n.repeat,
+  sendAt:   n.sendAt
+}))) %>;
+
+function openEdit(id) {
+  const n = NOTIFS.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('editTitle').value    = n.title;
+  document.getElementById('editBody').value     = n.body;
+  document.getElementById('editCategory').value = n.category;
+  document.getElementById('editRepeat').value   = n.repeat;
+  // Format date for datetime-local input
+  const d = new Date(n.sendAt);
+  const pad = v => String(v).padStart(2,'0');
+  document.getElementById('editSendAt').value =
+    `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  document.getElementById('editNotifForm').action = `/admin/notifications/${id}/edit`;
+  document.getElementById('editNotifOverlay').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('editNotifOverlay').classList.remove('open');
+}
+
+document.getElementById('editNotifOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
+});
+</script>
+
+<%- include('./layout-bottom') %>

@@ -125,6 +125,9 @@
           <a href="/admin/users" class="admin-nav-item admin-nav-sub <%= title.includes('Members') ? 'active' : '' %>">
             <span class="admin-nav-icon">🐱</span> Members
           </a>
+          <a href="/admin/notifications" class="admin-nav-item admin-nav-sub <%= title.includes('Notifications') ? 'active' : '' %>">
+            <span class="admin-nav-icon">📬</span> Notifications
+          </a>
           <% if (admin.role === 'owner') { %>
           <a href="/admin/staff" class="admin-nav-item admin-nav-sub <%= title.includes('Staff') ? 'active' : '' %>">
             <span class="admin-nav-icon">👥</span> Staff

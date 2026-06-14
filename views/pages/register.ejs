@@ -7,7 +7,7 @@
       <div class="auth-logo">
         <img src="/images/logo.png" alt="Con Leche" />
       </div>
-      <h1 class="auth-title">Join the Pack</h1>
+      <h1 class="auth-title">Join Con Leche</h1>
       <p class="auth-sub">Create your account and get your unique QR battlepass code.</p>
 
       <% if (error) { %>
@@ -36,6 +36,23 @@
           <label for="confirmPassword">Confirm Password</label>
           <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="••••••••" />
         </div>
+        <!-- Notification opt-ins -->
+        <div class="form-group notify-optin-group">
+          <p class="notify-optin-label">Email notifications <span class="notify-optin-sub">(you can change these any time in your profile)</span></p>
+          <label class="notify-check">
+            <input type="checkbox" name="notifySpecials" value="on" checked />
+            <span>Weekly specials, new drinks &amp; arrivals</span>
+          </label>
+          <label class="notify-check">
+            <input type="checkbox" name="notifyEvents" value="on" checked />
+            <span>Upcoming events &amp; truck locations</span>
+          </label>
+          <label class="notify-check">
+            <input type="checkbox" name="notifyBirthday" value="on" checked />
+            <span>Birthday treat email 🎂</span>
+          </label>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
       </form>
 <script>document.querySelector('[data-cap-today]')?.setAttribute('max', new Date().toISOString().split('T')[0]);</script>

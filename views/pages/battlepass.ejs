@@ -54,6 +54,39 @@
         </div>
       </div>
 
+      <!-- ── Email preferences ── -->
+      <div class="bp-section-card bp-prefs-card">
+        <p class="bp-section-label">📬 Email Notifications</p>
+        <p class="bp-section-hint">Choose what Con Leche can send you. Changes save instantly.</p>
+        <form id="prefsForm" class="bp-prefs-form">
+          <label class="bp-pref-toggle">
+            <div class="bp-pref-info">
+              <span class="bp-pref-name">Specials &amp; new arrivals</span>
+              <span class="bp-pref-desc">Weekly drinks, monthly features, new menu items</span>
+            </div>
+            <input type="checkbox" name="specials" id="prefSpecials" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.specials ? 'checked' : '' %> />
+            <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
+          </label>
+          <label class="bp-pref-toggle">
+            <div class="bp-pref-info">
+              <span class="bp-pref-name">Events &amp; truck locations</span>
+              <span class="bp-pref-desc">Where to find us — markets, pop-ups, run clubs</span>
+            </div>
+            <input type="checkbox" name="events" id="prefEvents" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.events ? 'checked' : '' %> />
+            <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
+          </label>
+          <label class="bp-pref-toggle">
+            <div class="bp-pref-info">
+              <span class="bp-pref-name">Birthday treat 🎂</span>
+              <span class="bp-pref-desc">Free cookie + 10% off on your birthday</span>
+            </div>
+            <input type="checkbox" name="birthday" id="prefBirthday" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.birthday ? 'checked' : '' %> />
+            <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
+          </label>
+          <p class="bp-prefs-saved hidden" id="prefsSaved">✓ Saved</p>
+        </form>
+      </div>
+
       <!-- ── Danger zone ── -->
       <div class="bp-danger-zone">
         <p class="bp-danger-label">Danger zone</p>
@@ -422,6 +455,31 @@ async function confirmRedeem() {
 document.getElementById('redeemOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeRedeem();
 });
+
+// ── Email preferences toggles ─────────────────────────────────────
+(function () {
+  const form = document.getElementById('prefsForm');
+  if (!form) return;
+  let saveTimer = null;
+  form.querySelectorAll('.bp-toggle-input').forEach(input => {
+    input.addEventListener('change', () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        const data = new FormData(form);
+        // Unchecked boxes don't appear in FormData — explicitly add them
+        ['specials','events','birthday'].forEach(k => { if (!data.has(k)) data.append(k, 'off'); });
+        const body = new URLSearchParams(data);
+        const res  = await fetch('/battlepass/preferences', { method: 'POST', body });
+        const json = await res.json();
+        if (json.success) {
+          const saved = document.getElementById('prefsSaved');
+          saved.classList.remove('hidden');
+          setTimeout(() => saved.classList.add('hidden'), 2500);
+        }
+      }, 400);
+    });
+  });
+})();
 
 // ── Delete account ────────────────────────────────────────────────
 const deleteInput = document.getElementById('deleteConfirmInput');

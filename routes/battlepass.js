@@ -114,6 +114,22 @@ router.post('/redeem-voucher/:rewardId', requireAuth, async (req, res) => {
   }
 });
 
+// ── UPDATE EMAIL PREFERENCES ──────────────────────────────────────
+router.post('/preferences', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    user.emailPreferences = {
+      specials: req.body.specials === 'on',
+      events:   req.body.events   === 'on',
+      birthday: req.body.birthday === 'on',
+    };
+    await user.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
 // ── ADMIN: SCAN & RECORD DRINK ────────────────────────────────────
 router.post('/scan', requireAdminApi, async (req, res) => {
   try {

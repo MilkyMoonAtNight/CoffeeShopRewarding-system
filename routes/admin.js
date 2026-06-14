@@ -17,6 +17,7 @@ const PuzzleAttempt = require('../models/PuzzleAttempt');
 const { pickWordForDay, xpForDifficulty } = require('../utils/puzzle');
 const crypto      = require('crypto');
 const { rateLimit, asString } = require('../utils/security');
+const Notification = require('../models/Notification');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
 
@@ -1113,6 +1114,74 @@ router.post('/staff/toggle/:id', ownerOnly, async (req, res) => {
 // ── ONLINE ORDERS (all admin roles can access) ────────────────────
 router.get('/orders', requireAdmin, (req, res) => {
   res.render('admin/orders', { title: 'Online Orders — Con Leche Admin', admin: req.admin });
+});
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────
+router.get('/notifications', ownerManager, async (req, res) => {
+  const notifications = await Notification.find().sort({ sendAt: -1 });
+  const userCount = await User.countDocuments();
+  res.render('admin/notifications', {
+    title: 'Notifications — Con Leche Admin',
+    admin: req.admin, notifications, userCount,
+    msg: req.query.msg || null
+  });
+});
+
+router.post('/notifications/create', ownerManager, async (req, res) => {
+  try {
+    const title    = asString(req.body.title, 200);
+    const body     = asString(req.body.body, 2000);
+    const category = asString(req.body.category, 20);
+    const repeat   = asString(req.body.repeat, 20) || 'none';
+    const sendAt   = new Date(asString(req.body.sendAt, 30));
+
+    if (!title || !body || !category || isNaN(sendAt.getTime()))
+      return res.redirect('/admin/notifications?msg=Missing+required+fields');
+    if (!['specials','events'].includes(category))
+      return res.redirect('/admin/notifications?msg=Invalid+category');
+    if (!['none','weekly','monthly'].includes(repeat))
+      return res.redirect('/admin/notifications?msg=Invalid+repeat');
+
+    await Notification.create({
+      title, body, category, repeat, sendAt,
+      createdBy: req.admin.name
+    });
+    res.redirect('/admin/notifications?msg=Notification+scheduled');
+  } catch (err) {
+    res.redirect('/admin/notifications?msg=' + encodeURIComponent(err.message));
+  }
+});
+
+router.post('/notifications/:id/edit', ownerManager, async (req, res) => {
+  try {
+    const notif = await Notification.findById(req.params.id);
+    if (!notif) return res.redirect('/admin/notifications?msg=Not+found');
+
+    notif.title    = asString(req.body.title, 200) || notif.title;
+    notif.body     = asString(req.body.body, 2000) || notif.body;
+    notif.category = asString(req.body.category, 20) || notif.category;
+    notif.repeat   = asString(req.body.repeat, 20)   || notif.repeat;
+    const newSendAt = new Date(asString(req.body.sendAt, 30));
+    if (!isNaN(newSendAt.getTime())) {
+      notif.sendAt = newSendAt;
+      notif.sentAt = null; // allow re-fire if rescheduled
+    }
+    await notif.save();
+    res.redirect('/admin/notifications?msg=Notification+updated');
+  } catch (err) {
+    res.redirect('/admin/notifications?msg=' + encodeURIComponent(err.message));
+  }
+});
+
+router.post('/notifications/:id/toggle', ownerManager, async (req, res) => {
+  const notif = await Notification.findById(req.params.id);
+  if (notif) { notif.active = !notif.active; await notif.save(); }
+  res.redirect('/admin/notifications?msg=Notification+updated');
+});
+
+router.post('/notifications/:id/delete', ownerOnly, async (req, res) => {
+  await Notification.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/notifications?msg=Notification+deleted');
 });
 
 // ── CHECK IN / OUT toggle ─────────────────────────────────────────

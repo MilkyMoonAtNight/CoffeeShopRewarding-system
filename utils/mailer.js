@@ -186,7 +186,122 @@ async function notifyCustomerStatusUpdate(order, customerEmail, newStatus) {
   });
 }
 
-module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendPasswordReset };
+// ── Birthday treat email ──────────────────────────────────────────
+async function sendBirthdayEmail(user) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5ede4;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5ede4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#581217;padding:28px 32px;text-align:center;">
+            <p style="margin:0;font-size:24px;font-weight:700;color:#fdf6ed;letter-spacing:0.03em;">☕ Con Leche</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px 32px;text-align:center;">
+            <p style="margin:0;font-size:52px;">🎂</p>
+            <h1 style="margin:16px 0 8px;font-size:24px;color:#2c2c2c;font-family:Georgia,serif;">Happy Birthday, ${user.name.split(' ')[0]}!</h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#666;line-height:1.7;">
+              Your birthday deserves something special. Come visit us today and treat yourself — from us to you.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf6ed;border-radius:12px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:20px 24px;text-align:center;">
+                  <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#aaa;">Your birthday gifts</p>
+                  <p style="margin:0;font-size:17px;font-weight:600;color:#581217;">🍪 A free cookie on us</p>
+                  <p style="margin:6px 0 0;font-size:17px;font-weight:600;color:#581217;">10% off your entire order</p>
+                  <p style="margin:12px 0 0;font-size:12px;color:#999;">Valid today only — just show this email at the truck.</p>
+                </td>
+              </tr>
+            </table>
+            <a href="${process.env.BASE_URL || ''}/drinks"
+               style="display:inline-block;background:#581217;color:#fdf6ed;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;">
+              See the menu →
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 28px;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#bbb;">Con Leche · Pretoria's cat-friendly coffee truck</p>
+            <p style="margin:6px 0 0;font-size:11px;color:#ccc;">
+              <a href="${process.env.BASE_URL || ''}/battlepass" style="color:#ccc;">Manage your email preferences</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await getTransporter().sendMail({
+    from:    `"Con Leche" <${process.env.EMAIL_USER}>`,
+    to:      user.email,
+    subject: `🎂 Happy Birthday ${user.name.split(' ')[0]}! A treat is waiting for you`,
+    html,
+  });
+}
+
+// ── Bulk notification email (specials / events) ───────────────────
+async function sendNotificationEmail(user, notification) {
+  const isEvent    = notification.category === 'events';
+  const emoji      = isEvent ? '📍' : '✨';
+  const accentLine = isEvent
+    ? 'Find the Con Leche truck near you'
+    : 'Something new & delicious at Con Leche';
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5ede4;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5ede4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#581217;padding:28px 32px;text-align:center;">
+            <p style="margin:0;font-size:24px;font-weight:700;color:#fdf6ed;">☕ Con Leche</p>
+            <p style="margin:6px 0 0;font-size:13px;color:rgba(253,246,237,0.65);">${accentLine}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 32px;">
+            <p style="margin:0 0 6px;font-size:26px;">${emoji}</p>
+            <h1 style="margin:10px 0 16px;font-size:22px;color:#2c2c2c;font-family:Georgia,serif;">${notification.title}</h1>
+            <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.75;white-space:pre-line;">${notification.body}</p>
+            <a href="${process.env.BASE_URL || ''}/${isEvent ? 'events' : 'drinks'}"
+               style="display:inline-block;background:#581217;color:#fdf6ed;padding:13px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+              ${isEvent ? 'See upcoming events →' : 'View the menu →'}
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 28px;border-top:1px solid #f0e8df;text-align:center;padding-top:20px;">
+            <p style="margin:0;font-size:11px;color:#ccc;">
+              You're receiving this because you opted in to Con Leche ${isEvent ? 'event' : 'specials'} updates.
+              <a href="${process.env.BASE_URL || ''}/battlepass" style="color:#999;">Update preferences</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await getTransporter().sendMail({
+    from:    `"Con Leche" <${process.env.EMAIL_USER}>`,
+    to:      user.email,
+    subject: `${emoji} ${notification.title}`,
+    html,
+  });
+}
+
+module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendPasswordReset, sendBirthdayEmail, sendNotificationEmail };
 
 async function sendPasswordReset(toEmail, resetUrl, name) {
   const html = `

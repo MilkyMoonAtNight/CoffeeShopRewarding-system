@@ -40,6 +40,13 @@ const userSchema = new mongoose.Schema({
   resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
 
+  // ── Email notification preferences ──
+  emailPreferences: {
+    specials:  { type: Boolean, default: true },   // weekly specials, monthly drinks, new arrivals
+    events:    { type: Boolean, default: true },   // upcoming truck locations & events
+    birthday:  { type: Boolean, default: true },   // birthday treat email
+  },
+
   // ── Cash / pay-in-store trust tracking ──
   // Starts at 100. Goes down when a cash order is marked no-show, up when one is
   // collected. If it drops below the threshold, the app stops offering "pay in store"

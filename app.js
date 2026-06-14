@@ -61,9 +61,12 @@ app.use((req, res) => {
   res.status(404).send('<h2>404 — Page not found</h2><a href="/">Go home</a>');
 });
 
+const { startScheduler } = require('./utils/scheduler');
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✓ Connected to MongoDB');
+    startScheduler();
     app.listen(PORT, () => console.log(`✓ Con Leche running at http://localhost:${PORT}`));
   })
   .catch(err => {
