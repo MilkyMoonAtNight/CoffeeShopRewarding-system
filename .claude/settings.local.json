@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),1000\\);\")"
+    ]
+  }
+}
