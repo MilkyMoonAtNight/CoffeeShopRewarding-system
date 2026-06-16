@@ -33,6 +33,14 @@ document.querySelectorAll('.admin-nav-group-label').forEach(label => {
     group.classList.toggle('open');
   });
 });
+
+// Stop accidental mouse-wheel scrolling from changing number inputs
+// (this is what turned a typed "25" into "24.5" on the price fields)
+document.addEventListener('wheel', e => {
+  if (document.activeElement === e.target && e.target.type === 'number') {
+    e.target.blur();
+  }
+}, { passive: true });
 </script>
 <script src="/js/main.js"></script>
 </body></html>

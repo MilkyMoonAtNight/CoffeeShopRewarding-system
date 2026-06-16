@@ -42,9 +42,9 @@ router.get('/pastries', async (req, res) => {
   }));
 
 
-  const ORDER  = ['croissant','donut','cookie','sandwich','quiche','cake','other'];
-  const LABELS = { croissant:'Croissants', donut:'Donuts', cookie:'Cookies', sandwich:'Sandwiches', quiche:'Quiches', cake:'Cakes', other:'Other' };
-  const ICONS  = { croissant:'🥐', donut:'🍩', cookie:'🍪', sandwich:'🥪', quiche:'🥧', cake:'🎂', other:'🍴' };
+  const ORDER  = ['croissant','danish','donut','cookie','sandwich','quiche','cake','other'];
+  const LABELS = { croissant:'Croissants', danish:'Danishes', donut:'Donuts', cookie:'Cookies', sandwich:'Sandwiches', quiche:'Quiches', cake:'Cakes', other:'Other' };
+  const ICONS  = { croissant:'🥐', danish:'🧁', donut:'🍩', cookie:'🍪', sandwich:'🥪', quiche:'🥧', cake:'🎂', other:'🍴' };
 
   const grouped = {};
   ORDER.forEach(cat => { grouped[cat] = []; });

@@ -5,7 +5,7 @@ const pastrySchema = new mongoose.Schema({
   description: { type: String, trim: true },
   price:       { type: Number, required: true },
   image:       { type: String, default: null },
-  category:    { type: String, enum: ['croissant','donut','cookie','sandwich','quiche','cake','other'], default: 'other' },
+  category:    { type: String, enum: ['croissant','danish','donut','cookie','sandwich','quiche','cake','other'], default: 'other' },
   isSpecial:   { type: Boolean, default: false },
   available:   { type: Boolean, default: true },
   order:       { type: Number, default: 99 },
