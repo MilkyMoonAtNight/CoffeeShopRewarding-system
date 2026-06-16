@@ -17,6 +17,7 @@ const PuzzleAttempt = require('../models/PuzzleAttempt');
 const { pickWordForDay, xpForDifficulty } = require('../utils/puzzle');
 const crypto      = require('crypto');
 const { rateLimit, asString } = require('../utils/security');
+const { loadUpcomingEvents } = require('../utils/eventOccurrence');
 const Notification = require('../models/Notification');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
@@ -158,7 +159,7 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
   const totalUsers  = await User.countDocuments();
   const scanResult  = await User.aggregate([{ $group: { _id: null, total: { $sum: '$totalDrinks' } } }]);
   const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5);
-  const upcomingEvents = await Event.find({ date: { $gte: new Date() } }).sort({ date: 1 }).limit(4);
+  const upcomingEvents = await loadUpcomingEvents(Event, { limit: 4 });
   res.render('admin/dashboard', {
     title: 'Dashboard — Con Leche Admin',
     admin: req.admin,

@@ -4,34 +4,34 @@
 <script>
 const toggle = document.getElementById('adminNavToggle');
 const drawer = document.getElementById('adminNavDrawer');
+
+// Collapse the whole nav — close the mobile drawer and any open group
+function collapseAdminNav() {
+  if (toggle) toggle.classList.remove('open');
+  if (drawer) drawer.classList.remove('open');
+  document.querySelectorAll('.admin-nav-group.open').forEach(g => g.classList.remove('open'));
+}
+
 if (toggle && drawer) {
   toggle.addEventListener('click', () => {
     toggle.classList.toggle('open');
     drawer.classList.toggle('open');
   });
-  // Close drawer when a nav link is clicked (mobile)
-  drawer.querySelectorAll('.admin-nav-item').forEach(link => {
-    link.addEventListener('click', () => {
-      toggle.classList.remove('open');
-      drawer.classList.remove('open');
-    });
+  // Selecting an actual page link collapses the whole nav
+  drawer.querySelectorAll('a.admin-nav-item').forEach(link => {
+    link.addEventListener('click', collapseAdminNav);
   });
 }
 
-// Accordion groups — click label to expand/collapse
+// Accordion groups — click label to expand/collapse (siblings close)
 document.querySelectorAll('.admin-nav-group-label').forEach(label => {
   label.addEventListener('click', () => {
     const group = label.parentElement;
-    // Close siblings
     document.querySelectorAll('.admin-nav-group').forEach(g => {
       if (g !== group) g.classList.remove('open');
     });
     group.classList.toggle('open');
   });
-});
-// Auto-open the group that contains the active link (JS fallback for browsers without :has())
-document.querySelectorAll('.admin-nav-group').forEach(group => {
-  if (group.querySelector('.admin-nav-item.active')) group.classList.add('open');
 });
 </script>
 <script src="/js/main.js"></script>

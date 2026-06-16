@@ -4,10 +4,10 @@ const Event  = require('../models/Event');
 const Drink  = require('../models/Drink');
 const Pastry = require('../models/Pastry');
 const Special = require('../models/Special');
+const { loadUpcomingEvents } = require('../utils/eventOccurrence');
 
 router.get('/', async (req, res) => {
-  const upcomingEvents = await Event.find({ date: { $gte: new Date() } })
-    .sort({ date: 1 }).limit(3).catch(() => []);
+  const upcomingEvents = await loadUpcomingEvents(Event, { limit: 3 });
 
   const rawSpecials = await Special.find({ available: true })
     .sort({ order: 1, createdAt: -1 }).limit(6).catch(() => []);
@@ -160,7 +160,7 @@ router.get('/drinks/:id', async (req, res) => {
 });
 
 router.get('/events', async (req, res) => {
-  const events = await Event.find({ date: { $gte: new Date() } }).sort({ date: 1 }).catch(() => []);
+  const events = await loadUpcomingEvents(Event);
   res.render('pages/events', { title: 'Events & Calendar — Con Leche', events });
 });
 

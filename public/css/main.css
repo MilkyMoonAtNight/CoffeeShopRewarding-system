@@ -3039,14 +3039,15 @@ button.detail-pill.detail-pill-active {
 .event-contact-none strong { color: var(--maroon); }
 
 /* ====== REVIEWS CAROUSEL ====== */
-.reviews-carousel { margin-top: 2.5rem; overflow: hidden; }
+.reviews-carousel { margin-top: 2.5rem; }
 .reviews-track {
+  scroll-padding-left: 1.25rem;
   display: flex; gap: 1.5rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  padding: 1rem 0.25rem 1.25rem;   /* breathing room for hover-tilt + shadow */
+  padding: 1rem 1.25rem 1.5rem;   /* room so card shadows aren't clipped */
   scrollbar-width: none;
 }
 .reviews-track::-webkit-scrollbar { display: none; }
@@ -3511,10 +3512,6 @@ body.home-page .strip-section { position: relative; z-index: 1; }
   padding-left: 2rem;
   font-size: 0.82rem;
 }
-
-/* Auto-expand group containing the active page */
-.admin-nav-group:has(.admin-nav-item.active) .admin-nav-group-items { max-height: 300px; }
-.admin-nav-group:has(.admin-nav-item.active) .admin-nav-group-arrow { transform: rotate(90deg); }
 
 /* ── Register: notification opt-in checkboxes ── */
 .notify-optin-group { border-top: 1px solid rgba(44,44,44,0.08); padding-top: 1rem; }

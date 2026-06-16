@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
-      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),1000\\);\")"
+      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),1000\\);\")",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); const m=require\\('mongoose'\\); const Event=require\\('./models/Event'\\); \\(async\\(\\)=>{ await m.connect\\(process.env.MONGODB_URI||process.env.MONGO_URI\\); const evs=await Event.find\\(\\).sort\\({date:1}\\); const now=new Date\\(\\); console.log\\('now:',now.toISOString\\(\\)\\); evs.forEach\\(e=>console.log\\(JSON.stringify\\({title:e.title,date:e.date,recurringType:e.recurringType,recurring:e.recurring,past:e.date<now}\\)\\)\\); await m.disconnect\\(\\); }\\)\\(\\).catch\\(e=>{console.error\\(e.message\\);process.exit\\(1\\);}\\);\")",
+      "PowerShell($conn = Get-NetTCPConnection -LocalPort 3059 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { Stop-Process -Id $conn.OwningProcess -Force; Write-Output \"Stopped PID $\\($conn.OwningProcess\\)\" } else { Write-Output \"Nothing on 3059\" })"
     ]
   }
 }
