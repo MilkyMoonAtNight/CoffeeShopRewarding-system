@@ -150,7 +150,7 @@
         <div class="bp-card-preview">
           <div class="bp-card-inner">
             <div class="bp-card-logo">
-              <img src="/images/logo.png" alt="Con Leche" />
+              <img src="/images/logo_nav.png" alt="Con Leche" />
             </div>
             <p class="bp-card-name">Your Name Here</p>
             <div class="bp-card-qr-placeholder">
@@ -169,76 +169,118 @@
   </div><!-- /home-duo -->
 
 
-  <!-- Google Reviews — coloured placeholder blocks for now -->
+  <!-- Google Reviews — static -->
   <section class="section reviews-home">
     <div class="container">
       <p class="section-eyebrow">Don't Take Our Word For It</p>
       <h2 class="section-title">What Our <em>Regulars</em> Say</h2>
       <div class="reviews-rating-line">
         <span class="reviews-stars">★★★★★</span>
-        <% if (typeof googleRating !== 'undefined' && googleRating) { %>
-        <span class="reviews-source"><%= googleRating %> on Google · <%= googleReviewCount %> reviews</span>
-        <% } else { %>
-        <span class="reviews-source">Reviews from Google</span>
-        <% } %>
+        <span class="reviews-source">5.0 average · 8 reviews</span>
       </div>
 
-      <% if (typeof reviews !== 'undefined' && reviews && reviews.length > 0) { %>
-      <!-- Live 5★ Google reviews, dressed in Con Leche colours -->
-      <div class="reviews-grid">
-        <% reviews.slice(0, 6).forEach((review, i) => { %>
-        <div class="review-card review-live review-theme-<%= (i % 3) + 1 %>">
+      <div class="reviews-carousel">
+        <div class="reviews-track" id="reviewsTrack">
+
+        <div class="review-card review-live review-theme-1">
           <span class="review-live-stars">★★★★★</span>
-          <p class="review-live-text">"<%= review.text.length > 220 ? review.text.slice(0, 220).trim() + '…' : review.text %>"</p>
+          <p class="review-live-text">"Been all over the world in coffee shops. This one gets a 5 out of 5 rating. Wonderful experience of coffee pastries atmosphere and friendly service"</p>
           <div class="review-live-author">
-            <% if (review.photo) { %>
-            <img src="<%= review.photo %>" alt="" class="review-live-avatar" referrerpolicy="no-referrer" />
-            <% } else { %>
             <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
-            <% } %>
             <div>
-              <span class="review-live-name"><%= review.author %></span>
-              <span class="review-live-when"><%= review.when %> · Google</span>
+              <span class="review-live-name">Andrew Kruger</span>
+              <span class="review-live-when">R1–100 · Google</span>
             </div>
           </div>
         </div>
-        <% }) %>
+
+        <div class="review-card review-live review-theme-2">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"I love the coffee, they even have interesting flavours like Crème Brûlée. There are a lot of nice snacks as well from Quiches and Croissants to a variety of tasteful cookies. Worth a visit on the way to drop off / pick up the kids, as they are open from 6am to 6pm"</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">JJ Jacobs</span>
+              <span class="review-live-when">R1–100 · Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-3">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"Our waiter was really on the ball. When we asked for our bill, he already had it split for everyone without us even having to ask."</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Stuart Ross</span>
+              <span class="review-live-when">R1–100 · Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-1">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"What a great place! Right by the high school — parents can get a good parking spot and have a coffee while they wait. We dropped in after The Beast Race on 28 March 2026. Got comfortable, had lattes, kicked off our running shoes, and spent a good 2 hours there. Friendly staff, clean, feels like having a 'kuier' on your own 'stoep'. Will definitely recommend."</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Mariette Thomas</span>
+              <span class="review-live-when">R100–200 · Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-2">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"I love the place so much!"</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Mia Pitzer</span>
+              <span class="review-live-when">R1–100 · Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-3">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"Came for the 6h30 Saturday run (ok, walk for me 😉). Stayed for the great coffee and welcoming atmosphere."</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Isa Giunta</span>
+              <span class="review-live-when">Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-1">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"Very friendly, warm and welcoming! Sample croissant was lovely and we're definitely coming back for the croissant tasting."</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Melt van der Spuy</span>
+              <span class="review-live-when">R1–100 · Google</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-card review-live review-theme-2">
+          <span class="review-live-stars">★★★★★</span>
+          <p class="review-live-text">"Super friendly staff. Just treated myself with a Chai Freezo and it's amazing… Well done guys… See you again ❤❤🥰 Such a cute little store."</p>
+          <div class="review-live-author">
+            <span class="review-live-avatar review-live-avatar-fallback">🐾</span>
+            <div>
+              <span class="review-live-name">Tanita Hattingh</span>
+              <span class="review-live-when">Facebook</span>
+            </div>
+          </div>
+        </div>
+
+        </div>
       </div>
-      <% } else { %>
-      <!-- Placeholder review blocks — shown until GOOGLE_PLACES_API_KEY + GOOGLE_PLACE_ID are set in .env -->
-      <div class="reviews-grid">
-        <div class="review-card review-ph-1">
-          <span class="review-ph-stars">★★★★★</span>
-          <div class="review-ph-line review-ph-line-90"></div>
-          <div class="review-ph-line review-ph-line-100"></div>
-          <div class="review-ph-line review-ph-line-70"></div>
-          <div class="review-ph-author">
-            <span class="review-ph-avatar"></span>
-            <span class="review-ph-name"></span>
-          </div>
-        </div>
-        <div class="review-card review-ph-2">
-          <span class="review-ph-stars">★★★★★</span>
-          <div class="review-ph-line review-ph-line-100"></div>
-          <div class="review-ph-line review-ph-line-80"></div>
-          <div class="review-ph-line review-ph-line-90"></div>
-          <div class="review-ph-author">
-            <span class="review-ph-avatar"></span>
-            <span class="review-ph-name"></span>
-          </div>
-        </div>
-        <div class="review-card review-ph-3">
-          <span class="review-ph-stars">★★★★★</span>
-          <div class="review-ph-line review-ph-line-80"></div>
-          <div class="review-ph-line review-ph-line-100"></div>
-          <div class="review-ph-line review-ph-line-60"></div>
-          <div class="review-ph-author">
-            <span class="review-ph-avatar"></span>
-            <span class="review-ph-name"></span>
-          </div>
-        </div>
-      </div>
-      <% } %>
+      <div class="reviews-dots" id="reviewsDots" aria-hidden="true"></div>
 
       <div class="reviews-cta">
         <p class="reviews-cta-text">Had a great visit? Tell the world — it takes 30 seconds.</p>
@@ -277,20 +319,57 @@
         <% }) %>
       </div>
 
-      <div class="events-row" id="eventsRow">
-        <% upcomingEvents.forEach(event => { %>
-        <div class="event-card-small" data-category="<%= event.type %>">
-          <% if (event.image) { %>
-          <div class="event-card-img" style="background-image:url('<%= event.image %>');"></div>
-          <% } %>
-          <div class="event-card-body">
-            <div class="event-type-badge event-<%= event.type %>">
-              <%= eventLabel(event.type) %>
+      <div class="events-grid" id="eventsRow">
+        <% upcomingEvents.forEach(function(event) {
+          const imgSrc = event.image ? (event.image.startsWith('/') ? event.image : '/images/events/' + event.image) : null;
+          const typeLabel = eventLabel(event.type);
+          const typeEmoji = event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐';
+          const recLabel = event.recurringType === 'daily' ? 'Daily' : event.recurringType === 'weekly' ? 'Weekly' : (event.recurring ? 'Weekly' : null);
+        %>
+        <div class="event-tile event-tile-<%= event.type %>" data-category="<%= event.type %>"
+             onclick="openEventModal(this)"
+             data-title="<%= encodeURIComponent(event.title) %>"
+             data-desc="<%= encodeURIComponent(event.description || '') %>"
+             data-img="<%= imgSrc || '' %>"
+             data-date="<%= event.date.toISOString() %>"
+             data-date-label="<%= event.date.toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) %>"
+             data-time="<%= event.date.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' }) %><%= event.endDate ? ' – ' + event.endDate.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' }) : '' %>"
+             data-location="<%= encodeURIComponent(event.location || '') %>"
+             data-type="<%= typeLabel %>"
+             data-rec="<%= recLabel || '' %>"
+             data-phone="<%= event.contactPhone || '' %>"
+             data-cname="<%= encodeURIComponent(event.contactName || '') %>"
+             data-socials="<%= encodeURIComponent(event.socials || '') %>">
+
+          <div class="event-tile-img-wrap">
+            <% if (imgSrc) { %>
+              <img src="<%= imgSrc %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
+            <% } else { %>
+              <div class="event-tile-placeholder"><span><%= typeEmoji %></span></div>
+            <% } %>
+            <div class="event-tile-overlay"></div>
+            <div class="event-tile-date">
+              <span class="event-tile-day"><%= event.date.toLocaleDateString('en-ZA', { day: 'numeric' }) %></span>
+              <span class="event-tile-month"><%= event.date.toLocaleDateString('en-ZA', { month: 'short' }) %></span>
             </div>
-            <h3 class="event-card-title"><%= event.title %></h3>
-            <p class="event-card-date"><%= event.date.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'long' }) %></p>
-            <% if (event.location) { %><p class="event-card-location"><%= event.location %></p><% } %>
           </div>
+
+          <div class="event-tile-body">
+            <div class="event-tags">
+              <span class="event-tag event-tag-<%= event.type %>"><%= typeLabel %></span>
+              <% if (recLabel) { %><span class="event-tag event-tag-recurring"><%= recLabel === 'Daily' ? '🔁 Daily' : '📅 Weekly' %></span><% } %>
+            </div>
+            <h3 class="event-tile-title"><%= event.title %></h3>
+            <% if (event.location) { %><p class="event-tile-location">📍 <%= event.location %></p><% } %>
+            <p class="event-tile-time">
+              <%= event.date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) %>
+              <%= event.endDate ? '– ' + event.endDate.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '' %>
+            </p>
+            <% if (event.description) { %>
+            <p class="event-tile-desc"><%= event.description %></p>
+            <% } %>
+          </div>
+
         </div>
         <% }) %>
       </div>
@@ -366,7 +445,7 @@ document.querySelectorAll('.events-filter-pill').forEach(pill => {
     document.querySelectorAll('.events-filter-pill').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     const filter = pill.dataset.filter;
-    document.querySelectorAll('#eventsRow .event-card-small').forEach(card => {
+    document.querySelectorAll('#eventsRow .event-tile').forEach(card => {
       card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
     });
   });
@@ -386,6 +465,90 @@ document.querySelectorAll('.review-card').forEach(card => {
     card.style.transform = 'perspective(700px) rotateY(0deg) rotateX(0deg) scale(1)';
   });
 });
+
+// ── Reviews carousel — smooth horizontal loop with dot indicator ──
+(function () {
+  const track = document.getElementById('reviewsTrack');
+  const dotsWrap = document.getElementById('reviewsDots');
+  if (!track || !dotsWrap) return;
+  const cards = Array.from(track.children);
+  if (!cards.length) return;
+
+  let perView = 1, pages = 1, current = 0, timer = null, paused = false;
+
+  function measure() {
+    const styles = getComputedStyle(track);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+    const cardW = cards[0].getBoundingClientRect().width + gap;
+    perView = Math.max(1, Math.round(track.clientWidth / cardW));
+    pages = Math.ceil(cards.length / perView);
+  }
+
+  function pageTarget(i) {
+    const idx = Math.min(i * perView, cards.length - 1);
+    return cards[idx].offsetLeft - track.offsetLeft;
+  }
+
+  function buildDots() {
+    measure();
+    if (current > pages - 1) current = pages - 1;
+    dotsWrap.innerHTML = '';
+    for (let i = 0; i < pages; i++) {
+      const dot = document.createElement('button');
+      dot.className = 'reviews-dot' + (i === current ? ' active' : '');
+      dot.setAttribute('aria-label', 'Review group ' + (i + 1));
+      dot.addEventListener('click', () => { goTo(i); restart(); });
+      dotsWrap.appendChild(dot);
+    }
+    dotsWrap.style.display = pages > 1 ? 'flex' : 'none';
+  }
+
+  function setActive(i) {
+    current = Math.max(0, Math.min(i, pages - 1));
+    dotsWrap.querySelectorAll('.reviews-dot').forEach((d, idx) => d.classList.toggle('active', idx === current));
+  }
+
+  function goTo(i) {
+    if (i >= pages) i = 0;
+    if (i < 0) i = pages - 1;
+    track.scrollTo({ left: pageTarget(i), behavior: 'smooth' });
+    setActive(i);
+  }
+
+  function next()    { goTo(current + 1); }
+  function start()   { if (!timer) timer = setInterval(() => { if (!paused) next(); }, 4500); }
+  function restart() { clearInterval(timer); timer = null; start(); }
+
+  // Keep the active dot in sync when the user scrolls/swipes manually
+  let scrollDebounce;
+  track.addEventListener('scroll', () => {
+    clearTimeout(scrollDebounce);
+    scrollDebounce = setTimeout(() => {
+      let nearest = 0, best = Infinity;
+      for (let i = 0; i < pages; i++) {
+        const diff = Math.abs(track.scrollLeft - pageTarget(i));
+        if (diff < best) { best = diff; nearest = i; }
+      }
+      setActive(nearest);
+    }, 120);
+  }, { passive: true });
+
+  // Pause while the visitor is interacting
+  ['mouseenter', 'touchstart'].forEach(ev => track.addEventListener(ev, () => paused = true, { passive: true }));
+  ['mouseleave', 'touchend'].forEach(ev => track.addEventListener(ev, () => paused = false, { passive: true }));
+
+  let resizeT;
+  window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(buildDots, 200); });
+
+  buildDots();
+  start();
+})();
 </script>
 
+<%- include('../partials/event-modal') %>
+
 <%- include('../partials/footer') %>
+
+<script>
+<%- include('../partials/event-modal-js') %>
+</script>

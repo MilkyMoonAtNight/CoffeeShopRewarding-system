@@ -46,10 +46,34 @@
         <label>Description</label>
         <textarea name="description" rows="3" placeholder="What's happening…" style="width:100%;padding:0.75rem;border:1.5px solid rgba(44,44,44,0.15);border-radius:var(--radius);font-family:var(--font-body);resize:vertical;"></textarea>
       </div>
-      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem;">
-        <input type="checkbox" name="recurring" id="recurring" style="width:auto;" />
-        <label for="recurring" style="margin:0;">Recurring weekly</label>
+
+      <!-- Recurring -->
+      <div class="form-group">
+        <label>Recurring</label>
+        <select name="recurringType" class="scan-input">
+          <option value="none">Not recurring</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
       </div>
+
+      <!-- Contact section -->
+      <div style="border-top:1px solid rgba(44,44,44,0.1);margin:1rem 0;padding-top:1rem;">
+        <p style="font-size:0.8rem;font-weight:600;color:var(--maroon);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.06em;">Event Organiser Contact</p>
+        <div class="form-group">
+          <label>Organiser Name</label>
+          <input type="text" name="contactName" placeholder="e.g. Sarah" />
+        </div>
+        <div class="form-group">
+          <label>WhatsApp Number <span style="opacity:0.4;font-weight:400;">(digits only, incl. country code)</span></label>
+          <input type="tel" name="contactPhone" placeholder="e.g. 27821234567" />
+        </div>
+        <div class="form-group">
+          <label>Socials <span style="opacity:0.4;font-weight:400;">(optional — URL or @handle)</span></label>
+          <input type="text" name="socials" placeholder="e.g. https://instagram.com/sarah or @sarah" />
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Event Photo <span style="opacity:0.4;font-weight:400;">(optional)</span></label>
         <div class="upload-zone" id="eventUploadZone" onclick="document.getElementById('eventImageFile').click()">
@@ -80,6 +104,7 @@
     <% if (events.length === 0) { %>
       <div class="admin-card"><p class="admin-empty">No events yet.</p></div>
     <% } else { %>
+      <% const builtin = ['truck_location','run_club','painting','pop_up','special']; %>
       <% events.forEach(event => { %>
       <div class="admin-card filterable-row" style="margin-bottom:1rem;"
            data-name="<%= (event.title || '').toLowerCase() %> <%= (event.location || '').toLowerCase() %>"
@@ -99,11 +124,15 @@
               <%= event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐' %>
               <%= event.type.replace('_',' ') %>
             </span>
+            <% if (event.recurringType && event.recurringType !== 'none') { %>
+              <span class="admin-badge" style="margin-left:0.25rem;background:rgba(91,158,110,0.12);color:#3a7a50;"><%= event.recurringType === 'daily' ? '🔁 Daily' : '📅 Weekly' %></span>
+            <% } %>
             <h4 style="font-family:var(--font-nimbus);font-size:1rem;"><%= event.title %></h4>
             <p style="font-size:0.8rem;color:rgba(44,44,44,0.5);margin-top:0.25rem;">
               <%= event.date.toLocaleDateString('en-ZA', { weekday:'short', day:'numeric', month:'short', year:'numeric' }) %>
               <% if (event.location) { %> · <%= event.location %><% } %>
             </p>
+            <% if (event.contactPhone) { %><p style="font-size:0.78rem;color:rgba(44,44,44,0.5);margin-top:0.2rem;">📞 <%= event.contactName || '' %> · +<%= event.contactPhone %></p><% } %>
             <% if (event.description) { %><p style="font-size:0.82rem;color:rgba(44,44,44,0.6);margin-top:0.35rem;"><%= event.description %></p><% } %>
             </div>
           </div>
@@ -129,14 +158,12 @@
                 <option value="painting" <%= event.type==='painting'?'selected':'' %>>🎨 Painting Class</option>
                 <option value="pop_up" <%= event.type==='pop_up'?'selected':'' %>>⭐ Pop-Up</option>
                 <option value="special" <%= event.type==='special'?'selected':'' %>>🎉 Special Event</option>
-                <% const builtin = ['truck_location','run_club','painting','pop_up','special']; %>
                 <option value="__custom" <%= !builtin.includes(event.type) ? 'selected' : '' %>>✏️ Custom type…</option>
               </select>
               <input type="text" name="customType" id="customType-<%= event._id %>" class="scan-input"
                      placeholder="e.g. Open Mic Night" maxlength="30"
                      value="<%= !builtin.includes(event.type) ? event.type.replace(/_/g, ' ') : '' %>"
                      style="display:<%= !builtin.includes(event.type) ? 'block' : 'none' %>;margin-top:0.5rem;" />
-              
             </div>
             <div class="form-group">
               <label>Date & Time</label>
@@ -153,6 +180,29 @@
             <div class="form-group">
               <label>Description</label>
               <textarea name="description" rows="2" style="width:100%;padding:0.75rem;border:1.5px solid rgba(44,44,44,0.15);border-radius:var(--radius);font-family:var(--font-body);"><%= event.description || '' %></textarea>
+            </div>
+            <div class="form-group">
+              <label>Recurring</label>
+              <select name="recurringType" class="scan-input">
+                <option value="none" <%= (!event.recurringType || event.recurringType==='none')?'selected':'' %>>Not recurring</option>
+                <option value="daily" <%= event.recurringType==='daily'?'selected':'' %>>Daily</option>
+                <option value="weekly" <%= event.recurringType==='weekly'?'selected':'' %>>Weekly</option>
+              </select>
+            </div>
+            <div style="border-top:1px solid rgba(44,44,44,0.1);margin:0.75rem 0;padding-top:0.75rem;">
+              <p style="font-size:0.78rem;font-weight:600;color:var(--maroon);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.06em;">Organiser Contact</p>
+              <div class="form-group">
+                <label>Organiser Name</label>
+                <input type="text" name="contactName" value="<%= event.contactName || '' %>" />
+              </div>
+              <div class="form-group">
+                <label>WhatsApp Number</label>
+                <input type="tel" name="contactPhone" value="<%= event.contactPhone || '' %>" placeholder="27821234567" />
+              </div>
+              <div class="form-group">
+                <label>Socials <span style="opacity:0.4;font-weight:400;">(optional)</span></label>
+                <input type="text" name="socials" value="<%= event.socials || '' %>" placeholder="URL or @handle" />
+              </div>
             </div>
             <button type="submit" class="btn btn-primary">Save Changes</button>
           </form>
@@ -177,10 +227,6 @@ function previewUpload(input, innerId, zoneId) {
   };
   reader.readAsDataURL(input.files[0]);
 }
-</script>
-
-
-<script>
 function toggleCustomType(sel, inputId) {
   const input = document.getElementById(inputId);
   if (input) input.style.display = sel.value === '__custom' ? 'block' : 'none';

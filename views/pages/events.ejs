@@ -24,33 +24,44 @@
       </div>
       <% } else { %>
       <div class="events-grid">
-        <% events.forEach(function(event) { %>
-        <div class="event-tile event-tile-<%= event.type %>">
+        <% events.forEach(function(event) {
+          const imgSrc = event.image ? (event.image.startsWith('/') ? event.image : '/images/events/' + event.image) : null;
+          const typeLabel = event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : event.type === 'pop_up' ? '⭐ Pop-Up' : event.type === 'special' ? '🎉 Special' : '⭐ ' + (event.type || 'Event').replace(/_/g, ' ');
+          const typeEmoji = event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐';
+          const recLabel = event.recurringType === 'daily' ? 'Daily' : event.recurringType === 'weekly' ? 'Weekly' : (event.recurring ? 'Weekly' : null);
+        %>
+        <div class="event-tile event-tile-<%= event.type %>"
+             onclick="openEventModal(this)"
+             data-title="<%= encodeURIComponent(event.title) %>"
+             data-desc="<%= encodeURIComponent(event.description || '') %>"
+             data-img="<%= imgSrc || '' %>"
+             data-date="<%= event.date.toISOString() %>"
+             data-date-label="<%= event.date.toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) %>"
+             data-time="<%= event.date.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' }) %><%= event.endDate ? ' – ' + event.endDate.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' }) : '' %>"
+             data-location="<%= encodeURIComponent(event.location || '') %>"
+             data-type="<%= typeLabel %>"
+             data-rec="<%= recLabel || '' %>"
+             data-phone="<%= event.contactPhone || '' %>"
+             data-cname="<%= encodeURIComponent(event.contactName || '') %>"
+             data-socials="<%= encodeURIComponent(event.socials || '') %>">
 
-          <!-- Image — half shown, full on hover -->
           <div class="event-tile-img-wrap">
-            <% if (event.image) { %>
-              <img src="<%= event.image.startsWith('/') ? event.image : '/images/events/' + event.image %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
+            <% if (imgSrc) { %>
+              <img src="<%= imgSrc %>" alt="<%= event.title %>" class="event-tile-img" loading="lazy" />
             <% } else { %>
-              <div class="event-tile-placeholder">
-                <span><%= event.type === 'truck_location' ? '🚐' : event.type === 'run_club' ? '🏃' : event.type === 'painting' ? '🎨' : '⭐' %></span>
-              </div>
+              <div class="event-tile-placeholder"><span><%= typeEmoji %></span></div>
             <% } %>
             <div class="event-tile-overlay"></div>
-            <!-- Date badge over image -->
             <div class="event-tile-date">
               <span class="event-tile-day"><%= event.date.toLocaleDateString('en-ZA', { day: 'numeric' }) %></span>
               <span class="event-tile-month"><%= event.date.toLocaleDateString('en-ZA', { month: 'short' }) %></span>
             </div>
           </div>
 
-          <!-- Details — slide up on hover -->
           <div class="event-tile-body">
             <div class="event-tags">
-              <span class="event-tag event-tag-<%= event.type %>">
-                <%= event.type === 'truck_location' ? '🚐 Truck' : event.type === 'run_club' ? '🏃 Run Club' : event.type === 'painting' ? '🎨 Painting' : event.type === 'pop_up' ? '⭐ Pop-Up' : event.type === 'special' ? '🎉 Special' : '⭐ ' + (event.type || 'Event').replace(/_/g, ' ') %>
-              </span>
-              <% if (event.recurring) { %><span class="event-tag event-tag-recurring">Weekly</span><% } %>
+              <span class="event-tag event-tag-<%= event.type %>"><%= typeLabel %></span>
+              <% if (recLabel) { %><span class="event-tag event-tag-recurring"><%= recLabel === 'Daily' ? '🔁 Daily' : '📅 Weekly' %></span><% } %>
             </div>
             <h3 class="event-tile-title"><%= event.title %></h3>
             <p class="event-tile-location">📍 <%= event.location %></p>
@@ -77,4 +88,10 @@
   </section>
 </main>
 
+<%- include('../partials/event-modal') %>
+
 <%- include('../partials/footer') %>
+
+<script>
+<%- include('../partials/event-modal-js') %>
+</script>

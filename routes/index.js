@@ -5,50 +5,10 @@ const Drink  = require('../models/Drink');
 const Pastry = require('../models/Pastry');
 const Special = require('../models/Special');
 
-// ─── Google Reviews (Places API) ───────────────────────────────
-// Needs GOOGLE_PLACES_API_KEY + GOOGLE_PLACE_ID in .env.
-// Fetched server-side, cached in memory for 6 hours, 5★ only.
-// Until the keys are set, home.ejs falls back to placeholder blocks.
-let reviewCache = { fetchedAt: 0, reviews: [], rating: null, count: null };
-const REVIEW_TTL = 6 * 60 * 60 * 1000; // 6 hours
-
-async function getGoogleReviews() {
-  const key = process.env.GOOGLE_PLACES_API_KEY;
-  const placeId = process.env.GOOGLE_PLACE_ID;
-  if (!key || !placeId) return reviewCache;
-  if (Date.now() - reviewCache.fetchedAt < REVIEW_TTL) return reviewCache;
-  try {
-    const url = `https://places.googleapis.com/v1/places/${placeId}` +
-      `?fields=rating,userRatingCount,reviews&key=${key}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Places API ${res.status}`);
-    const data = await res.json();
-    const fiveStar = (data.reviews || [])
-      .filter(r => r.rating === 5 && r.text && r.text.text)
-      .map(r => ({
-        author: r.authorAttribution?.displayName || 'A Con Leche regular',
-        photo: r.authorAttribution?.photoUri || null,
-        text: r.text.text,
-        when: r.relativePublishTimeDescription || ''
-      }));
-    reviewCache = {
-      fetchedAt: Date.now(),
-      reviews: fiveStar,
-      rating: data.rating || null,
-      count: data.userRatingCount || null
-    };
-  } catch (err) {
-    console.error('Google reviews fetch failed:', err.message);
-    reviewCache.fetchedAt = Date.now(); // don't hammer the API on errors
-  }
-  return reviewCache;
-}
-
 router.get('/', async (req, res) => {
   const upcomingEvents = await Event.find({ date: { $gte: new Date() } })
     .sort({ date: 1 }).limit(3).catch(() => []);
 
-  // Live specials managed from /admin/specials
   const rawSpecials = await Special.find({ available: true })
     .sort({ order: 1, createdAt: -1 }).limit(6).catch(() => []);
   const specials = rawSpecials.map(s => ({
@@ -56,16 +16,10 @@ router.get('/', async (req, res) => {
     image: s.image ? (s.image.startsWith('/') ? s.image : '/images/specials/' + s.image) : null
   }));
 
-  // Live 5★ Google reviews (cached; empty until API keys are set)
-  const googleReviews = await getGoogleReviews();
-
   res.render('pages/home', {
     title: 'Con Leche — Cat-Friendly Specialty Coffee',
     upcomingEvents,
-    specials,
-    reviews: googleReviews.reviews,
-    googleRating: googleReviews.rating,
-    googleReviewCount: googleReviews.count
+    specials
   });
 });
 

@@ -1,0 +1,38 @@
+<!-- ===== EVENT MODAL ===== -->
+<div class="modal-overlay event-modal-overlay" id="eventModalOverlay">
+  <div class="modal-sheet event-modal-sheet">
+    <button class="modal-close" id="eventModalClose" aria-label="Close">✕</button>
+    <div class="modal-img-wrap event-modal-img-wrap" id="eventModalImg"></div>
+    <div class="modal-body">
+      <div class="event-modal-tags" id="eventModalTags"></div>
+      <h2 class="modal-title" id="eventModalTitle"></h2>
+      <p class="event-modal-meta" id="eventModalMeta"></p>
+
+      <!-- Countdown -->
+      <div class="event-countdown" id="eventCountdown">
+        <span class="event-countdown-num" id="eventCountdownNum"></span>
+        <span class="event-countdown-label" id="eventCountdownLabel"></span>
+      </div>
+
+      <p class="event-modal-desc" id="eventModalDesc"></p>
+
+      <!-- Organiser contact / booking -->
+      <div class="event-contact" id="eventContact">
+        <div class="event-contact-namewrap" id="eventNameWrap">
+          <label class="event-contact-label" for="eventContactName">Your name <span>(optional)</span></label>
+          <input type="text" id="eventContactName" class="event-contact-input" placeholder="e.g. Thabo" autocomplete="given-name" />
+        </div>
+        <a href="#" target="_blank" rel="noopener" class="btn btn-whatsapp" id="eventWhatsappBtn">
+          <span class="wa-icon">💬</span> Chat on WhatsApp
+        </a>
+        <a href="#" target="_blank" rel="noopener" class="btn btn-primary event-book-btn" id="eventBookBtn">
+          📅 Book for this event
+        </a>
+        <a href="#" target="_blank" rel="noopener" class="event-socials-link" id="eventSocialsLink"></a>
+      </div>
+      <p class="event-contact-none" id="eventContactNone" style="display:none;">
+        Follow <strong>@conleche_coffee</strong> on Instagram for booking details.
+      </p>
+    </div>
+  </div>
+</div>

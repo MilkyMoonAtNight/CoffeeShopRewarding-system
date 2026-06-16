@@ -703,19 +703,23 @@ function resolveEventType(body) {
 
 router.post('/events/add', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
-    const { title, date, location, address, description, recurring, recurringDay } = req.body;
+    const { title, date, location, address, description, recurringType, recurringDay, contactName, contactPhone, socials } = req.body;
     const type = resolveEventType(req.body);
     const image = req.file ? req.file.filename : null;
-    await new Event({ title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay, image }).save();
+    const recurring = recurringType && recurringType !== 'none';
+    const phone = (contactPhone || '').replace(/\D/g, '');
+    await new Event({ title, type, date: new Date(date), location, address, description, recurring, recurringType: recurringType || 'none', recurringDay, image, contactName, contactPhone: phone, socials }).save();
     res.redirect('/admin/events?msg=Event+added');
   } catch (err) { res.redirect('/admin/events?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
 router.post('/events/edit/:id', ownerManager, makeUploader('events').single('imageFile'), async (req, res) => {
   try {
-    const { title, date, location, address, description, recurring, recurringDay } = req.body;
+    const { title, date, location, address, description, recurringType, recurringDay, contactName, contactPhone, socials } = req.body;
     const type = resolveEventType(req.body);
-    const update = { title, type, date: new Date(date), location, address, description, recurring: !!recurring, recurringDay };
+    const recurring = recurringType && recurringType !== 'none';
+    const phone = (contactPhone || '').replace(/\D/g, '');
+    const update = { title, type, date: new Date(date), location, address, description, recurring, recurringType: recurringType || 'none', recurringDay, contactName, contactPhone: phone, socials };
     if (req.file) update.image = req.file.filename;
     await Event.findByIdAndUpdate(req.params.id, update);
     res.redirect('/admin/events?msg=Event+updated');

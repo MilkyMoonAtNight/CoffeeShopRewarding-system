@@ -1,0 +1,109 @@
+// ── Event modal ───────────────────────────────────────────────────
+function openEventModal(tile) {
+  const d = tile.dataset;
+  const dec = v => { try { return decodeURIComponent(v || ''); } catch (e) { return v || ''; } };
+
+  const title    = dec(d.title);
+  const desc     = dec(d.desc);
+  const img      = d.img;
+  const iso      = d.date;
+  const dateLbl  = d.dateLabel;
+  const timeStr  = d.time || '';
+  const location = dec(d.location);
+  const typeLbl  = d.type || 'Event';
+  const recLbl   = d.rec || '';
+  const phone    = (d.phone || '').replace(/\D/g, '');
+  const cname    = dec(d.cname);
+  const socials  = dec(d.socials);
+
+  // Image
+  document.getElementById('eventModalImg').innerHTML = img
+    ? `<img src="${img}" alt="${title}" class="modal-img event-modal-img" />`
+    : `<div class="modal-img-placeholder"><span>🗓️</span></div>`;
+
+  // Tags
+  let tags = `<span class="event-tag">${typeLbl}</span>`;
+  if (recLbl) tags += `<span class="event-tag event-tag-recurring">${recLbl === 'Daily' ? '🔁 Daily' : '📅 Weekly'}</span>`;
+  document.getElementById('eventModalTags').innerHTML = tags;
+
+  // Title + meta
+  document.getElementById('eventModalTitle').textContent = title;
+  let meta = dateLbl || '';
+  if (timeStr) meta += ` · ${timeStr}`;
+  if (location) meta += ` · 📍 ${location}`;
+  document.getElementById('eventModalMeta').textContent = meta;
+
+  // Description
+  const descEl = document.getElementById('eventModalDesc');
+  descEl.textContent = desc;
+  descEl.style.display = desc ? 'block' : 'none';
+
+  // Countdown — days from today to the event date
+  const num = document.getElementById('eventCountdownNum');
+  const lbl = document.getElementById('eventCountdownLabel');
+  if (iso) {
+    const ev  = new Date(iso);
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startEvent = new Date(ev.getFullYear(), ev.getMonth(), ev.getDate());
+    const days = Math.round((startEvent - startToday) / 86400000);
+    if (days < 0)        { num.textContent = '✓';      lbl.textContent = 'This event has passed'; }
+    else if (days === 0) { num.textContent = 'Today';  lbl.textContent = "It's happening today!"; }
+    else if (days === 1) { num.textContent = '1';      lbl.textContent = 'day to go'; }
+    else                 { num.textContent = days;     lbl.textContent = 'days to go'; }
+  } else {
+    document.getElementById('eventCountdown').style.display = 'none';
+  }
+
+  // Contact / booking via WhatsApp
+  const contact   = document.getElementById('eventContact');
+  const noneNote  = document.getElementById('eventContactNone');
+  const waBtn     = document.getElementById('eventWhatsappBtn');
+  const bookBtn   = document.getElementById('eventBookBtn');
+  const socialEl  = document.getElementById('eventSocialsLink');
+  const nameInput = document.getElementById('eventContactName');
+
+  if (phone) {
+    contact.style.display = 'flex';
+    noneNote.style.display = 'none';
+    if (nameInput) nameInput.value = '';
+
+    const buildLinks = () => {
+      const who    = (nameInput && nameInput.value.trim()) ? `I'm ${nameInput.value.trim()} and ` : '';
+      const interest = `Hey there 👋 ${who}I'm interested in "${title}" — can I get more details?`;
+      const booking  = `Hi! I'd like to book for "${title}"${dateLbl ? ' on ' + dateLbl : ''}${timeStr ? ' at ' + timeStr : ''}. How do I secure my spot? 🐾`;
+      waBtn.href   = `https://wa.me/${phone}?text=${encodeURIComponent(interest)}`;
+      bookBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(booking)}`;
+    };
+    buildLinks();
+    if (nameInput) nameInput.oninput = buildLinks;
+  } else {
+    contact.style.display = 'none';
+    noneNote.style.display = 'block';
+  }
+
+  // Optional socials
+  if (socials) {
+    let href = socials;
+    if (/^@/.test(socials))            href = 'https://instagram.com/' + socials.slice(1);
+    else if (!/^https?:\/\//i.test(socials)) href = 'https://instagram.com/' + socials.replace(/^@/, '');
+    socialEl.href = href;
+    socialEl.textContent = 'Reach the organiser on socials →';
+    socialEl.style.display = 'inline-block';
+  } else {
+    socialEl.style.display = 'none';
+  }
+
+  document.getElementById('eventModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+// ── Close handlers ─────────────────────────────────────────────────
+(function () {
+  const overlay = document.getElementById('eventModalOverlay');
+  if (!overlay) return;
+  const close = () => { overlay.classList.remove('open'); document.body.style.overflow = ''; };
+  document.getElementById('eventModalClose').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+})();
