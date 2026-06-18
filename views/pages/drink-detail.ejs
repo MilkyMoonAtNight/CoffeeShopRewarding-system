@@ -11,8 +11,8 @@
   <section class="detail-hero <%= drink.category === 'cold' ? 'detail-hero-cold' : 'detail-hero-hot' %>">
     <div class="container detail-hero-inner">
 
-      <!-- Image -->
-      <div class="detail-img-col">
+      <!-- LEFT: image + identity -->
+      <div class="detail-left-col">
         <div class="detail-img-frame">
           <% if (drink.image) { %>
             <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" class="detail-img" />
@@ -23,18 +23,28 @@
           <% } %>
           <% if (drink.isSpecial) { %><div class="detail-special-badge">✦ Special</div><% } %>
         </div>
+
+        <div class="detail-identity">
+          <p class="detail-eyebrow"><%= drink.category === 'hot' ? 'Hot' : 'Cold' %> · <%= drink.subcategory %></p>
+          <h1 class="detail-title"><%= drink.name %></h1>
+          <% if (drink.description) { %>
+          <p class="detail-description"><%= drink.description %></p>
+          <% } %>
+          <div class="detail-live-price">
+            <span class="detail-live-amount" id="livePriceAmt"><% if (drink.sizes && drink.sizes.length) { %>R<%= drink.sizes[0].price %><% } %></span>
+            <span class="detail-live-extras" id="livePriceExtras"></span>
+          </div>
+          <div class="detail-chips">
+            <div class="detail-chip"><span class="chip-icon">🔥</span><div><span class="chip-label">Calories</span><span class="chip-val"><%= info.cal %></span></div></div>
+            <div class="detail-chip"><span class="chip-icon">💪</span><div><span class="chip-label">Protein</span><span class="chip-val"><%= info.protein %></span></div></div>
+            <div class="detail-chip"><span class="chip-icon">☕</span><div><span class="chip-label">Caffeine</span><span class="chip-val"><%= info.caff %></span></div></div>
+            <div class="detail-chip"><span class="chip-icon">🥛</span><div><span class="chip-label">Milk</span><span class="chip-val" id="chipMilkVal">Full cream</span></div></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Info -->
-      <div class="detail-info-col">
-        <p class="detail-eyebrow"><%= drink.category === 'hot' ? '☕ Hot drink' : '🧊 Cold drink' %> · <%= drink.subcategory %></p>
-        <h1 class="detail-title"><%= drink.name %></h1>
-
-        <!-- Live price -->
-        <div class="detail-live-price">
-          <span class="detail-live-amount" id="livePriceAmt"><% if (drink.sizes && drink.sizes.length) { %>R<%= drink.sizes[0].price %><% } %></span>
-          <span class="detail-live-extras" id="livePriceExtras"></span>
-        </div>
+      <!-- RIGHT: all options + CTA -->
+      <div class="detail-right-col">
 
         <!-- Size -->
         <% if (drink.sizes && drink.sizes.length) { %>
@@ -52,14 +62,6 @@
           </div>
         </div>
         <% } %>
-
-        <!-- Info chips -->
-        <div class="detail-chips">
-          <div class="detail-chip"><span class="chip-icon">🔥</span><div><span class="chip-label">Calories</span><span class="chip-val"><%= info.cal %></span></div></div>
-          <div class="detail-chip"><span class="chip-icon">💪</span><div><span class="chip-label">Protein</span><span class="chip-val"><%= info.protein %></span></div></div>
-          <div class="detail-chip"><span class="chip-icon">☕</span><div><span class="chip-label">Caffeine</span><span class="chip-val"><%= info.caff %></span></div></div>
-          <div class="detail-chip"><span class="chip-icon">🥛</span><div><span class="chip-label">Milk</span><span class="chip-val" id="chipMilkVal">Full cream</span></div></div>
-        </div>
 
         <!-- Milk -->
         <div class="detail-section">
@@ -135,6 +137,7 @@
           <a href="/order/confirm" class="detail-added-link">Go to checkout →</a>
         </div>
       </div>
+
     </div>
   </section>
 </main>

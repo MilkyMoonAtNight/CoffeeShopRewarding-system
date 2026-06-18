@@ -724,11 +724,11 @@ router.get('/drinks', ownerManager, async (req, res) => {
 
 router.post('/drinks/add', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order, image } = req.body;
+    const { name, category, subcategory, description, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     const imageFilename = req.file ? req.file.filename : (image || null);
     await new Drink({
-      name, category, subcategory,
+      name, category, subcategory, description: description || '',
       prices: { regular: priceRegular || null, large: priceLarge || null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
       flavours: flavourList, isSpecial: !!isSpecial, order: order || 99,
@@ -740,11 +740,11 @@ router.post('/drinks/add', ownerManager, drinkUpload.single('imageFile'), async 
 
 router.post('/drinks/edit/:id', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, category, subcategory, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order, image } = req.body;
+    const { name, category, subcategory, description, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     const imageFilename = req.file ? req.file.filename : (image || null);
     await Drink.findByIdAndUpdate(req.params.id, {
-      name, category, subcategory,
+      name, category, subcategory, description: description || '',
       prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null },
       sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
       flavours: flavourList, isSpecial: !!isSpecial,

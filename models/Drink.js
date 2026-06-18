@@ -20,6 +20,7 @@ const drinkSchema = new mongoose.Schema({
     regular: { type: String, default: null },
     large:   { type: String, default: null }
   },
+  description: { type: String, default: '', trim: true }, // short one-liner shown on detail page
   flavours: [{ type: String, trim: true }],  // if drink has flavour variants
   image:     { type: String, default: null }, // filename in public/images/drinks/
   available: { type: Boolean, default: true },

@@ -11,7 +11,10 @@
       "Bash(node -e \"const ejs=require\\('ejs'\\),fs=require\\('fs'\\);['views/admin/scan.ejs','views/pages/battlepass.ejs'].forEach\\(f=>{ejs.compile\\(fs.readFileSync\\(f,'utf8'\\),{filename:f}\\);console.log\\('EJS OK:',f\\)}\\);\")",
       "Bash(node -c routes/admin.js)",
       "Bash(node -c routes/battlepass.js)",
-      "Bash(node -c utils/scanState.js)"
+      "Bash(node -c utils/scanState.js)",
+      "Skill(anthropic-skills:humanizer)",
+      "Skill(anthropic-skills:humanizer:*)",
+      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),800\\);\")"
     ]
   }
 }
