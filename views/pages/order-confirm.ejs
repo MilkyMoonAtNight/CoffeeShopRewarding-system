@@ -65,8 +65,8 @@
               <button class="btn btn-primary" id="payOnlineBtn">
                 <span class="pay-btn-icon">💳</span>
                 <div>
-                  <span class="pay-btn-main">Pay now via Ozow</span>
-                  <span class="pay-btn-sub">Instant EFT — secure redirect</span>
+                  <span class="pay-btn-main">Confirm &amp; pay online</span>
+                  <span class="pay-btn-sub">Get your virtual slip</span>
                 </div>
               </button>
               <button class="btn btn-outline pay-instore-btn" id="payInstoreBtn">
@@ -85,23 +85,6 @@
     </div>
   </section>
 </main>
-
-<!-- Success overlay (pay in store) -->
-<div class="modal-overlay" id="successOverlay">
-  <div class="modal-sheet" style="max-width:440px;border-radius:var(--radius-lg);text-align:center;">
-    <div class="modal-body" style="padding-top:2rem;">
-      <div style="font-size:3.5rem;margin-bottom:1rem;">🐾</div>
-      <h2 style="font-family:var(--font-nimbus);font-size:1.8rem;margin-bottom:0.75rem;">Order placed!</h2>
-      <p style="color:rgba(44,44,44,0.6);margin-bottom:0.5rem;">We've got your order, <strong id="successName"></strong>.</p>
-      <p style="color:rgba(44,44,44,0.6);margin-bottom:1rem;">Show up, say your name, and your coffee will be ready. Pay when you collect.</p>
-      <p style="font-size:0.82rem;color:rgba(44,44,44,0.4);">Order <strong id="successRef"></strong></p>
-      <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
-        <a href="/order/my-orders" class="btn btn-primary">View my order →</a>
-        <a href="/" class="btn btn-outline" style="border-color:rgba(44,44,44,0.2);color:var(--charcoal);">Back to home</a>
-      </div>
-    </div>
-  </div>
-</div>
 
 <%- include('../partials/footer') %>
 
@@ -186,16 +169,13 @@ document.getElementById('payInstoreBtn').addEventListener('click', async () => {
     return;
   }
   sessionStorage.removeItem('cl_cart');
-  document.getElementById('successName').textContent = document.getElementById('cfName').value.trim();
-  document.getElementById('successRef').textContent  = data.ref;
-  document.getElementById('successOverlay').classList.add('open');
+  window.location = '/order/slip/' + encodeURIComponent(data.ref);
 });
 
 // ── Pay online via Ozow ───────────────────────────────────────────
 document.getElementById('payOnlineBtn').addEventListener('click', async () => {
   const { name, email } = getFormData();
   if (!name)  { alert('Please enter your name.');  return; }
-  if (!email) { alert('Please enter your email — it\'s required for the Ozow payment receipt.'); return; }
   if (!cart.length) { alert('Your cart is empty.'); return; }
 
   const btn = document.getElementById('payOnlineBtn');

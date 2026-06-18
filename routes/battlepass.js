@@ -5,6 +5,7 @@ const Admin = require('../models/Admin');
 const QRCode = require('qrcode');
 const { getMilestoneForDrink } = require('../models/User');
 const { asString } = require('../utils/security');
+const { isPending } = require('../utils/scanState');
 const ActivityLog = require('../models/ActivityLog');
 
 function requireAuth(req, res, next) {
@@ -65,6 +66,18 @@ router.get('/', requireAuth, async (req, res) => {
     const claimableItems   = user.rewards.filter(r => ['free_drink','special','merch','store_voucher'].includes(r.type) && !r.claimed);
     const claimedItems     = user.rewards.filter(r => ['free_drink','special','merch','store_voucher'].includes(r.type) && r.claimed);
 
+    // Pre-render the claim QR for any reward whose 4-digit code is still live
+    // (< 10 min old), so the QR persists across reloads — not just right after
+    // the customer taps Claim.
+    const claimQrs = {};
+    for (const r of claimableItems) {
+      if (r.claimCode && r.claimCodeGeneratedAt && (now - new Date(r.claimCodeGeneratedAt)) / 1000 / 60 < 10) {
+        claimQrs[r._id] = await QRCode.toDataURL(`conleche-claim:${user.qrCode}:${r._id}`, {
+          color: { dark: '#000000', light: '#ffffff' }, width: 240, margin: 2, errorCorrectionLevel: 'H'
+        });
+      }
+    }
+
     // Stamp history — when, by whom, how many (newest first)
     const stampHistory = await ActivityLog.find({ userId: user._id, type: 'drinks_added' })
       .sort({ at: -1 }).limit(50).catch(() => []);
@@ -74,6 +87,7 @@ router.get('/', requireAuth, async (req, res) => {
       user, qrDataUrl,
       upcomingMilestones, next, drinksToNext, progressPct,
       activeVouchers, redeemedVouchers, expiredVouchers, claimableItems, claimedItems,
+      claimQrs,
       stampHistory,
       now
     });
@@ -83,16 +97,52 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// ── GENERATE CLAIM CODE (customer taps Claim) ─────────────────────
+// ── GENERATE CLAIM CODE + QR (customer taps Claim) ────────────────
+// Returns BOTH a 4-digit code (the customer reads it out — proves they're
+// present) and a QR encoding "conleche-claim:<token>:<rewardId>" (the barista
+// scans it to auto-fill which reward + which customer, so no IDs are typed).
 router.post('/claim/:rewardId', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     const code = user.generateClaimCode(req.params.rewardId);
     if (!code) return res.json({ success: false, message: 'Already claimed or not found' });
     await user.save();
-    res.json({ success: true, code });
+    const payload  = `conleche-claim:${user.qrCode}:${req.params.rewardId}`;
+    const qrDataUrl = await QRCode.toDataURL(payload, {
+      color: { dark: '#000000', light: '#ffffff' },
+      width: 240, margin: 2, errorCorrectionLevel: 'H'
+    });
+    res.json({ success: true, code, qrDataUrl });
   } catch (err) {
     res.json({ success: false, message: err.message });
+  }
+});
+
+// ── ADMIN: CLAIM LOOKUP (barista scans the reward QR) ─────────────
+// Given the scanned token + rewardId, report what the reward is and whether
+// it's a real, still-claimable reward on this account. No state change — the
+// actual redemption happens in /confirm-claim once the 4-digit code matches.
+router.post('/claim-info', requireAdminApi, async (req, res) => {
+  try {
+    let token = asString(req.body.qrCode, 200).trim();
+    if (token.toLowerCase().startsWith('conleche:')) token = token.slice('conleche:'.length).trim();
+    const rewardId = asString(req.body.rewardId, 64);
+    const user = await User.findOne({ qrCode: token });
+    if (!user) return res.json({ success: false, valid: false, message: 'QR not on our system — customer not found' });
+    const reward = user.rewards.id(rewardId);
+    if (!reward) return res.json({ success: false, valid: false, message: 'Reward not found on this account' });
+
+    let valid = true, reason = 'Valid — ask the customer for their 4-digit code';
+    if (reward.redeemed)              { valid = false; reason = 'Already redeemed'; }
+    else if (reward.type !== 'voucher' && reward.claimed) { valid = false; reason = 'Already claimed'; }
+
+    res.json({
+      success: true, valid, reason,
+      customerName: user.name,
+      reward: { description: reward.description, type: reward.type, drinkNumber: reward.drinkNumber }
+    });
+  } catch (err) {
+    res.json({ success: false, valid: false, message: err.message });
   }
 });
 
@@ -127,6 +177,28 @@ router.post('/preferences', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.json({ success: false, message: err.message });
+  }
+});
+
+// ── CUSTOMER: LIVE STATUS POLL ────────────────────────────────────
+// The battlepass page polls this every few seconds. It compares totalDrinks
+// to detect newly-added stamps, and reads `pending` to show the
+// "Barista is loading your drinks…" overlay while a barista is mid-scan.
+router.get('/status', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId).select('totalDrinks tier rewards');
+    if (!user) return res.status(401).json({ ok: false });
+    const claimable = user.rewards.filter(r =>
+      ['free_drink','special','merch','store_voucher'].includes(r.type) && !r.claimed).length;
+    res.json({
+      ok: true,
+      totalDrinks: user.totalDrinks,
+      tier: user.tier,
+      claimable,
+      pending: isPending(user._id),
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false });
   }
 });
 
@@ -165,7 +237,8 @@ router.post('/scan', requireAdminApi, async (req, res) => {
 // ── ADMIN: CONFIRM CLAIM (barista enters 4-digit code) ────────────
 router.post('/confirm-claim', requireAdminApi, async (req, res) => {
   try {
-    const qrCode   = asString(req.body.qrCode, 200);
+    let qrCode     = asString(req.body.qrCode, 200).trim();
+    if (qrCode.toLowerCase().startsWith('conleche:')) qrCode = qrCode.slice('conleche:'.length).trim();
     const rewardId = asString(req.body.rewardId, 64);
     const code     = asString(req.body.code, 16);
     const user = await User.findOne({ qrCode });

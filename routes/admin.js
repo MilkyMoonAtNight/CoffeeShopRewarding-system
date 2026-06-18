@@ -17,6 +17,7 @@ const PuzzleAttempt = require('../models/PuzzleAttempt');
 const { pickWordForDay, xpForDifficulty } = require('../utils/puzzle');
 const crypto      = require('crypto');
 const { rateLimit, asString } = require('../utils/security');
+const { markPending, clearPending } = require('../utils/scanState');
 const { loadUpcomingEvents } = require('../utils/eventOccurrence');
 const Notification = require('../models/Notification');
 
@@ -180,8 +181,6 @@ router.get('/scan', requireAdmin, (req, res) => {
 router.post('/scan', requireAdmin, async (req, res) => {
   const panel     = asString(req.body.panel, 32);
   const qrCode    = asString(req.body.qrCode, 200);
-  const rewardId  = asString(req.body.rewardId, 64);
-  const claimCode = asString(req.body.claimCode, 16);
   let result = { panel };
   try {
     if (panel === 'record') {
@@ -203,25 +202,6 @@ router.post('/scan', requireAdmin, async (req, res) => {
         }).catch(() => {});
         result = { panel, success: true, user, newReward: newRewards[newRewards.length - 1] || null, newRewards, qty };
       }
-    } else if (panel === 'confirm') {
-      const user = await User.findOne({ qrCode: normalizeToken(qrCode) });
-      if (!user) {
-        result = { panel, success: false, message: 'Customer not found' };
-      } else {
-        const confirmed = user.confirmClaim(rewardId, claimCode, req.admin.name);
-        if (!confirmed.ok) {
-          result = { panel, success: false, message: confirmed.reason };
-        } else {
-          await user.save();
-          await ActivityLog.create({
-            type: confirmed.reward.type === 'voucher' ? 'voucher_redeemed' : 'reward_redeemed',
-            userId: user._id, userName: user.name,
-            adminId: req.admin._id, adminName: req.admin.name,
-            rewardType: confirmed.reward.type, rewardDescription: confirmed.reward.description
-          }).catch(() => {});
-          result = { panel, success: true, rewardDesc: confirmed.reward.description };
-        }
-      }
     }
   } catch (err) {
     result = { panel, success: false, message: err.message };
@@ -236,6 +216,9 @@ router.post('/scan-lookup', requireAdmin, async (req, res) => {
     const token = normalizeToken(asString(req.body.qrCode, 200));
     const user = await User.findOne({ qrCode: token });
     if (!user) return res.json({ success: false, message: 'QR code not found — is the customer registered?' });
+    // Flag the customer as "being served" so their battlepass page can show a
+    // live "Barista is loading your drinks…" overlay while we pick the quantity.
+    markPending(user._id);
     res.json({ success: true, token, user: { name: user.name, totalDrinks: user.totalDrinks, tier: user.tier } });
   } catch (err) {
     res.json({ success: false, message: err.message });
@@ -255,6 +238,7 @@ router.post('/scan-api', requireAdmin, async (req, res) => {
       if (reward) newRewards.push(reward);
     }
     await user.save();
+    clearPending(user._id); // drinks recorded — drop the "being served" flag
     await ActivityLog.create({
       type: 'drinks_added', userId: user._id, userName: user.name,
       adminId: req.admin._id, adminName: req.admin.name,

@@ -83,6 +83,21 @@ router.get('/confirm', requireUser, (req, res) => {
   res.render('pages/order-confirm', { title: 'Confirm Order — Con Leche' });
 });
 
+// ── Virtual slip (receipt) for a placed order ────────────────────
+router.get('/slip/:ref', requireUser, async (req, res) => {
+  const ref = asString(req.params.ref, 60);
+  const user = await User.findById(req.session.userId).select('name email pastOrders').lean();
+  const order = user && user.pastOrders
+    ? user.pastOrders.find(o => o.ref === ref)
+    : null;
+  if (!order) return res.status(404).render('pages/order-slip', { title: 'Slip — Con Leche', order: null, customerName: user ? user.name : '' });
+  res.render('pages/order-slip', {
+    title: `Slip ${order.ref} — Con Leche`,
+    order,
+    customerName: order.name || (user ? user.name : ''),
+  });
+});
+
 // ── Place order ───────────────────────────────────────────────────
 router.post('/place', requireUser, async (req, res) => {
   try {
@@ -144,6 +159,7 @@ router.post('/place', requireUser, async (req, res) => {
       paymentStatus: paymentMethod === 'cash' ? 'pending' : 'pending',
       status: 'pending', placedAt: new Date(),
     };
+    if (name)  order.name  = name;
     if (phone) order.phone = phone;
     if (email) order.email = email;
 

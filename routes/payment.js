@@ -22,6 +22,20 @@ router.post('/initiate', requireUser, async (req, res) => {
     const amountNum     = Number(req.body.total);
     if (!orderRef) return res.redirect('/order/confirm?error=payment_failed');
     if (!Number.isFinite(amountNum) || amountNum <= 0) return res.redirect('/order/confirm?error=payment_failed');
+
+    // ── TEST MODE: live payments off ────────────────────────────────
+    // While PAYMENTS_ENABLED !== 'true' we skip the Ozow redirect entirely so
+    // the ordering flow can be tested end-to-end: mark the order paid and send
+    // the customer straight to their virtual slip. Set PAYMENTS_ENABLED=true in
+    // the env to restore the real Ozow gateway below.
+    if (process.env.PAYMENTS_ENABLED !== 'true') {
+      await User.updateOne(
+        { _id: req.session.userId, 'pastOrders.ref': orderRef },
+        { $set: { 'pastOrders.$.paymentStatus': 'paid', 'pastOrders.$.status': 'pending' } }
+      ).catch(() => {});
+      return res.redirect('/order/slip/' + encodeURIComponent(orderRef));
+    }
+
     const isTest = process.env.NODE_ENV !== 'production';
 
     const fields = {

@@ -1,8 +1,3 @@
-/* ============================================
-   CON LECHE — Main Stylesheet
-   Palette: Cream / Charcoal / Maroon / Shiny Black
-   Fonts: TAN Nimbus (headings) / Poppins SemiBold (body)
-   ============================================ */
 
 @font-face {
   font-family: 'TAN Nimbus';
@@ -131,10 +126,10 @@ ul { list-style: none; }
   inset: 0;
 
   background:
-    radial-gradient(circle at top left, rgba(84,22,34,.7), transparent 40%),
-    radial-gradient(circle at top right, rgba(84,22,34,.7), transparent 40%),
-    radial-gradient(circle at bottom left, rgba(84,22,34,.7), transparent 40%),
-    radial-gradient(circle at bottom right, rgba(84,22,34,.7), transparent 40%);
+    radial-gradient(circle at top left, rgba(44, 6, 12, 0.7), transparent 40%),
+    radial-gradient(circle at top right, rgba(44, 6, 12, 0.7), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(44, 6, 12, 0.7), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(44, 6, 12, 0.7), transparent 40%);
 }
 .hero-grain {
   position: absolute; inset: 0;
@@ -148,14 +143,14 @@ ul { list-style: none; }
 }
 .hero-eyebrow {
   font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--maroon); margin-bottom: 1.25rem;
+  color: var(--cream); margin-bottom: 1.25rem;
 }
 .hero-title {
   font-family: var(--font-nimbus);
   font-size: clamp(3rem, 8vw, 6.5rem);
   font-weight: 700;
   color: var(--cream);
-  line-height: 1.05;
+  line-height: 1.2;
   margin-bottom: 1.5rem;
 }
 .hero-title em {
@@ -166,8 +161,7 @@ ul { list-style: none; }
 .hero-subtitle {
   max-width: 420px; margin-bottom: 2.5rem;
   font-family: var(--font-body); font-size: 1.35rem; font-weight: 500;
-  color: rgb(201, 151, 74);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.45);
+  color: var(--cream);
   line-height: 1.45;
 }
 .hero-actions {
@@ -194,7 +188,7 @@ ul { list-style: none; }
   display: flex; align-items: center; gap: 2rem;
   white-space: nowrap;
   font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase;
-  font-weight: 500; color: var(--black);
+  font-weight: 500; color: var(--cream);
   animation: scrollStrip 25s linear infinite;
   width: max-content;
 }
@@ -280,9 +274,9 @@ ul { list-style: none; }
   gap: 1.5rem;
   padding: 2rem;
 }
-.bp-text .section-eyebrow { color: rgba(201, 151, 74, 0.8); }
+.bp-text .section-eyebrow { color: rgb(211, 191, 65); }
 .bp-text .section-title   { color: var(--cream); }
-.bp-text .section-title em { color: rgba(201, 151, 74, 0.9); }
+.bp-text .section-title em { color: rgb(211, 191, 65); }
 .bp-text .section-body    { color: rgba(253, 246, 237, 0.75); }
 .milestone-pills { display: flex; flex-direction: column; gap: 0.5rem; }
 .pill {
@@ -290,8 +284,8 @@ ul { list-style: none; }
   border-radius: 50px; font-size: 0.82rem; font-weight: 500;
   width: fit-content;
 }
-.pill-voucher { background: rgba(201, 151, 74, 0.15); color: #7a5010; border: 1px solid rgba(201, 151, 74, 0.45); }
-.pill-drink   { background: rgba(201, 151, 74, 0.12); color: #7a5010; border: 1px solid rgba(201, 151, 74, 0.35); }
+.pill-voucher { background: rgba(211, 191, 65, 0.856); color: var(--charcoal); }
+.pill-drink   { background: rgba(211, 191, 65, 0.856); color: var(--charcoal); }
 .pill-merch { background: var(--black); color: var(--cream); border: 1px solid rgba(88, 18, 23, 0.4); }
 
 .bp-visual { display: flex; align-items: stretch; justify-content: center; }
@@ -370,9 +364,9 @@ ul { list-style: none; }
 }
 
 .tier-badge {
-  background: rgba(201,151,74,0.15);
-  border: 1px solid rgba(201,151,74,0.35);
-  color: rgba(201,151,74,0.95);
+  background: rgba(211, 191, 65, 0.67);
+  border: 1px solid rgba(211, 191, 65, 0.856);
+  color: rgba(211, 191, 65, 0.856);
   padding: 0.5rem 1.25rem;
   border-radius: 50px;
   font-size: 0.92rem;
@@ -467,7 +461,11 @@ ul { list-style: none; }
 .menu-card-link { color: var(--maroon); font-size: 0.85rem; margin-top: auto; }
 
 /* ====== EVENTS HOME ====== */
-.events-home { background: var(--cream-dark); }
+.events-home { 
+  background: url(../images/backgrounds/blocks.jpg);
+ background-size: 75%;
+
+}
 /* ── Events filter bar ── */
 .events-filter-bar {
   display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;
@@ -1270,7 +1268,7 @@ ul { list-style: none; }
   margin-top: 1.25rem; display: block;
   width: fit-content; margin-left: auto; margin-right: auto;
 }
-.bp-qr-img { width: 160px; height: 160px; display: block; }
+.bp-qr-img { width: 200px; height: 200px; display: block; }
 .bp-qr-hint { font-size: 0.72rem; color: rgba(253,246,237,0.25); margin-top: 0.75rem; text-align: center; }
 
 /* Stats row */
@@ -1452,7 +1450,6 @@ ul { list-style: none; }
 .drinks-empty { color: rgba(44,44,44,0.4); font-style: italic; margin-top: 2rem; }
 
 @media (min-width: 600px) {
-  .bp-qr-img { width: 200px; height: 200px; }
   .bp-container { padding: 1.5rem 1.5rem 4rem; }
 }
 
@@ -3562,3 +3559,51 @@ body.home-page .strip-section { position: relative; z-index: 1; }
 .badge-orange { background: rgba(239,159,39,0.12); color: #b97a00; }
 .badge-grey   { background: rgba(44,44,44,0.08);  color: rgba(44,44,44,0.5); }
 .badge-blue   { background: rgba(59,130,246,0.1); color: #2563eb; }
+
+/* ── Battlepass live "barista is serving you" overlay ── */
+.bp-live-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: none; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  background: rgba(20,8,9,0.72);
+  backdrop-filter: blur(5px);
+}
+.bp-live-overlay.open { display: flex; }
+.bp-live-card {
+  background: var(--cream); color: var(--charcoal);
+  border-radius: 18px; padding: 2.25rem 1.75rem;
+  width: 100%; max-width: 340px; text-align: center;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+  animation: bpLivePop 0.22s ease;
+}
+@keyframes bpLivePop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.bp-live-spinner {
+  width: 64px; height: 64px; margin: 0 auto 1.25rem;
+  border: 5px solid rgba(88,18,23,0.15);
+  border-top-color: var(--maroon);
+  border-radius: 50%;
+  animation: bpLiveSpin 0.8s linear infinite;
+}
+@keyframes bpLiveSpin { to { transform: rotate(360deg); } }
+.bp-live-check {
+  display: none;
+  width: 64px; height: 64px; margin: 0 auto 1.25rem;
+  align-items: center; justify-content: center;
+  background: #1D9E75; color: #fff;
+  border-radius: 50%; font-size: 2rem; font-weight: 700;
+  animation: bpLivePop 0.3s ease;
+}
+.bp-live-title {
+  font-family: var(--font-nimbus, serif);
+  font-size: 1.2rem; margin-bottom: 0.4rem; color: var(--maroon);
+}
+.bp-live-sub { font-size: 0.85rem; color: rgba(44,44,44,0.6); }
+
+/* ── Reward claim QR (shown next to the 4-digit code) ── */
+.bp-claim-show { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+.bp-claim-qr { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.bp-claim-qr img {
+  width: 132px; height: 132px; display: block;
+  background: #fff; padding: 6px; border-radius: 10px;
+}
+.bp-claim-qr-hint { font-size: 0.68rem; color: rgba(253,246,237,0.55); letter-spacing: 0.03em; }

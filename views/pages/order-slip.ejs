@@ -1,0 +1,167 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+<section class="section section-dark slip-page">
+  <div class="container slip-container">
+
+    <% if (!order) { %>
+      <div class="slip-card">
+        <div class="slip-empty">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem;">🧾</div>
+          <h2>Slip not found</h2>
+          <p>We couldn't find that order on your account.</p>
+          <a href="/order/my-orders" class="btn btn-primary" style="margin-top:1rem;">View my orders →</a>
+        </div>
+      </div>
+    <% } else {
+      const placed = new Date(order.placedAt);
+      const dateStr = placed.toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' });
+      const timeStr = placed.toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' });
+      const paid = order.paymentStatus === 'paid';
+      const payLabel = order.paymentMethod === 'cash' ? 'Pay in store' : 'Paid online';
+      const itemCount = (order.items || []).reduce((n) => n + 1, 0);
+    %>
+
+      <!-- Confirmation banner -->
+      <div class="slip-confirm">
+        <div class="slip-confirm-check">✓</div>
+        <div>
+          <h1 class="slip-confirm-title">Order confirmed</h1>
+          <p class="slip-confirm-sub">Thanks<%= customerName ? ', ' + customerName : '' %> — show this slip at the truck.</p>
+        </div>
+      </div>
+
+      <!-- The slip itself -->
+      <div class="slip-card">
+        <div class="slip-header">
+          <span class="slip-brand">CON LECHE</span>
+          <span class="slip-brand-sub">Specialty Coffee · Pretoria</span>
+        </div>
+
+        <div class="slip-meta">
+          <div class="slip-meta-row"><span>Order no.</span><b class="slip-ref"><%= order.ref %></b></div>
+          <div class="slip-meta-row"><span>Name</span><b><%= customerName || '—' %></b></div>
+          <div class="slip-meta-row"><span>Date</span><b><%= dateStr %> · <%= timeStr %></b></div>
+          <div class="slip-meta-row"><span>Collection</span><b><%= order.pickupMethod || 'At the truck' %></b></div>
+          <% if (order.phone) { %><div class="slip-meta-row"><span>Phone</span><b><%= order.phone %></b></div><% } %>
+        </div>
+
+        <div class="slip-divider"></div>
+
+        <!-- Items -->
+        <div class="slip-items">
+          <% (order.items || []).forEach(item => { %>
+            <div class="slip-item">
+              <div class="slip-item-main">
+                <span class="slip-item-name"><%= item.name %></span>
+                <% const opts = [item.size, item.ml, item.flavour,
+                     (item.milk && item.milk !== 'Full cream') ? item.milk : null,
+                     (item.sugar && item.sugar !== 'Regular') ? item.sugar : null
+                   ].filter(Boolean); %>
+                <% if (opts.length) { %><span class="slip-item-opts"><%= opts.join(' · ') %></span><% } %>
+                <% if (item.notes) { %><span class="slip-item-note">"<%= item.notes %>"</span><% } %>
+              </div>
+              <span class="slip-item-price">R<%= item.price %></span>
+            </div>
+          <% }) %>
+        </div>
+
+        <div class="slip-divider"></div>
+
+        <div class="slip-total-row">
+          <span>Total (<%= itemCount %> item<%= itemCount === 1 ? '' : 's' %>)</span>
+          <span class="slip-total-amount">R<%= order.total %></span>
+        </div>
+
+        <div class="slip-pay-row">
+          <span class="slip-pay-method"><%= payLabel %></span>
+          <span class="slip-pay-badge <%= paid ? 'paid' : 'unpaid' %>"><%= paid ? 'PAID' : 'PAY AT COLLECTION' %></span>
+        </div>
+
+        <% if (order.notes) { %>
+        <div class="slip-notes"><strong>Note:</strong> <%= order.notes %></div>
+        <% } %>
+
+        <div class="slip-footer">
+          <span class="slip-status">Status: <%= (order.status || 'pending').toUpperCase() %></span>
+          <span class="slip-thanks">🐾 See you soon!</span>
+        </div>
+      </div>
+
+      <div class="slip-actions">
+        <a href="/order/my-orders" class="btn btn-primary">View my orders →</a>
+        <a href="/order" class="btn btn-outline slip-btn-light">Order again</a>
+      </div>
+
+    <% } %>
+
+  </div>
+</section>
+</main>
+
+<%- include('../partials/footer') %>
+
+<style>
+.slip-page { padding: 2.5rem 0 4rem; }
+.slip-container { max-width: 480px; }
+
+.slip-confirm {
+  display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.5rem;
+}
+.slip-confirm-check {
+  width: 48px; height: 48px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #1D9E75; color: #fff; border-radius: 50%;
+  font-size: 1.4rem; font-weight: 700;
+}
+.slip-confirm-title { font-family: var(--font-nimbus, serif); font-size: 1.5rem; color: var(--cream); line-height: 1.1; }
+.slip-confirm-sub { font-size: 0.86rem; color: rgba(253,246,237,0.55); margin-top: 0.2rem; }
+
+.slip-card {
+  background: var(--cream); color: var(--charcoal);
+  border-radius: 14px; padding: 1.5rem 1.4rem;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.3);
+}
+.slip-header { text-align: center; margin-bottom: 1.1rem; }
+.slip-brand { display: block; font-family: var(--font-nimbus, serif); font-size: 1.5rem; letter-spacing: 0.12em; color: var(--maroon); }
+.slip-brand-sub { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: rgba(44,44,44,0.45); }
+
+.slip-meta { display: flex; flex-direction: column; gap: 0.4rem; }
+.slip-meta-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.88rem; }
+.slip-meta-row span { color: rgba(44,44,44,0.5); }
+.slip-meta-row b { font-weight: 600; text-align: right; }
+.slip-ref { font-family: ui-monospace, monospace; color: var(--maroon); letter-spacing: 0.04em; }
+
+.slip-divider { border-top: 2px dashed rgba(44,44,44,0.18); margin: 1rem 0; }
+
+.slip-items { display: flex; flex-direction: column; gap: 0.85rem; }
+.slip-item { display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline; }
+.slip-item-main { display: flex; flex-direction: column; gap: 0.12rem; }
+.slip-item-name { font-weight: 600; font-size: 0.95rem; }
+.slip-item-opts { font-size: 0.78rem; color: rgba(44,44,44,0.55); }
+.slip-item-note { font-size: 0.78rem; color: rgba(44,44,44,0.5); font-style: italic; }
+.slip-item-price { font-family: ui-monospace, monospace; font-weight: 600; white-space: nowrap; }
+
+.slip-total-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 1rem; font-weight: 700; }
+.slip-total-amount { font-family: ui-monospace, monospace; font-size: 1.3rem; color: var(--maroon); }
+
+.slip-pay-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; }
+.slip-pay-method { font-size: 0.85rem; color: rgba(44,44,44,0.6); }
+.slip-pay-badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.25rem 0.6rem; border-radius: 50px; }
+.slip-pay-badge.paid   { background: rgba(29,158,117,0.15); color: #1D9E75; }
+.slip-pay-badge.unpaid { background: rgba(239,159,39,0.18); color: #b97a00; }
+
+.slip-notes { margin-top: 1rem; font-size: 0.84rem; color: rgba(44,44,44,0.7); background: rgba(44,44,44,0.04); padding: 0.6rem 0.75rem; border-radius: 8px; }
+
+.slip-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; padding-top: 0.9rem; border-top: 1px solid rgba(44,44,44,0.1); }
+.slip-status { font-size: 0.72rem; letter-spacing: 0.08em; color: rgba(44,44,44,0.5); }
+.slip-thanks { font-size: 0.82rem; color: var(--maroon); font-weight: 600; }
+
+.slip-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+.slip-btn-light { border-color: rgba(253,246,237,0.3); color: var(--cream); }
+
+.slip-empty { text-align: center; padding: 1.5rem 0; }
+.slip-empty h2 { font-family: var(--font-nimbus, serif); font-size: 1.3rem; margin-bottom: 0.4rem; }
+.slip-empty p { color: rgba(44,44,44,0.6); }
+</style>

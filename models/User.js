@@ -62,8 +62,12 @@ const userSchema = new mongoose.Schema({
     total:        Number,
     pickupMethod: String,
     notes:        String,
+    name:         String,                                 // name the customer put on the order
+    phone:        String,
+    email:        String,
     paymentMethod:{ type: String, default: 'online' },   // 'online' | 'cash'
     paymentStatus:{ type: String, default: 'pending' },  // pending | paid | no_show | refunded
+    paymentId:    String,                                 // gateway transaction id (when paid online)
     status:       { type: String, default: 'pending' },
     placedAt:     { type: Date, default: Date.now }
   }]

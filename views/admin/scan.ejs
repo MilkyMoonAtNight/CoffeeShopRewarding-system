@@ -48,6 +48,23 @@
         </div>
       </div>
 
+      <!-- ── Live diagnostics (tap header to expand) ── -->
+      <div class="scan-diag" id="scanDiag">
+        <button type="button" class="scan-diag-head" onclick="document.getElementById('scanDiag').classList.toggle('open')">
+          <span>🔧 Live diagnostics</span>
+          <span class="scan-diag-toggle">tap</span>
+        </button>
+        <div class="scan-diag-body">
+          <div class="scan-diag-row"><span>jsQR library</span><b id="dgLib">checking…</b></div>
+          <div class="scan-diag-row"><span>Camera</span><b id="dgCam">—</b></div>
+          <div class="scan-diag-row"><span>Resolution</span><b id="dgRes">—</b></div>
+          <div class="scan-diag-row"><span>Decode rate</span><b id="dgFps">—</b></div>
+          <div class="scan-diag-row"><span>Frames decoded</span><b id="dgFrames">0</b></div>
+          <div class="scan-diag-row"><span>Last QR seen</span><b id="dgLast">none yet</b></div>
+          <div class="scan-diag-row scan-diag-err" id="dgErrRow" style="display:none;"><span>Error</span><b id="dgErr">—</b></div>
+        </div>
+      </div>
+
       <button id="camera-toggle" class="btn btn-outline" style="margin:0.75rem 1rem 1rem;width:calc(100% - 2rem);">
         Stop Camera
       </button>
@@ -105,39 +122,40 @@
   <!-- ── CONFIRM CLAIM ── -->
   <div class="admin-scan-panel hidden" id="panel-confirm">
     <div class="admin-card">
-      <p style="margin-bottom:1.25rem;font-size:0.9rem;color:rgba(44,44,44,0.6);">Customer taps <strong>Claim</strong> on their battlepass to get a 4-digit code. Enter it here to confirm.</p>
-      <form action="/admin/scan" method="POST">
-        <input type="hidden" name="panel" value="confirm" />
-        <div class="form-group">
-          <label>Customer QR Token</label>
-          <input type="text" name="qrCode" required placeholder="Customer QR token" class="scan-input" />
+      <p style="margin-bottom:1.25rem;font-size:0.9rem;color:rgba(44,44,44,0.6);">Customer taps <strong>Claim</strong> on their battlepass. <strong>Scan their reward QR</strong> below — it identifies the reward automatically — then enter the 4-digit code they read out.</p>
+
+      <div class="form-group">
+        <label>Customer reward QR</label>
+        <div class="confirm-scan-row">
+          <input type="text" id="confirmQr" placeholder="Scan the reward QR…" class="scan-input" readonly />
+          <button type="button" class="btn btn-outline confirm-scan-btn" id="confirmScanBtn" onclick="toggleConfirmScan()">📷 Scan</button>
         </div>
-        <div class="form-group">
-          <label>Reward ID</label>
-          <input type="text" name="rewardId" required placeholder="Reward ID from customer screen" class="scan-input" />
+        <input type="hidden" id="confirmRewardId" />
+        <!-- Mini camera for the confirm panel (hidden until "Scan" is tapped) -->
+        <div id="confirmCamWrap" class="confirm-cam-wrap" style="display:none;">
+          <video id="confirmVideo" playsinline></video>
+          <div class="confirm-cam-status" id="confirmCamStatus">Starting camera…</div>
         </div>
-        <div class="form-group">
-          <label>4-Digit Code</label>
-          <input type="text" name="claimCode" required placeholder="e.g. 4827" class="scan-input"
-                 maxlength="4" style="font-size:1.5rem;letter-spacing:0.3em;text-align:center;" />
-        </div>
-        <button type="submit" class="btn btn-primary btn-full">✓ Confirm Claim</button>
-      </form>
+      </div>
+
+      <!-- Reward identity + validity, filled after a successful scan -->
+      <div id="confirmReward" class="confirm-reward" style="display:none;"></div>
+
+      <div class="form-group">
+        <label>4-Digit Code</label>
+        <input type="text" id="confirmCode" inputmode="numeric" placeholder="e.g. 4827" class="scan-input"
+               maxlength="4" style="font-size:1.5rem;letter-spacing:0.3em;text-align:center;" />
+      </div>
+      <button type="button" id="confirmClaimBtn" class="btn btn-primary btn-full" onclick="submitConfirmClaim()" disabled>✓ Confirm Claim</button>
     </div>
-    <% if (result && result.panel === 'confirm') { %>
-    <div class="admin-card scan-result-card <%= result.success ? 'scan-success-card' : 'scan-error-card' %>">
-      <% if (result.success) { %>
-        <div class="scan-result-icon">✓</div><h3>Redeemed!</h3><p><%= result.rewardDesc %></p>
-      <% } else { %>
-        <div class="scan-result-icon scan-result-icon-err">✗</div><h3>Failed</h3><p><%= result.message %></p>
-      <% } %>
-    </div>
-    <% } %>
+
+    <!-- Result, JS-populated -->
+    <div id="confirmResult" class="admin-card scan-result-card" style="display:none;"></div>
   </div>
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+<script src="/js/jsQR.min.js"></script>
 <!-- ── Quantity popup (appears after a successful scan) ── -->
 <div class="qty-modal-overlay" id="qtyModal">
   <div class="qty-modal">
@@ -172,6 +190,7 @@ document.querySelectorAll('.admin-scan-tab').forEach(tab => {
     document.querySelectorAll('.admin-scan-panel').forEach(p => p.classList.add('hidden'));
     tab.classList.add('active');
     document.getElementById('panel-' + tab.dataset.panel).classList.remove('hidden');
+    if (typeof stopConfirmScan === 'function') stopConfirmScan(); // release confirm camera on any switch
     if (tab.dataset.panel !== 'camera') stopCamera();
     else startCamera();
   });
@@ -196,6 +215,38 @@ const scanText   = document.getElementById('scanAnimText');
 const scanDots   = document.getElementById('scanDots');
 const qrFrame    = document.getElementById('qrFrame');
 const qrLaser    = document.getElementById('qrLaser');
+
+// ── Live diagnostics ──────────────────────────────────────────────
+const dg = {
+  lib:    document.getElementById('dgLib'),
+  cam:    document.getElementById('dgCam'),
+  res:    document.getElementById('dgRes'),
+  fps:    document.getElementById('dgFps'),
+  frames: document.getElementById('dgFrames'),
+  last:   document.getElementById('dgLast'),
+  err:    document.getElementById('dgErr'),
+  errRow: document.getElementById('dgErrRow'),
+};
+let decodedFrames = 0;
+let fpsWindow = [];
+
+function dgError(msg) {
+  dg.errRow.style.display = 'flex';
+  dg.err.textContent = msg;
+}
+
+// Verify the QR library actually loaded. If the CSP or network blocks it,
+// fail loudly here instead of letting the scan loop die silently.
+const jsQRReady = (typeof jsQR === 'function');
+if (jsQRReady) {
+  dg.lib.textContent = 'loaded ✓';
+  dg.lib.style.color = '#1D9E75';
+} else {
+  dg.lib.textContent = 'NOT LOADED ✗';
+  dg.lib.style.color = '#c83232';
+  dgError('QR library blocked — check CSP / network. Use Manual Entry.');
+  document.getElementById('scanDiag').classList.add('open');
+}
 
 // ── Animated dots ─────────────────────────────────────────────────
 function startDotAnim(msg) {
@@ -238,6 +289,16 @@ function setStatus(state, msg) {
 // ── Camera ────────────────────────────────────────────────────────
 async function startCamera() {
   setStatus('idle', 'Starting…');
+  if (!jsQRReady) {                       // no point opening the camera if we can't decode
+    setStatus('error', 'QR library not loaded — use Manual Entry');
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    dg.cam.textContent = 'unsupported';
+    dgError('getUserMedia unavailable — needs HTTPS + a modern browser.');
+    setStatus('error', 'Camera API unavailable — use Manual Entry');
+    return;
+  }
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -245,10 +306,15 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
     scanning = true;
+    dg.cam.textContent = 'live ✓';
+    dg.cam.style.color = '#1D9E75';
     toggleBtn.textContent = 'Stop Camera';
     setStatus('scanning', 'Scanning');
     requestAnimationFrame(tick);
   } catch (e) {
+    dg.cam.textContent = 'denied/failed';
+    dg.cam.style.color = '#c83232';
+    dgError((e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : 'camera error'));
     setStatus('error', 'Camera unavailable — use Manual Entry');
     toggleBtn.style.display = 'none';
   }
@@ -282,20 +348,38 @@ function tick() {
     offscreen.height = h;
     offCtx.drawImage(video, 0, 0, w, h);
     frameCount++;
+
+    // ── diagnostics: resolution, decode rate, frame counter ──
+    const nowMs = performance.now();
+    fpsWindow.push(nowMs);
+    while (fpsWindow.length && nowMs - fpsWindow[0] > 1000) fpsWindow.shift();
+    decodedFrames++;
+    if (frameCount % 10 === 0) {
+      dg.res.textContent    = w + '×' + h;
+      dg.fps.textContent    = fpsWindow.length + ' fps';
+      dg.frames.textContent = decodedFrames;
+    }
     // Show frame count every 60 frames so barista knows camera is live
     if (frameCount % 60 === 0 && scanning && !cooldown) {
       liveText.textContent = `Scanning (${w}×${h})`;
     }
 
-    // Try full frame first
-    let code = tryDecode(offCtx, 0, 0, w, h);
-
-    // If not found, try centre crop (QR usually held in middle of frame)
-    if (!code) {
-      const cropSize = Math.min(w, h) * 0.7;
-      const cx = (w - cropSize) / 2;
-      const cy = (h - cropSize) / 2;
-      code = tryDecode(offCtx, cx, cy, cropSize, cropSize);
+    let code = null;
+    try {
+      // Try full frame first
+      code = tryDecode(offCtx, 0, 0, w, h);
+      // If not found, try centre crop (QR usually held in middle of frame)
+      if (!code) {
+        const cropSize = Math.min(w, h) * 0.7;
+        const cx = (w - cropSize) / 2;
+        const cy = (h - cropSize) / 2;
+        code = tryDecode(offCtx, cx, cy, cropSize, cropSize);
+      }
+    } catch (err) {
+      // A throw here (e.g. jsQR missing) would otherwise kill the loop silently.
+      dgError('decode: ' + err.message);
+      setStatus('error', 'Decode error — see diagnostics');
+      return; // stop scheduling; the error is now visible on screen
     }
 
     if (code && !cooldown) {
@@ -329,9 +413,11 @@ function tryDecode(ctx, x, y, w, h) {
   const imageData = ctx.getImageData(x, y, w, h);
   const result = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
   if (result) {
-    // Show raw decoded value in status bar so we can see what jsQR found
+    // Show raw decoded value in status bar + diagnostics so we can see what jsQR found
     console.log('jsQR decoded:', result.data);
     document.getElementById('scanAnimText').textContent = 'Found: ' + result.data.slice(0, 30);
+    dg.last.textContent = result.data.slice(0, 40);
+    dg.last.style.color = '#1D9E75';
   }
   return result;
 }
@@ -447,6 +533,174 @@ async function confirmAddDrinks() {
 function changeQty(delta) {
   const input = document.getElementById('qtyInput');
   input.value = Math.min(20, Math.max(1, parseInt(input.value) + delta));
+}
+
+// ── Confirm-Claim panel: scan the customer QR into the token field ─
+let confirmStream = null;
+let confirmScanning = false;
+const confirmVideo  = document.getElementById('confirmVideo');
+const confirmWrap   = document.getElementById('confirmCamWrap');
+const confirmBtn    = document.getElementById('confirmScanBtn');
+const confirmStatus = document.getElementById('confirmCamStatus');
+
+function toggleConfirmScan() {
+  if (confirmScanning) { stopConfirmScan(); } else { startConfirmScan(); }
+}
+
+async function startConfirmScan() {
+  if (!jsQRReady) { confirmStatus.textContent = 'QR library not loaded — type the token instead.'; confirmWrap.style.display = 'block'; return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    confirmWrap.style.display = 'block';
+    confirmStatus.textContent = 'Camera unavailable — type the token instead.';
+    return;
+  }
+  confirmWrap.style.display = 'block';
+  confirmStatus.textContent = 'Starting camera…';
+  try {
+    confirmStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    confirmVideo.srcObject = confirmStream;
+    await confirmVideo.play();
+    confirmScanning = true;
+    confirmBtn.textContent = '✕ Stop';
+    confirmStatus.textContent = 'Point at the customer QR…';
+    requestAnimationFrame(confirmTick);
+  } catch (e) {
+    confirmStatus.textContent = 'Camera blocked — type the token instead.';
+  }
+}
+
+function stopConfirmScan() {
+  confirmScanning = false;
+  if (confirmStream) { confirmStream.getTracks().forEach(t => t.stop()); confirmStream = null; }
+  confirmVideo.srcObject = null;
+  confirmWrap.style.display = 'none';
+  confirmBtn.textContent = '📷 Scan';
+}
+
+function confirmTick() {
+  if (!confirmScanning) return;
+  if (confirmVideo.readyState === confirmVideo.HAVE_ENOUGH_DATA && confirmVideo.videoWidth > 0) {
+    const w = confirmVideo.videoWidth, h = confirmVideo.videoHeight;
+    offscreen.width = w; offscreen.height = h;
+    offCtx.drawImage(confirmVideo, 0, 0, w, h);
+    let code = null;
+    try {
+      code = tryDecode(offCtx, 0, 0, w, h);
+      if (!code) {
+        const c = Math.min(w, h) * 0.7;
+        code = tryDecode(offCtx, (w - c) / 2, (h - c) / 2, c, c);
+      }
+    } catch (err) {
+      confirmStatus.textContent = 'Decode error: ' + err.message;
+      return;
+    }
+    if (code) {
+      stopConfirmScan();
+      onConfirmScanned(code.data);
+      return;
+    }
+  }
+  requestAnimationFrame(confirmTick);
+}
+
+// Parse the scanned reward QR and look it up. Expected payload:
+//   conleche-claim:<token>:<rewardId>
+let confirmToken = null, confirmRewardId = null;
+async function onConfirmScanned(raw) {
+  const reward = document.getElementById('confirmReward');
+  const btn    = document.getElementById('confirmClaimBtn');
+  confirmToken = null; confirmRewardId = null;
+  btn.disabled = true;
+
+  let token = '', rewardId = '';
+  if (raw.startsWith('conleche-claim:')) {
+    const parts = raw.slice('conleche-claim:'.length).split(':');
+    token = (parts[0] || '').trim();
+    rewardId = (parts[1] || '').trim();
+  } else {
+    // Not a reward QR — most likely the plain battlepass QR
+    reward.style.display = 'block';
+    reward.className = 'confirm-reward confirm-reward-bad';
+    reward.innerHTML = '✗ That\'s not a reward QR. Ask the customer to tap <strong>Claim</strong> first, then scan the QR it shows.';
+    return;
+  }
+
+  document.getElementById('confirmQr').value = token;
+  document.getElementById('confirmRewardId').value = rewardId;
+  confirmStatus.textContent = 'Verifying reward…';
+  reward.style.display = 'block';
+  reward.className = 'confirm-reward';
+  reward.innerHTML = 'Checking reward on our system…';
+
+  try {
+    const res = await fetch('/battlepass/claim-info', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qrCode: token, rewardId }),
+    });
+    const d = await res.json();
+    if (!d.success) {
+      reward.className = 'confirm-reward confirm-reward-bad';
+      reward.innerHTML = '✗ ' + (d.message || 'Reward not valid');
+      return;
+    }
+    const icon = d.reward.type === 'free_drink' ? '☕' : d.reward.type === 'voucher' ? '🎫' : d.reward.type === 'special' ? '✨' : '🎁';
+    if (d.valid) {
+      confirmToken = token; confirmRewardId = rewardId;
+      reward.className = 'confirm-reward confirm-reward-ok';
+      reward.innerHTML = `<div class="confirm-reward-head">${icon} <strong>${d.reward.description}</strong></div>
+        <div class="confirm-reward-meta">${d.customerName} · <span class="confirm-valid">Valid on our system ✓</span></div>
+        <div class="confirm-reward-hint">${d.reason}</div>`;
+      btn.disabled = false;
+      document.getElementById('confirmCode').focus();
+    } else {
+      reward.className = 'confirm-reward confirm-reward-bad';
+      reward.innerHTML = `<div class="confirm-reward-head">${icon} ${d.reward.description}</div>
+        <div class="confirm-reward-meta">${d.customerName}</div>
+        <div class="confirm-reward-hint">✗ ${d.reason}</div>`;
+    }
+  } catch (e) {
+    reward.className = 'confirm-reward confirm-reward-bad';
+    reward.innerHTML = '✗ Connection error — try again.';
+  }
+}
+
+async function submitConfirmClaim() {
+  const code = (document.getElementById('confirmCode').value || '').trim();
+  const result = document.getElementById('confirmResult');
+  const btn = document.getElementById('confirmClaimBtn');
+  if (!confirmToken || !confirmRewardId) { alert('Scan the reward QR first.'); return; }
+  if (code.length !== 4) { alert('Enter the 4-digit code the customer is showing.'); return; }
+  btn.disabled = true; btn.textContent = 'Confirming…';
+  try {
+    const res = await fetch('/battlepass/confirm-claim', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qrCode: confirmToken, rewardId: confirmRewardId, code }),
+    });
+    const d = await res.json();
+    result.style.display = 'block';
+    if (d.success) {
+      result.className = 'admin-card scan-result-card scan-success-card';
+      result.innerHTML = `<div class="scan-result-icon">✓</div><h3>Redeemed!</h3><p>${d.reward ? d.reward.description : ''}</p>`;
+      // Reset for the next customer
+      confirmToken = null; confirmRewardId = null;
+      document.getElementById('confirmQr').value = '';
+      document.getElementById('confirmRewardId').value = '';
+      document.getElementById('confirmCode').value = '';
+      document.getElementById('confirmReward').style.display = 'none';
+      btn.textContent = '✓ Confirm Claim';
+    } else {
+      result.className = 'admin-card scan-result-card scan-error-card';
+      result.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div><h3>Failed</h3><p>${d.message || 'Could not confirm'}</p>`;
+      btn.disabled = false; btn.textContent = '✓ Confirm Claim';
+    }
+  } catch (e) {
+    result.style.display = 'block';
+    result.className = 'admin-card scan-result-card scan-error-card';
+    result.innerHTML = `<div class="scan-result-icon scan-result-icon-err">✗</div><h3>Error</h3><p>Connection error</p>`;
+    btn.disabled = false; btn.textContent = '✓ Confirm Claim';
+  }
 }
 
 // Auto-start
@@ -586,6 +840,54 @@ startCamera();
   transition: all 0.12s ease;
 }
 .qty-quick:hover { background: var(--maroon); color: var(--cream); }
+
+/* ── Live diagnostics ── */
+.scan-diag { border-top: 1px solid rgba(44,44,44,0.06); }
+.scan-diag-head {
+  width: 100%; background: none; border: none; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 1rem; font-size: 0.78rem; font-weight: 600;
+  color: rgba(44,44,44,0.6);
+}
+.scan-diag-toggle { font-size: 0.7rem; opacity: 0.5; }
+.scan-diag-body {
+  display: none; padding: 0 1rem 0.75rem;
+  font-size: 0.78rem; color: rgba(44,44,44,0.7);
+}
+.scan-diag.open .scan-diag-body { display: block; }
+.scan-diag-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.3rem 0; border-bottom: 1px solid rgba(44,44,44,0.04);
+}
+.scan-diag-row b { font-family: ui-monospace, monospace; font-weight: 600; }
+.scan-diag-err b { color: #c83232; word-break: break-word; text-align: right; max-width: 60%; }
+
+/* ── Confirm-panel inline scanner ── */
+.confirm-scan-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.confirm-scan-row .scan-input { flex: 1; }
+.confirm-scan-btn { white-space: nowrap; padding: 0.5rem 0.85rem; flex-shrink: 0; }
+.confirm-cam-wrap {
+  position: relative; margin-top: 0.65rem;
+  background: #000; border-radius: var(--radius);
+  overflow: hidden; aspect-ratio: 4/3;
+}
+.confirm-cam-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.confirm-cam-status {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); color: #fff;
+  font-size: 0.78rem; text-align: center; padding: 0.4rem 0.6rem;
+}
+.confirm-reward {
+  margin: 0 0 1rem; padding: 0.85rem 1rem; border-radius: var(--radius);
+  font-size: 0.9rem; line-height: 1.4;
+  background: rgba(44,44,44,0.04); border: 1px solid rgba(44,44,44,0.08);
+}
+.confirm-reward-ok  { background: rgba(29,158,117,0.08); border-color: rgba(29,158,117,0.35); }
+.confirm-reward-bad { background: rgba(200,50,50,0.07);  border-color: rgba(200,50,50,0.3); color: #a02828; }
+.confirm-reward-head { font-size: 1rem; margin-bottom: 0.2rem; }
+.confirm-reward-meta { font-size: 0.82rem; color: rgba(44,44,44,0.6); }
+.confirm-valid { color: #1D9E75; font-weight: 700; }
+.confirm-reward-hint { font-size: 0.78rem; margin-top: 0.35rem; opacity: 0.8; }
 </style>
 
 <%- include('./layout-bottom') %>

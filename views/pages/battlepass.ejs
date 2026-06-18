@@ -177,9 +177,17 @@
             <div class="bp-claim-action">
               <% const codeAge = reward.claimCodeGeneratedAt ? (new Date() - new Date(reward.claimCodeGeneratedAt)) / 1000 / 60 : 99; %>
               <% if (reward.claimCode && codeAge < 10) { %>
-                <div class="bp-code-display">
-                  <span class="bp-code"><%= reward.claimCode %></span>
-                  <span class="bp-code-hint">Show barista</span>
+                <div class="bp-claim-show">
+                  <% if (claimQrs && claimQrs[reward._id]) { %>
+                  <div class="bp-claim-qr">
+                    <img src="<%= claimQrs[reward._id] %>" alt="Reward QR" />
+                    <span class="bp-claim-qr-hint">Barista scans this</span>
+                  </div>
+                  <% } %>
+                  <div class="bp-code-display">
+                    <span class="bp-code"><%= reward.claimCode %></span>
+                    <span class="bp-code-hint">Read this to your barista</span>
+                  </div>
                 </div>
               <% } else { %>
                 <button class="btn btn-primary claim-btn" data-id="<%= reward._id %>">Claim</button>
@@ -313,6 +321,16 @@
 </section>
 </main>
 
+<!-- ── Live "barista is serving you" overlay ── -->
+<div class="bp-live-overlay" id="bpLiveOverlay">
+  <div class="bp-live-card">
+    <div class="bp-live-spinner" id="bpLiveSpinner"></div>
+    <div class="bp-live-check" id="bpLiveCheck">✓</div>
+    <h2 class="bp-live-title" id="bpLiveTitle">Barista is loading your drinks…</h2>
+    <p class="bp-live-sub" id="bpLiveSub">Hang tight, this only takes a moment.</p>
+  </div>
+</div>
+
 <!-- Voucher redeem confirmation overlay -->
 <div class="modal-overlay" id="redeemOverlay">
   <div class="modal-sheet" style="max-width:400px;border-radius:var(--radius-lg);">
@@ -391,9 +409,12 @@ document.querySelectorAll('.claim-btn').forEach(btn => {
       if (data.success) {
         const action = btn.closest('.bp-claim-action');
         action.innerHTML = `
-          <div class="bp-code-display">
-            <span class="bp-code">${data.code}</span>
-            <span class="bp-code-hint">Show barista</span>
+          <div class="bp-claim-show">
+            ${data.qrDataUrl ? `<div class="bp-claim-qr"><img src="${data.qrDataUrl}" alt="Reward QR" /><span class="bp-claim-qr-hint">Barista scans this</span></div>` : ''}
+            <div class="bp-code-display">
+              <span class="bp-code">${data.code}</span>
+              <span class="bp-code-hint">Read this to your barista</span>
+            </div>
           </div>`;
       } else {
         btn.textContent = 'Claim';
@@ -501,6 +522,59 @@ function submitDelete() {
 document.getElementById('deleteAccountOverlay').addEventListener('click', function(e) {
   if (e.target === this) this.classList.remove('open');
 });
+
+// ── Live stamp updates ────────────────────────────────────────────
+// Poll the server. While a barista is mid-scan, show "Barista is loading
+// your drinks…" with a spinner; when the drink count goes up, swap to a
+// check mark, then refresh the page so stamps/rewards/history are current.
+(function () {
+  const overlay = document.getElementById('bpLiveOverlay');
+  const spinner = document.getElementById('bpLiveSpinner');
+  const check   = document.getElementById('bpLiveCheck');
+  const title   = document.getElementById('bpLiveTitle');
+  const sub     = document.getElementById('bpLiveSub');
+  let knownTotal = <%= Number(user.totalDrinks) || 0 %>;
+  let celebrating = false;
+
+  function showLoading() {
+    spinner.style.display = 'block';
+    check.style.display   = 'none';
+    title.textContent = 'Barista is loading your drinks…';
+    sub.textContent   = 'Hang tight, this only takes a moment.';
+    overlay.classList.add('open');
+  }
+  function showAdded(added, newTotal) {
+    celebrating = true;
+    spinner.style.display = 'none';
+    check.style.display   = 'flex';
+    title.textContent = added + (added === 1 ? ' drink added!' : ' drinks added!');
+    sub.textContent   = 'You now have ' + newTotal + ' drinks. Refreshing…';
+    overlay.classList.add('open');
+    setTimeout(() => window.location.reload(), 2200);
+  }
+
+  async function poll() {
+    if (celebrating) return;
+    try {
+      const res = await fetch('/battlepass/status', { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) return;
+      const d = await res.json();
+      if (!d.ok) return;
+      if (d.totalDrinks > knownTotal) {
+        const added = d.totalDrinks - knownTotal;
+        knownTotal = d.totalDrinks;
+        showAdded(added, d.totalDrinks);
+      } else if (d.pending) {
+        showLoading();
+      } else {
+        overlay.classList.remove('open');
+      }
+    } catch (_) { /* offline / transient — try again next tick */ }
+  }
+
+  setInterval(poll, 2500);
+  poll();
+})();
 </script>
 
 <%- include('../partials/footer') %>
