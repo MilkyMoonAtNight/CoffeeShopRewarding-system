@@ -6,14 +6,18 @@
     <div class="container">
       <p class="section-eyebrow light">Where We'll Be</p>
       <h1 class="page-title light">Events & Calendar</h1>
-      <div class="events-legend">
-        <span class="legend-item"><span class="legend-dot event-truck_location"></span>Trailer Location</span>
-        <span class="legend-item"><span class="legend-dot event-run_club"></span>Run Club</span>
-        <span class="legend-item"><span class="legend-dot event-painting"></span>Fun Classes</span>
-        <span class="legend-item"><span class="legend-dot event-special"></span>Special Event</span>
-      </div>
     </div>
   </section>
+
+  <div class="events-tabs-wrap">
+    <div class="events-tabs">
+      <button class="events-tab active" data-filter="all">All</button>
+      <button class="events-tab" data-filter="truck_location"><span class="legend-dot event-truck_location"></span>Trailer Location</button>
+      <button class="events-tab" data-filter="run_club"><span class="legend-dot event-run_club"></span>Run Club</button>
+      <button class="events-tab" data-filter="painting"><span class="legend-dot event-painting"></span>Fun Classes</button>
+      <button class="events-tab" data-filter="special"><span class="legend-dot event-special"></span>Special Event</button>
+    </div>
+  </div>
 
   <section class="section events-section section-bloop">
     <div class="container">
@@ -94,4 +98,20 @@
 
 <script>
 <%- include('../partials/event-modal-js') %>
+
+(function () {
+  const tabs  = document.querySelectorAll('.events-tab');
+  const tiles = document.querySelectorAll('.event-tile');
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      const filter = tab.dataset.filter;
+      tiles.forEach(function (tile) {
+        tile.style.display = (filter === 'all' || tile.classList.contains('event-tile-' + filter)) ? '' : 'none';
+      });
+    });
+  });
+}());
 </script>
