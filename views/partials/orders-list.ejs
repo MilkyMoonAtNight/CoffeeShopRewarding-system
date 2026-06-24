@@ -6,7 +6,7 @@ const STATUS_STEP = { pending: 1, preparing: 2, ready: 3, done: 4 };
   <div style="font-size:3rem;margin-bottom:1rem;">🛒</div>
   <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;">No orders yet</h2>
   <p style="color:rgba(44,44,44,0.5);margin-bottom:1.5rem;">Place your first order and it will appear here.</p>
-  <a href="/order" class="btn btn-primary">Order Now →</a>
+  <a href="/drinks" class="btn btn-primary">Order Now →</a>
 </div>
 <% } else { %>
 <% orders.forEach(order => {
@@ -51,7 +51,7 @@ const STATUS_STEP = { pending: 1, preparing: 2, ready: 3, done: 4 };
     <summary class="slip-summary">Show order slip to barista</summary>
     <div class="virtual-slip">
       <div class="slip-header">
-        <img src="/images/logo.png" alt="Con Leche" class="slip-logo" />
+        <img src="/images/logo_nav.png" alt="Con Leche" class="slip-logo" />
         <div>
           <p class="slip-ref"><%= order.ref %></p>
           <p class="slip-date"><%= placedDate %></p>

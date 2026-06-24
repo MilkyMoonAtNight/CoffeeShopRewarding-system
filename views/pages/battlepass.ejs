@@ -7,9 +7,9 @@
 
     <!-- ── INTERNAL NAV ── -->
     <div class="bp-tabs">
-      <button class="bp-tab active" data-tab="profile">👤 Profile</button>
-      <button class="bp-tab" data-tab="rewards">🐾 Rewards</button>
-      <button class="bp-tab" data-tab="history">🕘 History</button>
+      <button class="bp-tab active" data-tab="profile">Profile</button>
+      <button class="bp-tab" data-tab="rewards">Rewards</button>
+      <button class="bp-tab" data-tab="history">History</button>
     </div>
 
     <!-- ════════════ TAB: PROFILE ════════════ -->
@@ -19,11 +19,22 @@
         <div class="bp-card-logo">
           <img src="/images/logo_nav.png" alt="Con Leche" />
         </div>
-        <h2 class="bp-name"><%= user.name %></h2>
+        <div class="bp-name-row">
+          <h2 class="bp-name" id="bpNameDisplay"><%= user.name %></h2>
+          <button class="bp-edit-name-btn" id="bpEditNameBtn" title="Edit name">&#9998;</button>
+        </div>
+        <form id="bpNameForm" class="bp-name-form hidden" autocomplete="off">
+          <input type="text" id="bpNameInput" class="bp-name-input" value="<%= user.name %>"
+                 pattern="[A-Za-z\s]+" maxlength="80" required />
+          <button type="submit" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.82rem;">Save</button>
+          <button type="button" id="bpNameCancel" style="background:none;border:none;cursor:pointer;font-size:0.82rem;color:rgba(253,246,237,0.4);">Cancel</button>
+        </form>
         <p class="bp-email"><%= user.email %></p>
         <div class="bp-qr-box">
           <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
         </div>
+
+        <span style="display:block;height:0.75rem;"></span>
 
         <div class="bp-tier-chip">
           <%= user.tier === 'Kitten' ? '🐱' : user.tier === 'Cat' ? '🐈' : user.tier === 'Tom Cat' ? '😸' : '🐆' %>
@@ -56,7 +67,7 @@
 
       <!-- ── Email preferences ── -->
       <div class="bp-section-card bp-prefs-card">
-        <p class="bp-section-label">📬 Email Notifications</p>
+        <p class="bp-section-label">Email Notifications</p>
         <p class="bp-section-hint">Choose what Con Leche can send you. Changes save instantly.</p>
         <form id="prefsForm" class="bp-prefs-form">
           <label class="bp-pref-toggle">
@@ -77,7 +88,7 @@
           </label>
           <label class="bp-pref-toggle">
             <div class="bp-pref-info">
-              <span class="bp-pref-name">Birthday treat 🎂</span>
+              <span class="bp-pref-name">Birthday treat</span>
               <span class="bp-pref-desc">Free cookie + 10% off on your birthday</span>
             </div>
             <input type="checkbox" name="birthday" id="prefBirthday" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.birthday ? 'checked' : '' %> />
@@ -575,6 +586,50 @@ document.getElementById('deleteAccountOverlay').addEventListener('click', functi
   setInterval(poll, 2500);
   poll();
 })();
+</script>
+
+<script>
+// ── Edit name ────────────────────────────────────────────────────
+const bpNameDisplay = document.getElementById('bpNameDisplay');
+const bpEditBtn     = document.getElementById('bpEditNameBtn');
+const bpNameForm    = document.getElementById('bpNameForm');
+const bpNameInput   = document.getElementById('bpNameInput');
+const bpNameCancel  = document.getElementById('bpNameCancel');
+
+if (bpEditBtn) {
+  bpEditBtn.addEventListener('click', () => {
+    bpNameForm.classList.remove('hidden');
+    bpEditBtn.classList.add('hidden');
+    bpNameInput.focus();
+  });
+  bpNameCancel.addEventListener('click', () => {
+    bpNameForm.classList.add('hidden');
+    bpEditBtn.classList.remove('hidden');
+  });
+  bpNameInput.addEventListener('input', function () {
+    const pos = this.selectionStart;
+    this.value = this.value.replace(/[^A-Za-z\s]/g, '').replace(/\b\w/g, c => c.toUpperCase());
+    this.setSelectionRange(pos, pos);
+  });
+  bpNameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newName = bpNameInput.value.trim();
+    if (!newName) return;
+    try {
+      const r = await fetch('/battlepass/update-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        bpNameDisplay.textContent = d.name;
+        bpNameForm.classList.add('hidden');
+        bpEditBtn.classList.remove('hidden');
+      }
+    } catch(err) {}
+  });
+}
 </script>
 
 <%- include('../partials/footer') %>

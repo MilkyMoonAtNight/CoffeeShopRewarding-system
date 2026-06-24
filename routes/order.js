@@ -9,7 +9,7 @@ const { asString, cleanText } = require('../utils/security');
 
 // Statuses an admin is allowed to set — prevents arbitrary/script values being
 // stored on the order and later rendered in the dashboard / emailed out.
-const ALLOWED_STATUSES = ['pending', 'preparing', 'ready', 'done', 'paid', 'cancelled'];
+const ALLOWED_STATUSES = ['pending', 'preparing', 'ready', 'collecting', 'done', 'paid', 'cancelled'];
 
 // ── Auth guard ────────────────────────────────────────────────────
 function requireUser(req, res, next) {
@@ -50,6 +50,15 @@ router.get('/my-orders', requireUser, async (req, res) => {
     ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt))
     : [];
   res.render('pages/my-orders', { title: 'My Orders — Con Leche', orders });
+});
+
+// ── My orders — JSON feed for force-refresh ───────────────────────
+router.get('/my-orders/feed', requireUser, async (req, res) => {
+  const user = await User.findById(req.session.userId).select('pastOrders').lean();
+  const orders = (user && user.pastOrders)
+    ? user.pastOrders.sort((a,b) => new Date(b.placedAt)-new Date(a.placedAt))
+    : [];
+  res.json({ ok: true, orders });
 });
 
 // ── My orders — live status poll (SSE) ───────────────────────────
@@ -135,7 +144,6 @@ router.post('/place', requireUser, async (req, res) => {
 
     const collection = cleanText(body.collection, 40);
     const notes      = cleanText(body.notes, 500);
-    const name       = cleanText(body.name, 100);
     const phone      = asString(body.phone, 30).replace(/[^\d+()\s-]/g, '');
     const email      = asString(body.email, 200).toLowerCase();
     const paymentMethod = body.paymentMethod === 'cash' ? 'cash' : 'online';
@@ -159,7 +167,6 @@ router.post('/place', requireUser, async (req, res) => {
       paymentStatus: paymentMethod === 'cash' ? 'pending' : 'pending',
       status: 'pending', placedAt: new Date(),
     };
-    if (name)  order.name  = name;
     if (phone) order.phone = phone;
     if (email) order.email = email;
 
@@ -169,13 +176,16 @@ router.post('/place', requireUser, async (req, res) => {
     const user = await User.findByIdAndUpdate(req.session.userId, userUpdate,
       { new: false }).select('name email').lean();
 
+    // Use the account name — never trust client-supplied name
+    if (user && user.name) order.name = user.name;
+
     // Email all checked-in staff ─────────────────────────────────
     const checkedInStaff = await Admin.find({ checkedIn: true, active: true }).select('email').lean();
     const staffEmails    = checkedInStaff.map(s => s.email).filter(Boolean);
 
     const orderForEmail = {
       ...order,
-      userName:  user ? user.name  : name,
+      userName:  user ? user.name  : '',
       userEmail: user ? user.email : email,
     };
 
@@ -257,6 +267,20 @@ router.post('/settle/:userId/:ref', async (req, res) => {
 });
 
 // ── Admin feed ────────────────────────────────────────────────────
+// ── Customer "on my way" signal ───────────────────────────────────
+router.post('/collect-signal/:ref', requireUser, async (req, res) => {
+  try {
+    const ref = String(req.params.ref).slice(0, 32);
+    await User.updateOne(
+      { _id: req.session.userId, 'pastOrders.ref': ref },
+      { $set: { 'pastOrders.$.customerSignal': true, 'pastOrders.$.status': 'done' } }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false });
+  }
+});
+
 router.get('/admin-feed', async (req, res) => {
   if (!req.session.adminId) return res.json({ ok: false });
   try {

@@ -27,6 +27,8 @@ router.post('/register', loginLimiter, async (req, res) => {
 
     if (!name || !email || !password)
       return res.render('pages/register', { title: 'Join the Pack', error: 'All fields are required' });
+    if (!/^[A-Za-z\s]+$/.test(name))
+      return res.render('pages/register', { title: 'Join the Pack', error: 'Name may only contain letters and spaces' });
     if (!EMAIL_RE.test(email))
       return res.render('pages/register', { title: 'Join the Pack', error: 'Please enter a valid email address' });
     if (password.length < 8)
@@ -36,6 +38,8 @@ router.post('/register', loginLimiter, async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists)
       return res.render('pages/register', { title: 'Join the Pack', error: 'Email already registered' });
+    // Title-case each word
+    const titledName = name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
     // Birthday: stored only when it's a valid past date
     let birthday = null;
     if (birthdayRaw) {
@@ -44,13 +48,13 @@ router.post('/register', loginLimiter, async (req, res) => {
     }
 
     const emailPreferences = {
-      specials: req.body.notifySpecials !== 'false',
-      events:   req.body.notifyEvents   !== 'false',
-      birthday: req.body.notifyBirthday !== 'false',
+      specials: req.body.notifySpecials === 'on',
+      events:   req.body.notifyEvents   === 'on',
+      birthday: req.body.notifyBirthday === 'on',
     };
 
     const qrToken = crypto.randomBytes(16).toString('hex');
-    const user = new User({ name, email, password, qrCode: qrToken, birthday, emailPreferences });
+    const user = new User({ name: titledName, email, password, qrCode: qrToken, birthday, emailPreferences });
     await user.save();
     req.session.userId   = user._id;
     req.session.userName = user.name;

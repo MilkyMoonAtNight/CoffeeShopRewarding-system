@@ -68,8 +68,9 @@ const userSchema = new mongoose.Schema({
     paymentMethod:{ type: String, default: 'online' },   // 'online' | 'cash'
     paymentStatus:{ type: String, default: 'pending' },  // pending | paid | no_show | refunded
     paymentId:    String,                                 // gateway transaction id (when paid online)
-    status:       { type: String, default: 'pending' },
-    placedAt:     { type: Date, default: Date.now }
+    status:         { type: String, default: 'pending' },
+    customerSignal: { type: Boolean, default: false },
+    placedAt:       { type: Date, default: Date.now }
   }]
 });
 

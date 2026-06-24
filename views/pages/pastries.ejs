@@ -9,15 +9,15 @@
       <h1 class="page-title light">Pastries</h1></div>
   </section>
 
-  <!-- Category tabs -->
-  <div class="drinks-tabs-wrap">
-    <div class="drinks-tabs" id="pastryTabs">
+  <!-- Category filter pills -->
+  <div class="pastry-filter-wrap">
+    <div class="pastry-filter-bar" id="pastryTabs">
       <%
         let firstTab = true;
         ORDER.forEach(function(cat) {
           if (grouped[cat] && grouped[cat].length > 0) {
       %>
-        <button class="drinks-tab <%= firstTab ? 'active' : '' %>"
+        <button class="events-filter-pill <%= firstTab ? 'active' : '' %>"
                 data-cat="<%= cat %>">
           <%= ICONS[cat] %> <%= LABELS[cat] %>
         </button>
@@ -100,13 +100,15 @@ window.CL_DATA = {
 <%- include('../partials/item-modal') %>
 
 <script>
-// Tab switching
-document.querySelectorAll('#pastryTabs .drinks-tab').forEach(tab => {
+// Category pill switching
+document.querySelectorAll('#pastryTabs .events-filter-pill').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('#pastryTabs .drinks-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#pastryTabs .events-filter-pill').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.pastry-panel').forEach(p => p.classList.add('hidden'));
     tab.classList.add('active');
     document.getElementById('pcat-' + tab.dataset.cat).classList.remove('hidden');
+    // Scroll selected pill into view
+    tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   });
 });
 </script>

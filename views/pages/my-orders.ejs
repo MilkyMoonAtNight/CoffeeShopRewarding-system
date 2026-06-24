@@ -1,7 +1,7 @@
 <%- include('../partials/head') %>
 <%- include('../partials/navbar') %>
 
-<main>
+<main class="my-orders-main">
   <section class="page-hero page-hero-short section-dark">
     <div class="container">
       <p class="section-eyebrow light">Your account</p>
@@ -12,6 +12,9 @@
   <section class="section">
     <div class="container" style="max-width:720px;">
 
+      <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
+        <button id="forceRefreshBtn" title="Refresh orders" style="background:none;border:1px solid rgba(44,44,44,0.15);border-radius:var(--radius);padding:0.4rem 0.9rem;cursor:pointer;font-size:1rem;color:var(--maroon);transition:transform 0.4s ease;">↻</button>
+      </div>
       <div id="ordersWrap">
         <%- include('../partials/orders-list', { orders }) %>
       </div>
@@ -23,11 +26,13 @@
 <%- include('../partials/footer') %>
 
 <script>
-// ── SSE live updates ──────────────────────────────────────────────
-// Renders the same status tracker live when admin changes an order
+// ── State ─────────────────────────────────────────────────────────
+// Track which order slips the user has opened so re-renders keep them open
+const openSlips = new Set();
+
+// ── Render ────────────────────────────────────────────────────────
 function renderOrders(orders) {
-  const STATUS_LABEL = { pending:'Order received', preparing:'Being prepared', ready:'Ready for pickup', done:'Collected' };
-  const STATUS_STEP  = { pending:1, preparing:2, ready:3, done:4 };
+  const STATUS_STEP = { pending:1, preparing:2, ready:3, done:4 };
 
   if (!orders || !orders.length) {
     document.getElementById('ordersWrap').innerHTML = `
@@ -35,36 +40,39 @@ function renderOrders(orders) {
         <div style="font-size:3rem;margin-bottom:1rem;">🛒</div>
         <h2 style="font-family:var(--font-nimbus);font-size:1.4rem;margin-bottom:0.5rem;">No orders yet</h2>
         <p style="color:rgba(44,44,44,0.5);margin-bottom:1.5rem;">Place your first order and it will appear here.</p>
-        <a href="/order" class="btn btn-primary">Order Now →</a>
+        <a href="/drinks" class="btn btn-primary">Order Now →</a>
       </div>`;
     return;
   }
 
   document.getElementById('ordersWrap').innerHTML = orders.map(order => {
-    const step   = STATUS_STEP[order.status]  || 1;
-    const isDone = order.status === 'done';
-    const placedDate = new Date(order.placedAt).toLocaleString('en-ZA', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const step        = STATUS_STEP[order.status] || 1;
+    const isDone  = order.status === 'done';
+    const isReady = order.status === 'ready';
+    const safeRef = order.ref.replace(/[^A-Za-z0-9-]/g, '');
+    const isOpen      = openSlips.has(safeRef);
+    const placedDate  = new Date(order.placedAt).toLocaleString('en-ZA', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
     const stepDot = (n, label) => `
       <div class="tracker-step ${step >= n ? 'done' : ''} ${step === n ? 'active' : ''}">
         <div class="tracker-dot"><span>${step >= n ? '✓' : n}</span></div>
         <span class="tracker-label">${label}</span>
       </div>`;
 
-    const statusText = order.status === 'ready'    ? '🐾 <strong>Your order is ready!</strong> Come grab it.'
-                     : order.status === 'preparing' ? '☕ We\'re making your order now…'
-                     : order.status === 'done'      ? '✓ Collected — enjoy!'
-                     : '📋 Order received — we\'ll start soon.';
+    const statusText =
+        order.status === 'preparing' ? '☕ We\'re making your order now…'
+      : isDone                       ? '✓ Collected — enjoy! 🐾'
+      : order.status === 'pending'   ? '📋 Order received — we\'ll start soon.'
+      : '';  // ready handled by its own UI
 
-    const statusColor = order.status === 'ready' ? 'var(--maroon)'
-                       : order.status === 'done'  ? 'rgba(44,44,44,0.4)'
-                       : 'rgba(44,44,44,0.7)';
+    const statusColor = isDone ? 'rgba(44,44,44,0.4)' : 'rgba(44,44,44,0.7)';
 
     const slipItems = (order.items || []).map(item => {
       const tags = [
-        item.size  ? `<span class="slip-tag">${item.size} · ${item.ml}</span>` : '',
+        item.size    ? `<span class="slip-tag">${item.size} · ${item.ml}</span>` : '',
         item.flavour ? `<span class="slip-tag">${item.flavour}</span>` : '',
-        item.milk && item.milk !== 'Full cream' ? `<span class="slip-tag">${item.milk}</span>` : '',
-        item.sugar && item.sugar !== 'Regular'  ? `<span class="slip-tag">${item.sugar}</span>`  : '',
+        item.milk  && item.milk  !== 'Full cream' ? `<span class="slip-tag">${item.milk}</span>`  : '',
+        item.sugar && item.sugar !== 'Regular'    ? `<span class="slip-tag">${item.sugar}</span>` : '',
       ].join('');
       return `<div class="slip-item">
         <div class="slip-item-main"><strong>${item.name}</strong>${tags ? '<br/>'+tags : ''}</div>
@@ -73,11 +81,58 @@ function renderOrders(orders) {
       </div>`;
     }).join('');
 
-    // Pulse animation if status is ready
-    const readyPulse = order.status === 'ready' ? 'myorder-ready-pulse' : '';
+    const virtualSlip = `
+      <div class="virtual-slip">
+        <div class="slip-header">
+          <div class="vs-brand">CON LECHE</div>
+          <div>
+            <p class="slip-ref">${order.ref}</p>
+            <p class="slip-date">${placedDate}</p>
+          </div>
+        </div>
+        <div class="slip-items">${slipItems}</div>
+        <div class="slip-footer"><span>Total</span><strong>R${order.total}</strong></div>
+        <div class="slip-collection">📍 ${order.pickupMethod || order.collection || ''}</div>
+      </div>`;
+
+    // Slider — only shown when status is 'ready'
+    const sliderBlock = isReady ? `
+      <div class="collect-slider-wrap" id="csw-${safeRef}">
+        <div class="csw-logo">CON LECHE</div>
+        <p class="csw-label">Slide to confirm collection</p>
+        <div class="csw-track" id="cst-${safeRef}">
+          <div class="csw-fill" id="csf-${safeRef}"></div>
+          <div class="csw-thumb" id="cstb-${safeRef}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <span class="csw-text" id="cswtxt-${safeRef}">Slide to collect →</span>
+        </div>
+        <p class="csw-sub" id="cswsub-${safeRef}">Show this slip to the barista</p>
+      </div>` : '';
+
+    // Tap-to-open prompt — shown only when 'ready'
+    const revealSection = isReady ? `
+      <div class="ready-reveal-prompt" id="rrp-${safeRef}" onclick="toggleSlip('${safeRef}')">
+        <span class="rrp-pulse-dot"></span>
+        <span class="rrp-text">Tap to show your slip &amp; collect</span>
+        <span class="rrp-arrow" id="rra-${safeRef}">${isOpen ? '‹' : '›'}</span>
+      </div>
+      <div class="ready-reveal-body" id="rrb-${safeRef}" style="display:${isOpen ? 'block' : 'none'};">
+        ${virtualSlip}
+        ${sliderBlock}
+      </div>` : '';
+
+    // Non-active slip toggle (pending / preparing)
+    const pendingSlip = (!isDone && !isReady) ? `
+      <details class="slip-details" ${isOpen ? 'open' : ''}>
+        <summary class="slip-summary" onclick="togglePendingSlip('${safeRef}', this.parentElement)">Show order slip to barista</summary>
+        ${virtualSlip}
+      </details>` : '';
+
+    const pulseClass = isReady ? 'myorder-ready-pulse' : '';
 
     return `
-    <div class="myorder-card ${isDone ? 'myorder-done' : ''} ${readyPulse}">
+    <div class="myorder-card ${isDone ? 'myorder-done' : ''} ${pulseClass}">
       <div class="myorder-header">
         <div>
           <p class="myorder-ref">${order.ref}</p>
@@ -99,30 +154,117 @@ function renderOrders(orders) {
           <div class="tracker-line ${step >= 4 ? 'done' : ''}"></div>
           ${stepDot(4,'Collected')}
         </div>
-        <div class="tracker-status-text" style="color:${statusColor};">${statusText}</div>
+        ${statusText ? `<div class="tracker-status-text" style="color:${statusColor};">${statusText}</div>` : ''}
       </div>
 
-      ${!isDone ? `
-      <details class="slip-details">
-        <summary class="slip-summary">Show order slip to barista</summary>
-        <div class="virtual-slip">
-          <div class="slip-header">
-            <img src="/images/logo.png" alt="Con Leche" class="slip-logo" />
-            <div>
-              <p class="slip-ref">${order.ref}</p>
-              <p class="slip-date">${placedDate}</p>
-            </div>
-          </div>
-          <div class="slip-items">${slipItems}</div>
-          <div class="slip-footer"><span>Total</span><strong>R${order.total}</strong></div>
-          <div class="slip-collection">📍 ${order.pickupMethod || order.collection || ''}</div>
-        </div>
-      </details>` : ''}
+      ${revealSection}
+      ${pendingSlip}
     </div>`;
   }).join('');
+
+  orders.filter(o => o.status === 'ready').forEach(o => {
+    initCollectSlider(o.ref.replace(/[^A-Za-z0-9-]/g, ''), o.ref);
+  });
 }
 
-// Connect to SSE stream
+// ── Toggle helpers ────────────────────────────────────────────────
+function toggleSlip(safeRef) {
+  const body  = document.getElementById('rrb-' + safeRef);
+  const arrow = document.getElementById('rra-' + safeRef);
+  if (!body) return;
+  const nowOpen = body.style.display === 'none';
+  body.style.display = nowOpen ? 'block' : 'none';
+  if (arrow) arrow.textContent = nowOpen ? '‹' : '›';
+  if (nowOpen) openSlips.add(safeRef); else openSlips.delete(safeRef);
+}
+
+function togglePendingSlip(safeRef, detailsEl) {
+  // details toggles itself — just keep openSlips in sync
+  // Called on summary click before the browser toggles the element
+  setTimeout(() => {
+    if (detailsEl.open) openSlips.add(safeRef); else openSlips.delete(safeRef);
+  }, 0);
+}
+
+// ── Collect slider ────────────────────────────────────────────────
+function initCollectSlider(safeRef, orderRef) {
+  const wrap  = document.getElementById('csw-'    + safeRef);
+  const track = document.getElementById('cst-'    + safeRef);
+  const thumb = document.getElementById('cstb-'   + safeRef);
+  const fill  = document.getElementById('csf-'    + safeRef);
+  const text  = document.getElementById('cswtxt-' + safeRef);
+  const sub   = document.getElementById('cswsub-' + safeRef);
+  if (!wrap || !track || !thumb) return;
+
+  let dragging = false, startX = 0, startLeft = 0, signalled = false;
+
+  function getLeft() { return parseFloat(thumb.style.left) || 4; }
+  function setPos(px) {
+    const max = track.offsetWidth - thumb.offsetWidth - 4;
+    px = Math.max(4, Math.min(px, max));
+    thumb.style.left = px + 'px';
+    fill.style.width = (px + thumb.offsetWidth / 2) + 'px';
+    text.style.opacity = Math.max(0, 1 - ((px - 4) / (max - 4)) * 2);
+  }
+
+  function onStart(clientX) {
+    if (signalled) return;
+    dragging = true; startX = clientX; startLeft = getLeft();
+    thumb.style.transition = 'none';
+    fill.style.transition = 'none';
+  }
+  function onMove(clientX) { if (dragging) setPos(startLeft + (clientX - startX)); }
+
+  async function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    thumb.style.transition = ''; fill.style.transition = '';
+    const max = track.offsetWidth - thumb.offsetWidth - 4;
+    const pct = (getLeft() - 4) / (max - 4);
+    if (pct > 0.85) {
+      signalled = true;
+      // Snap thumb to the very end and turn green
+      thumb.style.transition = 'left 0.2s ease, background 0.3s ease';
+      fill.style.transition  = 'width 0.2s ease, background 0.3s ease';
+      thumb.style.left = (max + 4) + 'px';
+      fill.style.width = '100%';
+      wrap.classList.add('csw-done');
+      text.textContent = '✓ Collected!';
+      if (sub) sub.textContent = 'See you next time! 🐾';
+
+      // Glow the virtual slip green
+      const slip = wrap.closest('.ready-reveal-body') &&
+                   wrap.closest('.ready-reveal-body').querySelector('.virtual-slip');
+      if (slip) slip.classList.add('virtual-slip-collected');
+
+      try { await fetch('/order/collect-signal/' + encodeURIComponent(orderRef), { method: 'POST' }); } catch(e) {}
+      // SSE will push 'done' and re-render the card
+    } else {
+      thumb.style.left = '4px';
+      fill.style.width = '0';
+      text.style.opacity = 1;
+    }
+  }
+
+  thumb.addEventListener('mousedown', e => { onStart(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', e => onMove(e.clientX));
+  window.addEventListener('mouseup', () => onEnd());
+  thumb.addEventListener('touchstart', e => { onStart(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (dragging) { onMove(e.touches[0].clientX); e.preventDefault(); } }, { passive: false });
+  window.addEventListener('touchend', () => onEnd());
+}
+
+// ── Force-refresh button ──────────────────────────────────────────
+const refreshBtn = document.getElementById('forceRefreshBtn');
+if (refreshBtn) {
+  refreshBtn.addEventListener('click', () => {
+    refreshBtn.style.transform = 'rotate(360deg)';
+    setTimeout(() => { refreshBtn.style.transform = ''; refreshBtn.style.transition = 'none'; setTimeout(() => { refreshBtn.style.transition = 'transform 0.4s ease'; }, 50); }, 420);
+    fetch('/order/my-orders/feed').then(r => r.json()).then(d => { if (d.orders) renderOrders(d.orders); }).catch(() => {});
+  });
+}
+
+// ── SSE live stream ───────────────────────────────────────────────
 if (!!window.EventSource) {
   const source = new EventSource('/order/my-orders/stream');
   source.onmessage = (e) => {
@@ -131,14 +273,11 @@ if (!!window.EventSource) {
       if (data.orders) renderOrders(data.orders);
     } catch(err) {}
   };
-  source.onerror = () => {
-    // Reconnects automatically — no action needed
-  };
+  source.onerror = () => {};
 }
 </script>
 
 <style>
-/* Ready pulse animation */
 @keyframes readyPulse {
   0%   { box-shadow: 0 0 0 0 rgba(88,18,23,0.25); }
   70%  { box-shadow: 0 0 0 12px rgba(88,18,23,0); }
@@ -147,5 +286,84 @@ if (!!window.EventSource) {
 .myorder-ready-pulse {
   animation: readyPulse 2s ease infinite;
   border-color: rgba(88,18,23,0.3) !important;
+}
+
+/* "Tap to show slip" prompt on ready orders */
+.ready-reveal-prompt {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--maroon); color: var(--cream);
+  border-radius: var(--radius); padding: 0.75rem 1rem;
+  margin-top: 0.75rem; cursor: pointer;
+  font-weight: 600; font-size: 0.9rem;
+  transition: opacity 0.15s;
+}
+.ready-reveal-prompt:hover { opacity: 0.9; }
+.rrp-pulse-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--cream); flex-shrink: 0;
+  animation: readyPulse 1.6s ease infinite;
+}
+.rrp-text { flex: 1; }
+.rrp-arrow { font-size: 1.4rem; line-height: 1; }
+.ready-reveal-body { margin-top: 0.75rem; }
+
+/* Virtual slip (shared) */
+.vs-brand {
+  font-family: var(--font-nimbus, serif);
+  font-size: 1.1rem; letter-spacing: 0.12em; color: var(--maroon);
+}
+
+/* Collect slider */
+.collect-slider-wrap {
+  background: var(--maroon); border-radius: 14px;
+  padding: 1.4rem 1.2rem 1.2rem;
+  text-align: center; margin-top: 1rem;
+  user-select: none;
+}
+.csw-logo {
+  font-family: var(--font-nimbus, serif);
+  font-size: 1.35rem; letter-spacing: 0.13em;
+  color: var(--cream); margin-bottom: 0.2rem;
+}
+.csw-label {
+  font-size: 0.78rem; color: rgba(253,246,237,0.6);
+  margin-bottom: 1rem; letter-spacing: 0.03em;
+}
+.csw-track {
+  position: relative; background: rgba(253,246,237,0.12);
+  border-radius: 50px; height: 52px;
+  display: flex; align-items: center;
+  overflow: hidden; cursor: ew-resize;
+}
+.csw-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: rgba(253,246,237,0.15); border-radius: 50px;
+  pointer-events: none; transition: background 0.2s;
+}
+.csw-thumb {
+  position: absolute; left: 4px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--cream); color: var(--maroon);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  z-index: 2; cursor: grab; touch-action: none;
+}
+.csw-thumb:active { cursor: grabbing; }
+.csw-text {
+  position: absolute; left: 0; right: 0; text-align: center;
+  font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em;
+  color: rgba(253,246,237,0.5); pointer-events: none; transition: opacity 0.2s;
+}
+.csw-sub { font-size: 0.72rem; color: rgba(253,246,237,0.38); margin-top: 0.75rem; margin-bottom: 0; }
+/* Virtual slip green glow on collection */
+@keyframes slipCollectedGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(29,158,117,0.6); border-color: rgba(29,158,117,0.6); }
+  50%  { box-shadow: 0 0 0 10px rgba(29,158,117,0.15); border-color: #1D9E75; }
+  100% { box-shadow: 0 0 0 18px rgba(29,158,117,0); border-color: #1D9E75; }
+}
+.virtual-slip-collected {
+  border: 2px solid #1D9E75 !important;
+  animation: slipCollectedGlow 0.7s ease forwards;
+  border-radius: var(--radius);
 }
 </style>

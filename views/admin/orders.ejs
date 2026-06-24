@@ -10,8 +10,8 @@
   <button class="order-filter-btn" data-filter="progress">⏳ In Progress <span class="ofb-count" id="cntProg">0</span></button>
   <button class="order-filter-btn" data-filter="finished">✓ Finished</button>
   <button class="order-filter-btn" data-filter="all">All</button>
-  <label class="orders-auto"><input type="checkbox" id="autoRefresh" checked /> Auto-refresh</label>
-  <button class="order-filter-btn" id="refreshBtn">↻</button>
+  <button class="order-filter-btn" data-filter="past">Past Orders</button>
+  <button class="order-filter-btn" id="refreshBtn" title="Force refresh">↻</button>
 </div>
 
 <div id="ordersWrap"><div class="admin-empty" style="padding:2rem 0;">Loading orders…</div></div>
@@ -42,10 +42,13 @@
 
 <%- include('./layout-bottom') %>
 
+<div class="orders-daily-bar" id="ordersDailyBar">
+  <span class="odb-label">Today's revenue</span>
+  <span class="odb-total" id="odb-total">R0</span>
+  <span class="odb-count" id="odb-count">0 orders</span>
+</div>
+
 <script>
-// Escape any value before inserting it into innerHTML — order fields
-// (customer name, item names, notes, …) are user-supplied and would otherwise
-// allow stored XSS in the staff dashboard.
 function esc(v) {
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -53,32 +56,36 @@ function esc(v) {
 }
 const STATUS_LABELS = { pending:'Pending', preparing:'Preparing', ready:'Ready for pickup', done:'Done' };
 const STATUS_NEXT   = { pending:['preparing','done'], preparing:['ready','done'], ready:['done'], done:[] };
-const STATUS_COLORS = { pending:'#c99fa6', preparing:'#1D9E75', ready:'rgb(88,18,23)', done:'rgba(44,44,44,0.3)' };
+const STATUS_COLORS = { pending:'#E2C9A0', preparing:'#1D9E75', ready:'rgb(88,18,23)', done:'rgba(44,44,44,0.3)' };
 
-let orders = [];
+let allOrders    = [];
+let orders       = [];
 let currentFilter = 'new';
 let currentOrder  = null;
 
-// Map the named tabs to underlying statuses
+function todayStart() {
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+
 const FILTER_MAP = {
   new:      o => o.status === 'pending',
   progress: o => o.status === 'preparing' || o.status === 'ready',
   finished: o => o.status === 'done',
-  all:      () => true
+  all:      () => true,
+  past:     () => true,   // uses allOrders array, not orders
 };
 
-// Filter buttons
 document.querySelectorAll('.order-filter-btn[data-filter]').forEach(btn => {
   btn.addEventListener('click', () => {
     currentFilter = btn.dataset.filter;
     document.querySelectorAll('.order-filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    renderOrders();
+    if (currentFilter === 'past') loadPastOrders();
+    else renderOrders();
   });
 });
 document.getElementById('refreshBtn').addEventListener('click', loadOrders);
 
-// Modal close
 document.getElementById('odClose').addEventListener('click', () => {
   document.getElementById('orderDetailOverlay').classList.remove('open');
 });
@@ -90,15 +97,53 @@ async function loadOrders() {
   try {
     const res = await fetch('/order/admin-feed');
     const data = await res.json();
-    if (data.ok) { orders = data.orders; renderOrders(); }
+    if (data.ok) {
+      const midnight = todayStart();
+      orders = data.orders.filter(o => new Date(o.placedAt) >= midnight);
+
+      updateDailyBar();
+      if (currentFilter !== 'past') renderOrders();
+    }
   } catch(e) {
     document.getElementById('ordersWrap').innerHTML = '<div class="admin-empty">Could not load orders.</div>';
   }
 }
 
+async function loadPastOrders() {
+  try {
+    const res = await fetch('/order/admin-feed');
+    const data = await res.json();
+    if (data.ok) {
+      allOrders = data.orders;
+      renderPastOrders();
+    }
+  } catch(e) {}
+}
+
+function updateDailyBar() {
+  const todayOrders = orders;
+  const total = todayOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  document.getElementById('odb-total').textContent = 'R' + total;
+  document.getElementById('odb-count').textContent = todayOrders.length + ' order' + (todayOrders.length !== 1 ? 's' : '');
+}
+
+function renderPastOrders() {
+  const wrap = document.getElementById('ordersWrap');
+  const sorted = [...allOrders].sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
+  const pastTotal = sorted.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  if (!sorted.length) {
+    wrap.innerHTML = '<div class="admin-empty" style="padding:2rem 0;">No past orders found.</div>';
+    return;
+  }
+  wrap.innerHTML = `<div class="orders-list">${sorted.map(o => orderRowHtml(o)).join('')}</div>
+    <div class="orders-past-total">All-time revenue: <strong>R${pastTotal}</strong> across ${sorted.length} orders</div>`;
+  document.querySelectorAll('.order-row').forEach(row => {
+    row.addEventListener('click', () => openOrderDetail(allOrders.indexOf(allOrders.find(o => o.ref === row.dataset.ref))));
+  });
+}
+
 function renderOrders() {
   const wrap = document.getElementById('ordersWrap');
-  // Update count badges
   document.getElementById('cntNew').textContent  = orders.filter(FILTER_MAP.new).length;
   document.getElementById('cntProg').textContent = orders.filter(FILTER_MAP.progress).length;
 
@@ -109,43 +154,72 @@ function renderOrders() {
     wrap.innerHTML = `<div class="admin-empty" style="padding:2rem 0;">No ${labels[currentFilter]||''}orders right now.</div>`;
     return;
   }
-  wrap.innerHTML = `<div class="orders-list">${visible.map((o,i) => {
-    const time = new Date(o.placedAt).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
-    const date = new Date(o.placedAt).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
-    return `<div class="order-row" data-idx="${orders.indexOf(o)}">
-      <div class="order-row-left">
-        <span class="order-ref">${esc(o.ref)}</span>
-        <span class="order-time">${date} · ${time}</span>
-      </div>
-      <div class="order-row-mid">
-        <p class="order-customer">${esc(o.userName)}</p>
-        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${esc(o.pickupMethod)}${o.paymentMethod==='cash'?' · <span class="order-cash-pill">🏪 CASH'+(o.paymentStatus==='no_show'?' · no-show':o.paymentStatus==='paid'?' · paid':'')+'</span>':''}</p>
-      </div>
-      <div class="order-row-right">
-        <span class="order-total-pill">R${esc(o.total)}</span>
-        <span class="order-status-dot" style="background:${STATUS_COLORS[o.status]||'#888'}"></span>
-        <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||esc(o.status)}</span>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-
+  const isProgress = currentFilter === 'progress';
+  wrap.innerHTML = `<div class="orders-list ${isProgress ? 'orders-progress-grid' : ''}">${visible.map(o => isProgress ? progressCardHtml(o) : orderRowHtml(o)).join('')}</div>`;
   document.querySelectorAll('.order-row').forEach(row => {
-    row.addEventListener('click', () => openOrderDetail(parseInt(row.dataset.idx)));
+    row.addEventListener('click', () => {
+      const idx = orders.findIndex(o => o.ref === row.dataset.ref);
+      openOrderDetail(idx);
+    });
   });
 }
 
+function orderRowHtml(o) {
+  const time = new Date(o.placedAt).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  const date = new Date(o.placedAt).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+  return `<div class="order-row" data-ref="${esc(o.ref)}">
+    <div class="order-row-left">
+      <span class="order-ref">${esc(o.ref)}</span>
+      <span class="order-time">${date} · ${time}</span>
+    </div>
+    <div class="order-row-mid">
+      <p class="order-customer">${esc(o.userName)}</p>
+      <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''} · ${esc(o.pickupMethod)}${o.paymentMethod==='cash'?' · <span class="order-cash-pill">CASH'+(o.paymentStatus==='no_show'?' · no-show':o.paymentStatus==='paid'?' · paid':'')+'</span>':''}</p>
+    </div>
+    <div class="order-row-right">
+      <span class="order-total-pill">R${esc(o.total)}</span>
+      <span class="order-status-dot" style="background:${STATUS_COLORS[o.status]||'#888'}"></span>
+      <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||esc(o.status)}</span>
+    </div>
+  </div>`;
+}
+
+function progressCardHtml(o) {
+  const time = new Date(o.placedAt).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  const date = new Date(o.placedAt).toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+  const arrivingBadge = o.customerSignal ? `<span class="opc-arriving-badge">🐾 Collected</span>` : '';
+  return `<div class="order-row order-progress-card" data-ref="${esc(o.ref)}">
+    <div class="opc-header">
+      <span class="order-ref">${esc(o.ref)}</span>
+      <span class="order-time">${date} · ${time}</span>
+      ${arrivingBadge}
+    </div>
+    <div class="opc-body">
+      <div class="opc-left">
+        <p class="order-customer">${esc(o.userName)}</p>
+        <p class="order-summary">${o.items.length} item${o.items.length!==1?'s':''}</p>
+        <p class="order-summary">${esc(o.pickupMethod)}${o.paymentMethod==='cash'?' · <span class="order-cash-pill">CASH</span>':''}</p>
+      </div>
+      <div class="opc-right">
+        <span class="order-total-pill">R${esc(o.total)}</span>
+        <span class="order-status-text" style="color:${STATUS_COLORS[o.status]||'#888'}">${STATUS_LABELS[o.status]||esc(o.status)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
 function openOrderDetail(idx) {
-  currentOrder = orders[idx];
+  currentOrder = (currentFilter === 'past' ? allOrders : orders)[idx];
+  if (!currentOrder) return;
   const o = currentOrder;
   document.getElementById('odTitle').textContent = o.userName;
-  document.getElementById('odMeta').textContent = `${o.ref} · ${new Date(o.placedAt).toLocaleString('en-ZA')}${o.userEmail?' · '+o.userEmail:''}`;
   const badge = document.getElementById('odStatusBadge');
   badge.textContent = STATUS_LABELS[o.status] || o.status;
   badge.style.background = STATUS_COLORS[o.status] || '#888';
 
   document.getElementById('odItems').innerHTML = o.items.map(item => `
     <div class="od-item">
-      <div class="od-item-img">${item.image?`<img src="${esc(item.image)}" alt="${esc(item.name)}"/>`:`<span>${item.type==='pastry'?'🥐':item.category==='cold'?'🧊':'☕'}</span>`}</div>
+      <div class="od-item-img">${item.image?`<img src="${esc(item.image)}" alt="${esc(item.name)}"/>`:`<span>${item.type==='pastry'?'(P)':item.category==='cold'?'(C)':'(H)'}</span>`}</div>
       <div class="od-item-body">
         <p class="od-item-name">${esc(item.name)}</p>
         <div class="cart-item-opts">
@@ -163,20 +237,25 @@ function openOrderDetail(idx) {
   document.getElementById('odCollection').textContent = o.pickupMethod || '—';
   document.getElementById('odNotes').textContent = o.notes ? `"${o.notes}"` : '';
 
+  // Phone visible only while the order is active — hide once done/collected
+  const odMeta = document.getElementById('odMeta');
+  const isActive = o.status !== 'done';
+  const phoneStr = (isActive && o.phone) ? ` · 📞 ${esc(o.phone)}` : '';
+  odMeta.textContent = `${o.ref} · ${new Date(o.placedAt).toLocaleString('en-ZA')}${o.userEmail?' · '+o.userEmail:''}${phoneStr}`;
+
   const nexts = STATUS_NEXT[o.status] || [];
-  // Cash orders get a payment line + settle controls
   let payHtml = '';
   if (o.paymentMethod === 'cash') {
     const ti = (typeof o.trustIndex === 'number') ? o.trustIndex : 100;
-    const tiColor = ti >= 70 ? '#1D9E75' : ti >= 40 ? '#c99fa6' : '#c83232';
+    const tiColor = ti >= 70 ? '#1D9E75' : ti >= 40 ? '#E2C9A0' : '#c83232';
     payHtml = `<div class="od-section-label">Payment</div>
       <div class="od-cash-box">
-        <p class="od-cash-line">🏪 <strong>Pay in store (cash/card)</strong> · status:
+        <p class="od-cash-line"><strong>Pay in store (cash/card)</strong> · status:
           <span class="od-pay-status od-pay-${esc(o.paymentStatus||'pending')}">${esc(o.paymentStatus||'pending')}</span></p>
         <p class="od-trust">Customer trust index: <strong style="color:${tiColor}">${ti}</strong>/100</p>
         ${(o.paymentStatus==='pending') ? `<div class="od-settle-btns">
-          <button class="od-settle-btn od-settle-paid" data-outcome="paid">✓ Collected & paid</button>
-          <button class="od-settle-btn od-settle-noshow" data-outcome="no_show">✕ No-show</button>
+          <button class="od-settle-btn od-settle-paid" data-outcome="paid">Collected &amp; paid</button>
+          <button class="od-settle-btn od-settle-noshow" data-outcome="no_show">No-show</button>
         </div>` : `<p class="od-settled">Settled — ${esc(o.paymentStatus)}</p>`}
       </div>`;
   }
@@ -190,7 +269,6 @@ function openOrderDetail(idx) {
   document.querySelectorAll('.od-settle-btn').forEach(btn => {
     btn.addEventListener('click', () => settleCash(btn.dataset.outcome));
   });
-
   document.getElementById('orderDetailOverlay').classList.add('open');
 }
 
@@ -209,7 +287,7 @@ async function updateStatus(newStatus) {
 
 async function settleCash(outcome) {
   const o = currentOrder;
-  if (outcome === 'no_show' && !confirm('Mark this as a no-show? This lowers the customer\'s trust index.')) return;
+  if (outcome === 'no_show' && !confirm('Mark this as a no-show?')) return;
   try {
     await fetch(`/order/settle/${o.userId}/${o.ref}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -221,5 +299,5 @@ async function settleCash(outcome) {
 }
 
 loadOrders();
-let autoTimer = setInterval(() => { if (document.getElementById('autoRefresh').checked) loadOrders(); }, 15000);
+setInterval(loadOrders, 15000);
 </script>

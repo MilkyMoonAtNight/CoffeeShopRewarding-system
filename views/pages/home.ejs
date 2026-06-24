@@ -87,7 +87,12 @@
       <% if (typeof specials !== 'undefined' && specials && specials.length > 0) { %>
       <div class="specials-grid">
         <% specials.forEach((special, i) => { %>
-        <div class="special-card">
+        <div class="special-card" style="cursor:pointer;"
+             onclick="openSpecialModal(this)"
+             data-title="<%= encodeURIComponent(special.title) %>"
+             data-desc="<%= encodeURIComponent(special.description || '') %>"
+             data-price="<%= special.price || '' %>"
+             data-img="<%= special.image || '' %>">
           <% if (special.image) { %>
           <div class="special-card-image" style="background-image:url('<%= special.image %>');"></div>
           <% } else { %>
@@ -104,21 +109,27 @@
       <% } else { %>
       <!-- Placeholder blocks — replaced automatically once specials are uploaded via the admin page -->
       <div class="specials-grid">
-        <div class="special-card special-card-placeholder">
+        <div class="special-card special-card-placeholder" style="cursor:pointer;"
+             onclick="openSpecialModal(this)"
+             data-title="Special%20Coming%20Soon" data-desc="Upload%20this%20one%20from%20the%20admin%20panel." data-price="" data-img="">
           <div class="special-card-image special-ph-img-1"><span class="special-ph-mark">✦</span></div>
           <div class="special-card-body">
             <h3 class="special-card-title">Special Coming Soon</h3>
             <p class="special-card-desc">Upload this one from the admin panel.</p>
           </div>
         </div>
-        <div class="special-card special-card-placeholder">
+        <div class="special-card special-card-placeholder" style="cursor:pointer;"
+             onclick="openSpecialModal(this)"
+             data-title="Special%20Coming%20Soon" data-desc="Upload%20this%20one%20from%20the%20admin%20panel." data-price="" data-img="">
           <div class="special-card-image special-ph-img-2"><span class="special-ph-mark">✦</span></div>
           <div class="special-card-body">
             <h3 class="special-card-title">Special Coming Soon</h3>
             <p class="special-card-desc">Upload this one from the admin panel.</p>
           </div>
         </div>
-        <div class="special-card special-card-placeholder">
+        <div class="special-card special-card-placeholder" style="cursor:pointer;"
+             onclick="openSpecialModal(this)"
+             data-title="Special%20Coming%20Soon" data-desc="Upload%20this%20one%20from%20the%20admin%20panel." data-price="" data-img="">
           <div class="special-card-image special-ph-img-3"><span class="special-ph-mark">✦</span></div>
           <div class="special-card-body">
             <h3 class="special-card-title">Special Coming Soon</h3>
@@ -430,6 +441,40 @@
   window.addEventListener('resize', revealCheck);
 })();
 
+// ── Specials modal ───────────────────────────────────────────────
+function openSpecialModal(card) {
+  const title = decodeURIComponent(card.dataset.title || '');
+  const desc  = decodeURIComponent(card.dataset.desc  || '');
+  const price = card.dataset.price;
+  const img   = card.dataset.img;
+  document.getElementById('specialModalTitle').textContent = title;
+  document.getElementById('specialModalDesc').textContent  = desc;
+  document.getElementById('specialModalPrice').textContent = price ? 'R' + price : '';
+  document.getElementById('specialModalImg').innerHTML = img
+    ? `<img src="${img}" alt="${title}" class="modal-img" />`
+    : `<div class="modal-img-placeholder"><span>✦</span></div>`;
+  const overlay = document.getElementById('specialModalOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+document.getElementById('specialModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) { this.classList.remove('open'); document.body.style.overflow = ''; }
+});
+
+// ── Strip reveal: hide until hero scrolls out of view (mobile) ───
+(function () {
+  const hero  = document.querySelector('.hero');
+  const strip = document.querySelector('.strip-section');
+  if (!hero || !strip) return;
+  strip.style.transition = 'opacity 0.4s ease';
+  function setStrip(heroVisible) { strip.style.opacity = heroVisible ? '0' : '1'; }
+  const obs = new IntersectionObserver(entries => setStrip(entries[0].isIntersecting), { threshold: 0.05 });
+  if (window.innerWidth < 900) { setStrip(true); obs.observe(hero); }
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 900) { strip.style.opacity = '1'; obs.disconnect(); }
+  });
+})();
+
 // ── Events category filter ────────────────────────────────────────
 document.querySelectorAll('.events-filter-pill').forEach(pill => {
   pill.addEventListener('click', () => {
@@ -537,6 +582,24 @@ document.querySelectorAll('.review-card').forEach(card => {
 </script>
 
 <%- include('../partials/event-modal') %>
+
+<!-- ===== SPECIAL MODAL ===== -->
+<div class="modal-overlay" id="specialModalOverlay">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="document.getElementById('specialModalOverlay').classList.remove('open');document.body.style.overflow='';">✕</button>
+    <div class="modal-img-wrap" id="specialModalImg"></div>
+    <div class="modal-body">
+      <div class="modal-header-row">
+        <div>
+          <h2 class="modal-title" id="specialModalTitle"></h2>
+          <p class="modal-subtitle" id="specialModalDesc"></p>
+        </div>
+        <span class="modal-price-badge" id="specialModalPrice"></span>
+      </div>
+      <p style="font-size:0.82rem;color:rgba(44,44,44,0.45);margin-top:1rem;">Available this week at Con Leche. Ask your barista for details.</p>
+    </div>
+  </div>
+</div>
 
 <%- include('../partials/footer') %>
 

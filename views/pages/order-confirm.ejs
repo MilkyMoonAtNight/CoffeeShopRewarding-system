@@ -24,16 +24,11 @@
           <h2 class="confirm-section-title">Order details</h2>
 
           <div class="form-group">
-            <label>Your name</label>
-            <input type="text" id="cfName" class="confirm-input" placeholder="e.g. Lerato" />
-          </div>
-          <div class="form-group">
-            <label>Phone number</label>
+            <label>Phone number <span style="opacity:0.4;font-weight:400;">(for collection notification)</span></label>
             <input type="tel" id="cfPhone" class="confirm-input" placeholder="e.g. 082 123 4567" />
           </div>
-          <div class="form-group">
-            <label>Email <span style="opacity:0.4;font-weight:400;">(required for online payment)</span></label>
-            <input type="email" id="cfEmail" class="confirm-input" placeholder="e.g. you@email.com" />
+          <div class="form-group" style="display:none;">
+            <input type="email" id="cfEmail" class="confirm-input" />
           </div>
           <div class="form-group">
             <label>Collection method</label>
@@ -104,7 +99,7 @@ document.querySelectorAll('#colPills .opt-card').forEach(btn => {
 function renderConfirm() {
   const el = document.getElementById('confirmItems');
   if (!cart.length) {
-    el.innerHTML = '<div class="confirm-empty">Your cart is empty. <a href="/order" style="color:var(--maroon);">Add items →</a></div>';
+    el.innerHTML = '<div class="confirm-empty">Your cart is empty. <a href="/drinks" style="color:var(--maroon);">Add items →</a></div>';
     document.getElementById('cfTotal').textContent = 'R0';
     document.getElementById('payOnlineBtn').disabled = true;
     document.getElementById('payInstoreBtn').disabled = true;
@@ -130,22 +125,20 @@ function renderConfirm() {
 }
 
 function getFormData() {
-  const name  = document.getElementById('cfName').value.trim();
   const phone = document.getElementById('cfPhone').value.trim();
   const email = document.getElementById('cfEmail').value.trim();
-  return { name, phone, email };
+  return { phone, email };
 }
 
 async function placeOrder(paymentMethod) {
-  const { name, phone, email } = getFormData();
-  if (!name) { alert('Please enter your name.'); return null; }
+  const { phone, email } = getFormData();
   if (!cart.length) { alert('Your cart is empty.'); return null; }
 
   const res = await fetch('/order/place', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      name, phone, email,
+      phone, email,
       collection: colMethod,
       notes: document.getElementById('cfNotes').value.trim(),
       items: cart,
@@ -174,8 +167,7 @@ document.getElementById('payInstoreBtn').addEventListener('click', async () => {
 
 // ── Pay online via Ozow ───────────────────────────────────────────
 document.getElementById('payOnlineBtn').addEventListener('click', async () => {
-  const { name, email } = getFormData();
-  if (!name)  { alert('Please enter your name.');  return; }
+  const { email } = getFormData();
   if (!cart.length) { alert('Your cart is empty.'); return; }
 
   const btn = document.getElementById('payOnlineBtn');

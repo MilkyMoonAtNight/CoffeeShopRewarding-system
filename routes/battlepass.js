@@ -28,6 +28,21 @@ async function requireAdminApi(req, res, next) {
   }
 }
 
+// ── UPDATE NAME ──────────────────────────────────────────────────
+router.post('/update-name', requireAuth, async (req, res) => {
+  try {
+    const raw = asString(req.body.name || '', 80).trim();
+    if (!raw || !/^[A-Za-z\s]+$/.test(raw))
+      return res.json({ ok: false, error: 'Invalid name' });
+    const name = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    await User.findByIdAndUpdate(req.session.userId, { name });
+    req.session.userName = name;
+    res.json({ ok: true, name });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 // ── BATTLEPASS DASHBOARD ─────────────────────────────────────────
 router.get('/', requireAuth, async (req, res) => {
   try {

@@ -5,7 +5,7 @@
   <section class="auth-section">
     <div class="auth-card">
       <div class="auth-logo">
-        <img src="/images/logo.png" alt="Con Leche" />
+        <img src="/images/logo_nav.png" alt="Con Leche" />
       </div>
       <h1 class="auth-title">Join Con Leche</h1>
       <p class="auth-sub">Create your account and get your unique QR battlepass code.</p>
@@ -17,16 +17,18 @@
       <form action="/register" method="POST" class="auth-form">
         <div class="form-group">
           <label for="name">Full Name</label>
-          <input type="text" id="name" name="name" required placeholder="Your name" />
+          <input type="text" id="name" name="name" required placeholder="e.g. Iwan Rademan"
+                 pattern="[A-Za-z\s]+" title="Letters only — no numbers or special characters" autocomplete="name" />
+          <span class="form-hint">First and last name preferred. Letters only.</span>
         </div>
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" name="email" required placeholder="you@example.com" />
         </div>
         <div class="form-group">
-          <label for="birthday">Birthday</label>
-          <input type="date" id="birthday" name="birthday" required data-cap-today />
-          <span class="form-hint">So we can spoil you on your big day 🎂</span>
+          <label for="birthday">Birthday <span style="opacity:0.45;font-weight:400;">(optional)</span></label>
+          <input type="date" id="birthday" name="birthday" data-cap-today />
+          <span class="form-hint">Adding your birthday means we'll send you a birthday treat voucher. No birthday entered means no birthday email.</span>
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -49,13 +51,27 @@
           </label>
           <label class="notify-check">
             <input type="checkbox" name="notifyBirthday" value="on" checked />
-            <span>Birthday treat email 🎂</span>
+            <span>Birthday treat email</span>
           </label>
         </div>
 
         <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
       </form>
 <script>document.querySelector('[data-cap-today]')?.setAttribute('max', new Date().toISOString().split('T')[0]);</script>
+
+<script>
+// Auto-capitalize each word and restrict to letters+spaces
+const nameInput = document.getElementById('name');
+if (nameInput) {
+  nameInput.addEventListener('input', function () {
+    const pos = this.selectionStart;
+    this.value = this.value
+      .replace(/[^A-Za-z\s]/g, '')
+      .replace(/\b\w/g, c => c.toUpperCase());
+    this.setSelectionRange(pos, pos);
+  });
+}
+</script>
 
       <p class="auth-switch">Already have an account? <a href="/login">Sign in →</a></p>
     </div>
