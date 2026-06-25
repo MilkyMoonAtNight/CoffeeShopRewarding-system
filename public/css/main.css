@@ -2529,9 +2529,10 @@ button.detail-pill.detail-pill-active {
   /* Ensure tap targets are at least 44px */
   .btn, .nav-link, .nav-cta, .opt-card,
   .alt-pill, .detail-pill, .order-filter-btn,
-  .qty-circle, .modal-close, .cart-remove-btn {
+  .qty-circle, .cart-remove-btn {
     min-height: 44px;
   }
+  .modal-close { min-height: unset; min-width: unset; width: 36px; height: 36px; }
 
   /* Container padding tighter on mobile */
   .container { padding-left: 1.1rem; padding-right: 1.1rem; }
