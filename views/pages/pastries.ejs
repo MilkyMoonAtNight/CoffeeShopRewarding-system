@@ -17,7 +17,7 @@
         ORDER.forEach(function(cat) {
           if (grouped[cat] && grouped[cat].length > 0) {
       %>
-        <button class="events-filter-pill <%= firstTab ? 'active' : '' %>"
+        <button class="pastry-tab <%= firstTab ? 'active' : '' %>"
                 data-cat="<%= cat %>">
           <%= ICONS[cat] %> <%= LABELS[cat] %>
         </button>
@@ -100,10 +100,10 @@ window.CL_DATA = {
 <%- include('../partials/item-modal') %>
 
 <script>
-// Category pill switching
-document.querySelectorAll('#pastryTabs .events-filter-pill').forEach(tab => {
+// Category tab switching
+document.querySelectorAll('#pastryTabs .pastry-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('#pastryTabs .events-filter-pill').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#pastryTabs .pastry-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.pastry-panel').forEach(p => p.classList.add('hidden'));
     tab.classList.add('active');
     document.getElementById('pcat-' + tab.dataset.cat).classList.remove('hidden');

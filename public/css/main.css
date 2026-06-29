@@ -280,9 +280,9 @@ ul { list-style: none; }
   gap: 1.5rem;
   padding: 2rem;
 }
-.bp-text .section-eyebrow { color: var(--accent); }
+.bp-text .section-eyebrow { color: #F5CA3B; }
 .bp-text .section-title   { color: var(--cream); }
-.bp-text .section-title em { color: var(--accent); }
+.bp-text .section-title em { color: #F5CA3B; }
 .bp-text .section-body    { color: rgba(253, 246, 237, 0.75); }
 .milestone-pills { display: flex; flex-direction: column; gap: 0.5rem; }
 .pill {
@@ -372,9 +372,9 @@ ul { list-style: none; }
 }
 
 .tier-badge {
-  background: rgba(226,201,160,0.25);
-  border: 1px solid rgba(226,201,160,0.7);
-  color: var(--accent);
+  background: rgba(245,202,59,0.2);
+  border: 1px solid rgba(245,202,59,0.8);
+  color: #F5CA3B;
   padding: 0.5rem 1.25rem;
   border-radius: 50px;
   font-size: 0.92rem;
@@ -600,7 +600,7 @@ ul { list-style: none; }
 /* Collapse about spacing: origin → mission, mission → cta */
 .about-origin { padding-bottom: 1.5rem; }
 .about-mission { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-.about-cta { background: var(--charcoal); text-align: center; padding-top: 1.5rem; }
+.about-cta { background: var(--black); text-align: center; padding-top: 1.5rem; }
 .about-cta .section-title { color: var(--cream); }
 .about-cta .section-title em { color: var(--accent); }
 .about-cta p { color: rgba(253,246,237,0.6); margin-bottom: 2rem; font-family: var(--font-body); font-size: 1.1rem; }
@@ -793,8 +793,15 @@ ul { list-style: none; }
   border-color: var(--maroon);
   background: var(--white);
 }
-.auth-switch { text-align: center; font-size: 0.85rem; color: rgba(44,44,44,0.55); }
-.auth-switch a { color: var(--maroon); font-weight: 500; }
+.auth-switch {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 0.25em; text-align: center;
+  font-size: 0.85rem; color: rgba(44,44,44,0.55); margin-top: 1.25rem;
+}
+.auth-switch a { color: var(--maroon); font-weight: 500; white-space: nowrap; }
+/* Birthday split fields */
+.birthday-fields { display: flex; gap: 0.5rem; }
+.birthday-fields input { min-width: 0; text-align: center; }
 
 /* ====== BATTLEPASS PAGE ====== */
 .battlepass-page { padding-top: 100px; }
@@ -1790,13 +1797,14 @@ ul { list-style: none; }
 
 .modal-close {
   position: absolute; top: 1rem; right: 1rem; z-index: 10;
-  background: rgba(44,44,44,0.08); border: none;
+  background: #F5CA3B; border: none;
   border-radius: 50%; width: 36px; height: 36px;
-  font-size: 0.9rem; cursor: pointer; color: var(--charcoal);
+  font-size: 0.9rem; cursor: pointer; color: #2c2c2c;
   display: flex; align-items: center; justify-content: center;
   transition: background var(--transition);
+  line-height: 1; flex-shrink: 0;
 }
-.modal-close:hover { background: rgba(44,44,44,0.15); }
+.modal-close:hover { background: #e8b820; }
 
 /* Modal image */
 .modal-img-wrap {
@@ -2434,7 +2442,8 @@ button.detail-pill.detail-pill-active {
 
 .tracker-line {
   flex: 1; height: 2px; background: rgba(44,44,44,0.1);
-  margin: 0 0.25rem; margin-bottom: 1.1rem;
+  margin: 0 0.25rem;
+  align-self: flex-start; margin-top: 13px;
   transition: background 0.3s ease;
 }
 .tracker-line.done { background: var(--maroon); }
@@ -2707,7 +2716,7 @@ button.detail-pill.detail-pill-active {
   .detail-chips { grid-template-columns: 1fr 1fr; }
 
   .tracker-steps { gap: 0; }
-  .tracker-line  { margin: 0 0.1rem; }
+  .tracker-line  { margin: 0 0.1rem; margin-top: 11px; }
 
   .footer-inner { grid-template-columns: 1fr; }
 
@@ -3232,7 +3241,7 @@ button.detail-pill.detail-pill-active {
 /* ====== GOOGLE REVIEWS (home) ====== */
 .reviews-home { background: var(--cream); border-top: 1px solid var(--cream-dark); }
 
-/* ── Pastry category filter pills ── */
+/* ── Pastry category filter — tab style matching drinks bar ── */
 .pastry-filter-wrap {
   background: var(--black);
   position: sticky; top: 70px; z-index: 50;
@@ -3242,18 +3251,18 @@ button.detail-pill.detail-pill-active {
 }
 .pastry-filter-wrap::-webkit-scrollbar { display: none; }
 .pastry-filter-bar {
-  display: flex; gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  white-space: nowrap;
-  width: max-content; min-width: 100%;
+  max-width: 1280px; margin: 0 auto; padding: 0 2rem;
+  display: flex; width: max-content; min-width: 100%;
 }
-.pastry-filter-bar .events-filter-pill {
-  border-color: rgba(253,246,237,0.2);
-  color: rgba(253,246,237,0.6);
-  flex-shrink: 0;
+.pastry-tab {
+  background: none; border: none; cursor: pointer;
+  color: rgba(253,246,237,0.45); font-family: var(--font-body);
+  font-size: 0.88rem; font-weight: 600; padding: 1rem 1.5rem;
+  border-bottom: 2px solid transparent; transition: all var(--transition);
+  white-space: nowrap; flex-shrink: 0;
 }
-.pastry-filter-bar .events-filter-pill:hover { background: rgba(253,246,237,0.06); color: var(--cream); }
-.pastry-filter-bar .events-filter-pill.active { background: var(--maroon); color: var(--cream); border-color: var(--maroon); }
+.pastry-tab:hover { color: var(--cream); }
+.pastry-tab.active { color: var(--cream); border-bottom-color: var(--maroon); }
 
 /* ── Home page: centre eyebrows, titles, and rating line ── */
 .menu-preview .section-title,
@@ -3321,7 +3330,7 @@ button.detail-pill.detail-pill-active {
 }
 @media (max-width: 650px) {
   .specials-grid, .reviews-grid { grid-template-columns: 1fr; }
-  .special-card-image { height: 180px; }
+  .special-card-image { height: 280px; }
 }
 
 /* ── Live Google reviews — Con Leche themed cards ── */
@@ -3504,6 +3513,17 @@ body.home-page .strip-section { position: relative; z-index: 1; }
 .about-top .about-origin { padding-top: 1.5rem; }
 @media (min-width: 769px) {
   .about-top .page-hero .container { transform: translateX(-4rem); }
+}
+/* Mobile: bloop only covers to bottom of image; text on plain cream */
+@media (max-width: 768px) {
+  .about-text {
+    background: var(--cream);
+    box-shadow: 0 0 0 100vmax var(--cream);
+    clip-path: inset(0 -100vmax);
+    padding-top: 2rem;
+  }
+  .about-text .section-title { text-align: center; }
+  .about-text p { color: var(--charcoal); }
 }
 
 /* ── Admin list search & filter bar ── */

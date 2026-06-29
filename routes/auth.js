@@ -23,7 +23,9 @@ router.post('/register', loginLimiter, async (req, res) => {
     const email    = asString(req.body.email, 200).toLowerCase();
     const password = asString(req.body.password, 200);
     const confirmPassword = asString(req.body.confirmPassword, 200);
-    const birthdayRaw = asString(req.body.birthday, 20);
+    const bdYear  = parseInt(asString(req.body.birthdayYear,  6)) || null;
+    const bdMonth = parseInt(asString(req.body.birthdayMonth, 4)) || null;
+    const bdDay   = parseInt(asString(req.body.birthdayDay,   4)) || null;
 
     if (!name || !email || !password)
       return res.render('pages/register', { title: 'Join the Pack', error: 'All fields are required' });
@@ -40,11 +42,14 @@ router.post('/register', loginLimiter, async (req, res) => {
       return res.render('pages/register', { title: 'Join the Pack', error: 'Email already registered' });
     // Title-case each word
     const titledName = name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    // Birthday: stored only when it's a valid past date
+    // Birthday: need at least month + day to be useful for birthday emails
     let birthday = null;
-    if (birthdayRaw) {
-      const d = new Date(birthdayRaw);
-      if (!isNaN(d.getTime()) && d < new Date()) birthday = d;
+    if (bdMonth && bdDay) {
+      const year = (bdYear && bdYear >= 1920 && bdYear <= new Date().getFullYear()) ? bdYear : 1900;
+      const d = new Date(year, bdMonth - 1, bdDay);
+      if (!isNaN(d.getTime())) birthday = d;
+    } else if (bdYear && bdYear >= 1920 && bdYear <= new Date().getFullYear()) {
+      birthday = new Date(bdYear, 0, 1); // year only, Jan 1 placeholder
     }
 
     const emailPreferences = {

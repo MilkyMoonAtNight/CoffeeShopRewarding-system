@@ -21,25 +21,37 @@
       <div class="modal-section-label">Size</div>
       <div class="opt-card-row" id="modalSizeBtns"></div>
 
-      <div class="modal-section-label">Milk alternative <span class="detail-extra-note">+R6</span></div>
-      <div class="opt-card-row opt-card-row-wrap" id="modalMilkBtns">
-        <button class="opt-card opt-card-active" data-milk="Full cream" data-extra="0"><span class="opt-card-main">Full cream</span><span class="opt-card-sub">Default</span></button>
-        <button class="opt-card" data-milk="Oat milk"     data-extra="6"><span class="opt-card-main">Oat milk</span><span class="opt-card-price">+R6</span></button>
-        <button class="opt-card" data-milk="Almond milk"  data-extra="6"><span class="opt-card-main">Almond milk</span><span class="opt-card-price">+R6</span></button>
-        <button class="opt-card" data-milk="Soy milk"     data-extra="6"><span class="opt-card-main">Soy milk</span><span class="opt-card-price">+R6</span></button>
-        <button class="opt-card" data-milk="Lactose free" data-extra="6"><span class="opt-card-main">Lactose free</span><span class="opt-card-price">+R6</span></button>
+      <!-- Milk alternatives — hidden for slushi & fizz -->
+      <div id="milkSection">
+        <div class="modal-section-label">Milk alternative <span class="detail-extra-note">+R6</span></div>
+        <div class="opt-card-row opt-card-row-wrap" id="modalMilkBtns">
+          <button class="opt-card opt-card-active" data-milk="Full cream" data-extra="0"><span class="opt-card-main">Full cream</span><span class="opt-card-sub">Default</span></button>
+          <button class="opt-card" data-milk="Oat milk"     data-extra="6"><span class="opt-card-main">Oat milk</span><span class="opt-card-price">+R6</span></button>
+          <button class="opt-card" data-milk="Almond milk"  data-extra="6"><span class="opt-card-main">Almond milk</span><span class="opt-card-price">+R6</span></button>
+          <button class="opt-card" data-milk="Soy milk"     data-extra="6"><span class="opt-card-main">Soy milk</span><span class="opt-card-price">+R6</span></button>
+          <button class="opt-card" data-milk="Lactose free" data-extra="6"><span class="opt-card-main">Lactose free</span><span class="opt-card-price">+R6</span></button>
+        </div>
       </div>
 
+      <!-- Fizz Fix base — only shown for fizz drinks -->
+      <div id="fizzBaseSection" style="display:none;">
+        <div class="modal-section-label">Base</div>
+        <div class="opt-card-row" id="fizzBaseBtns">
+          <button class="opt-card opt-card-active" data-base="Soda water"><span class="opt-card-main">Soda water</span></button>
+          <button class="opt-card" data-base="Sprite"><span class="opt-card-main">Sprite</span></button>
+        </div>
+      </div>
+
+      <!-- Flavours (single or multi-select depending on drink type) -->
       <div id="flavourSection" style="display:none;">
-        <div class="modal-section-label">Flavour</div>
+        <div class="modal-section-label" id="flavourLabel">Flavour</div>
         <div class="opt-card-row opt-card-row-wrap" id="modalFlavourBtns"></div>
       </div>
 
-      <div class="modal-section-label">Sugar</div>
-      <div class="opt-card-row" id="modalSugarBtns">
-        <button class="opt-card opt-card-active" data-sugar="Regular"><span class="opt-card-main">Regular</span></button>
-        <button class="opt-card" data-sugar="Less sugar"><span class="opt-card-main">Less sugar</span></button>
-        <button class="opt-card" data-sugar="No sugar"><span class="opt-card-main">No sugar</span></button>
+      <!-- Freezo extras — extra pump & strong coffee option -->
+      <div id="freezoExtrasSection" style="display:none;">
+        <div class="modal-section-label">Extras</div>
+        <div class="opt-card-row opt-card-row-wrap" id="freezoExtrasBtns"></div>
       </div>
 
       <div class="modal-section-label">Note <span style="opacity:0.4;font-weight:400;">(optional)</span></div>
@@ -115,10 +127,13 @@
 
 <!-- ===== SHARED MODAL JS ===== -->
 <script>
-// ── Menu data (injected per-page via window.CL_DATA before this partial loads) ──
+// ── Flavour lists ─────────────────────────────────────────────────
 const LATTE_FLAVOURS     = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
 const FREEZO_FLAVOURS    = ['White Chocolate','Chai','Coffee','Chocolate','Salted Caramel'];
 const FROZENYOG_FLAVOURS = [...LATTE_FLAVOURS,'Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+const SLUSHI_FLAVOURS    = ['Strawberry','Cherry','Litchi','Creamsoda','Apple'];
+const FIZZ_FLAVOURS      = ['Cloudy Lemonade','Watermelon','Elderflower'];
+
 const FILLER = {
   espresso: {cal:'~80 kcal', protein:'1g',  caff:'~150mg'},
   specialty:{cal:'~180 kcal',protein:'5g',  caff:'~95mg' },
@@ -130,27 +145,49 @@ const FILLER = {
   other:    {cal:'~120 kcal',protein:'4g',  caff:'~80mg' },
 };
 
+// ── Drink type detection ──────────────────────────────────────────
+function getDrinkType(drink) {
+  const n = (drink.name || '').toLowerCase();
+  if (n.includes('coffee') && n.includes('freezo')) return 'coffee-freezo';
+  if (n.includes('freezo'))                         return 'freezo';
+  if (n.includes('slushi') || n.includes('slush'))  return 'slushi';
+  if (n.includes('fizz'))                           return 'fizz';
+  if (n.includes('frozen yogurt') || n.includes('froyo')) return 'froyo';
+  if (n.includes('matcha'))                         return 'matcha';
+  return 'other';
+}
+
 const CL = window.CL_DATA || {};
-const HOT_DRINKS  = CL.hot      || [];
-const COLD_DRINKS = CL.cold     || [];
-const PASTRIES    = CL.pastries || [];
+const HOT_DRINKS   = CL.hot      || [];
+const COLD_DRINKS  = CL.cold     || [];
+const PASTRIES     = CL.pastries || [];
 const IS_LOGGED_IN = CL.loggedIn || false;
 
-// Attach flavour lists
+// Attach flavour lists & multi-flavour flag
 COLD_DRINKS.forEach(d => {
-  const n = d.name.toLowerCase();
-  d.flavours = n.includes('frozen yogurt')||n.includes('froyo') ? FROZENYOG_FLAVOURS
-             : n.includes('freezo') ? FREEZO_FLAVOURS
-             : n.includes('latte')  ? LATTE_FLAVOURS : [];
+  const t = getDrinkType(d);
+  d.flavours = t === 'froyo'                          ? FROZENYOG_FLAVOURS
+             : (t === 'freezo' || t === 'coffee-freezo') ? FREEZO_FLAVOURS
+             : t === 'slushi'                         ? SLUSHI_FLAVOURS
+             : t === 'fizz'                           ? FIZZ_FLAVOURS
+             : t === 'matcha'                         ? SLUSHI_FLAVOURS
+             : d.name.toLowerCase().includes('latte') ? LATTE_FLAVOURS
+             : (d.flavours && d.flavours.length)      ? d.flavours
+             : [];
+  d.multiFlav = (t === 'slushi' || t === 'froyo');
 });
 HOT_DRINKS.forEach(d => {
-  d.flavours = d.name.toLowerCase().includes('latte') ? LATTE_FLAVOURS : [];
+  d.flavours = d.name.toLowerCase().includes('latte') ? LATTE_FLAVOURS : (d.flavours || []);
 });
 
 // ── State ─────────────────────────────────────────────────────────
-let cart       = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
+let cart        = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
 let activeDrink = null, activePastry = null;
-let selSize = null, selMilk = 'Full cream', milkExtra = 0, selFlavour = null, selSugar = 'Regular';
+let selSize = null, selMilk = 'Full cream', milkExtra = 0;
+let selFlavour = null, selFlavours = [];
+let extraPump = false, pumpExtra = 0;
+let strongFreeze = false, strongExtra = 0;
+let selFizzBase = 'Soda water';
 let pastryQty = 1;
 
 // ── Wire up every card on the page ───────────────────────────────
@@ -164,7 +201,7 @@ document.querySelectorAll('[data-pastry-idx]').forEach(card => {
   card.addEventListener('click', () => openPastryModal(PASTRIES[parseInt(card.dataset.pastryIdx)]));
 });
 
-// ── opt-card selection helper ─────────────────────────────────────
+// ── opt-card single-selection helper ─────────────────────────────
 function bindOptCards(containerId, onSelect) {
   document.querySelectorAll('#' + containerId + ' .opt-card').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -179,56 +216,151 @@ function bindOptCards(containerId, onSelect) {
 function openDrinkModal(drink) {
   if (!drink) return;
   activeDrink = drink;
-  selMilk = 'Full cream'; milkExtra = 0; selSugar = 'Regular';
-  selFlavour = drink.flavours && drink.flavours.length ? drink.flavours[0] : null;
-  selSize    = drink.sizes && drink.sizes.length ? drink.sizes[0] : null;
+  const dtype = getDrinkType(drink);
 
+  // Reset state
+  selMilk = 'Full cream'; milkExtra = 0;
+  selFlavour = drink.flavours && drink.flavours.length ? drink.flavours[0] : null;
+  selFlavours = [];
+  extraPump = false; pumpExtra = 0;
+  strongFreeze = false; strongExtra = 0;
+  selFizzBase = 'Soda water';
+
+  // Image
   document.getElementById('modalImgWrap').innerHTML = drink.image
     ? `<img src="${drink.image}" alt="${drink.name}" class="modal-img" />`
     : `<div class="modal-img-placeholder"><span>${drink.category==='cold'?'🧊':'☕'}</span></div>`;
 
+  // Title + subtitle
   document.getElementById('modalTitle').textContent    = drink.name;
-  document.getElementById('modalSubtitle').textContent = (drink.category==='hot'?'Hot':'Cold') + (drink.subcategory?' · '+drink.subcategory:'') + (drink.isSpecial?' · ✦ Special':'');
+  document.getElementById('modalSubtitle').textContent = (drink.category==='hot'?'Hot':'Cold')
+    + (drink.subcategory?' · '+drink.subcategory:'')
+    + (drink.isSpecial?' · ✦ Special':'');
 
+  // Info chips
   const info = FILLER[drink.subcategory] || FILLER.other;
   document.getElementById('chipCal').textContent     = info.cal;
   document.getElementById('chipProtein').textContent = info.protein;
   document.getElementById('chipCaff').textContent    = info.caff;
-  document.getElementById('chipMilk').textContent    = 'Full cream';
+  document.getElementById('chipMilk').textContent    = dtype === 'slushi' ? 'None' : 'Full cream';
 
-  // Size cards
-  document.getElementById('modalSizeBtns').innerHTML = drink.sizes.length
-    ? drink.sizes.map((s,i) => `<button class="opt-card${i===0?' opt-card-active':''}" data-price="${s.price}" data-label="${s.label}" data-ml="${s.ml}"><span class="opt-card-main">${s.label}</span><span class="opt-card-sub">${s.ml}</span><span class="opt-card-price">R${s.price}</span></button>`).join('')
+  // ── Sizes ──
+  let sizesToShow = drink.sizes;
+  if (dtype === 'slushi') {
+    // Slushi is one size (large)
+    const largeOnly = drink.sizes.filter(s => s.label.toLowerCase() === 'large');
+    sizesToShow = largeOnly.length ? largeOnly : drink.sizes.slice(-1);
+  }
+  selSize = sizesToShow.length ? sizesToShow[0] : null;
+  document.getElementById('modalSizeBtns').innerHTML = sizesToShow.length
+    ? sizesToShow.map((s,i) => `<button class="opt-card${i===0?' opt-card-active':''}" data-price="${s.price}" data-label="${s.label}" data-ml="${s.ml}"><span class="opt-card-main">${s.label}</span><span class="opt-card-sub">${s.ml}</span><span class="opt-card-price">R${s.price}</span></button>`).join('')
     : '<span style="font-size:0.8rem;opacity:0.4;">One size</span>';
   bindOptCards('modalSizeBtns', btn => {
     selSize = {label:btn.dataset.label, ml:btn.dataset.ml, price:Number(btn.dataset.price)};
     updateModalPrice();
   });
 
-  // Reset milk
-  document.querySelectorAll('#modalMilkBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.milk==='Full cream'));
-  bindOptCards('modalMilkBtns', btn => {
-    selMilk = btn.dataset.milk; milkExtra = parseInt(btn.dataset.extra)||0;
-    document.getElementById('chipMilk').textContent = selMilk;
-    updateModalPrice();
-  });
-
-  // Flavours
-  const fs = document.getElementById('flavourSection');
-  const fc = document.getElementById('modalFlavourBtns');
-  if (drink.flavours && drink.flavours.length) {
-    fs.style.display = 'block';
-    fc.innerHTML = drink.flavours.map((f,i) =>
-      `<button class="opt-card${i===0?' opt-card-active':''}" data-flavour="${f}"><span class="opt-card-main">${f}</span></button>`
-    ).join('');
-    bindOptCards('modalFlavourBtns', btn => { selFlavour = btn.dataset.flavour; });
+  // ── Milk section ──
+  const milkSection    = document.getElementById('milkSection');
+  const fizzBaseSection = document.getElementById('fizzBaseSection');
+  if (dtype === 'slushi' || dtype === 'fizz') {
+    milkSection.style.display = 'none';
   } else {
-    fs.style.display = 'none'; selFlavour = null;
+    milkSection.style.display = 'block';
+    document.querySelectorAll('#modalMilkBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.milk==='Full cream'));
+    bindOptCards('modalMilkBtns', btn => {
+      selMilk = btn.dataset.milk; milkExtra = parseInt(btn.dataset.extra)||0;
+      document.getElementById('chipMilk').textContent = selMilk;
+      updateModalPrice();
+    });
   }
 
-  // Reset sugar
-  document.querySelectorAll('#modalSugarBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.sugar==='Regular'));
-  bindOptCards('modalSugarBtns', btn => { selSugar = btn.dataset.sugar; });
+  // ── Fizz base section ──
+  if (dtype === 'fizz') {
+    fizzBaseSection.style.display = 'block';
+    selFizzBase = 'Soda water';
+    document.querySelectorAll('#fizzBaseBtns .opt-card').forEach(b => b.classList.toggle('opt-card-active', b.dataset.base==='Soda water'));
+    bindOptCards('fizzBaseBtns', btn => { selFizzBase = btn.dataset.base; });
+  } else {
+    fizzBaseSection.style.display = 'none';
+  }
+
+  // ── Flavours ──
+  const fs = document.getElementById('flavourSection');
+  const fc = document.getElementById('modalFlavourBtns');
+  const flavourLabel = document.getElementById('flavourLabel');
+  const flavourList = drink.flavours || [];
+
+  if (flavourList.length) {
+    fs.style.display = 'block';
+    flavourLabel.textContent = drink.multiFlav ? 'Flavour (pick up to 2)' : 'Flavour';
+    fc.innerHTML = flavourList.map(f =>
+      `<button class="opt-card" data-flavour="${f}"><span class="opt-card-main">${f}</span></button>`
+    ).join('');
+
+    if (drink.multiFlav) {
+      // Multi-select: max 2 flavours
+      selFlavours = [];
+      document.querySelectorAll('#modalFlavourBtns .opt-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const isActive = btn.classList.contains('opt-card-active');
+          if (isActive) {
+            btn.classList.remove('opt-card-active');
+            selFlavours = selFlavours.filter(f => f !== btn.dataset.flavour);
+          } else if (selFlavours.length < 2) {
+            btn.classList.add('opt-card-active');
+            selFlavours.push(btn.dataset.flavour);
+          }
+        });
+      });
+    } else {
+      // Single select
+      selFlavour = flavourList[0];
+      document.querySelector('#modalFlavourBtns .opt-card')?.classList.add('opt-card-active');
+      bindOptCards('modalFlavourBtns', btn => { selFlavour = btn.dataset.flavour; });
+    }
+  } else {
+    fs.style.display = 'none'; selFlavour = null; selFlavours = [];
+  }
+
+  // ── Freezo extras ──
+  const freezoSec = document.getElementById('freezoExtrasSection');
+  const freezoBtns = document.getElementById('freezoExtrasBtns');
+  if (dtype === 'freezo' || dtype === 'coffee-freezo') {
+    freezoSec.style.display = 'block';
+    let extrasHTML = `<button class="opt-card" data-xtype="pump"><span class="opt-card-main">Extra pump</span><span class="opt-card-price">+R5</span></button>`;
+    if (dtype === 'coffee-freezo') {
+      extrasHTML += `<button class="opt-card" data-xtype="strong"><span class="opt-card-main">Strong coffee freezo</span><span class="opt-card-price">+R5</span></button>`;
+    }
+    freezoBtns.innerHTML = extrasHTML;
+
+    freezoBtns.querySelectorAll('.opt-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('opt-card-active');
+        const on = btn.classList.contains('opt-card-active');
+        if (btn.dataset.xtype === 'pump') {
+          extraPump = on; pumpExtra = on ? 5 : 0;
+          // Toggle between freezo and latte flavours
+          const fc2 = document.getElementById('modalFlavourBtns');
+          const fs2 = document.getElementById('flavourSection');
+          const fl2 = document.getElementById('flavourLabel');
+          const newFlavs = on ? LATTE_FLAVOURS : FREEZO_FLAVOURS;
+          selFlavour = newFlavs[0];
+          fs2.style.display = 'block';
+          fl2.textContent = 'Flavour';
+          fc2.innerHTML = newFlavs.map((f,i) => `<button class="opt-card${i===0?' opt-card-active':''}" data-flavour="${f}"><span class="opt-card-main">${f}</span></button>`).join('');
+          bindOptCards('modalFlavourBtns', b => { selFlavour = b.dataset.flavour; });
+        } else if (btn.dataset.xtype === 'strong') {
+          strongFreeze = on; strongExtra = on ? 5 : 0;
+        }
+        updateModalPrice();
+      });
+    });
+  } else {
+    freezoSec.style.display = 'none';
+    extraPump = false; pumpExtra = 0;
+    strongFreeze = false; strongExtra = 0;
+  }
 
   document.getElementById('modalNotes').value = '';
   updateModalPrice();
@@ -237,7 +369,7 @@ function openDrinkModal(drink) {
 
 function updateModalPrice() {
   if (!selSize) return;
-  const t = selSize.price + milkExtra;
+  const t = selSize.price + milkExtra + pumpExtra + strongExtra;
   document.getElementById('modalPriceBadge').textContent = 'R' + t;
   const ap = document.getElementById('modalAddPrice');
   if (ap) ap.textContent = 'R' + t;
@@ -247,10 +379,24 @@ const modalAddBtn = document.getElementById('modalAddBtn');
 if (modalAddBtn) {
   modalAddBtn.addEventListener('click', () => {
     if (!selSize) return;
+    const dtype = getDrinkType(activeDrink);
+    const isMulti = activeDrink.multiFlav;
+    const finalFlavour = isMulti
+      ? (selFlavours.length ? selFlavours.join(' + ') : null)
+      : selFlavour;
+    const finalMilk = dtype === 'fizz' ? selFizzBase
+                    : dtype === 'slushi' ? null
+                    : selMilk;
+    const extrasArr = [];
+    if (extraPump)   extrasArr.push('Extra pump');
+    if (strongFreeze) extrasArr.push('Strong');
+    const finalExtras = extrasArr.length ? extrasArr.join(' · ') : null;
+
     cart.push({
       id:Date.now(), type:'drink', name:activeDrink.name,
-      size:selSize.label, ml:selSize.ml, price:selSize.price+milkExtra,
-      milk:selMilk, flavour:selFlavour, sugar:selSugar,
+      size:selSize.label, ml:selSize.ml,
+      price:selSize.price + milkExtra + pumpExtra + strongExtra,
+      milk:finalMilk, flavour:finalFlavour, extras:finalExtras,
       notes:document.getElementById('modalNotes').value.trim(),
       image:activeDrink.image, category:activeDrink.category,
     });
@@ -328,10 +474,10 @@ function renderCartItems() {
       <div class="cart-item-body">
         <p class="cart-item-name">${item.name}</p>
         <div class="cart-item-opts">
-          ${item.size?`<span class="cart-opt-pill">${item.size} · ${item.ml}</span>`:''}
+          ${item.size?`<span class="cart-opt-pill">${item.size}${item.ml?' · '+item.ml:''}</span>`:''}
           ${item.flavour?`<span class="cart-opt-pill">${item.flavour}</span>`:''}
           ${item.milk&&item.milk!=='Full cream'?`<span class="cart-opt-pill">${item.milk}</span>`:''}
-          ${item.sugar&&item.sugar!=='Regular'?`<span class="cart-opt-pill">${item.sugar}</span>`:''}
+          ${item.extras?`<span class="cart-opt-pill">${item.extras}</span>`:''}
         </div>
         ${item.notes?`<p class="cart-item-note">"${item.notes}"</p>`:''}
       </div>

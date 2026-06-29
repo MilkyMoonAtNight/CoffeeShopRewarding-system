@@ -26,9 +26,13 @@
           <input type="email" id="email" name="email" required placeholder="you@example.com" />
         </div>
         <div class="form-group">
-          <label for="birthday">Birthday <span style="opacity:0.45;font-weight:400;">(optional)</span></label>
-          <input type="date" id="birthday" name="birthday" data-cap-today />
-          <span class="form-hint">Adding your birthday means we'll send you a birthday treat voucher. No birthday entered means no birthday email.</span>
+          <label>Birthday <span style="opacity:0.45;font-weight:400;">(optional — any fields)</span></label>
+          <div class="birthday-fields">
+            <input type="number" name="birthdayYear"  placeholder="Year"  min="1920" max="2009" style="flex:2;" />
+            <input type="number" name="birthdayMonth" placeholder="Month" min="1"    max="12"   style="flex:1;" />
+            <input type="number" name="birthdayDay"   placeholder="Day"   min="1"    max="31"   style="flex:1;" />
+          </div>
+          <span class="form-hint">Adding your birthday month &amp; day means we'll send you a birthday treat voucher.</span>
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -57,8 +61,6 @@
 
         <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
       </form>
-<script>document.querySelector('[data-cap-today]')?.setAttribute('max', new Date().toISOString().split('T')[0]);</script>
-
 <script>
 // Auto-capitalize each word and restrict to letters+spaces
 const nameInput = document.getElementById('name');
