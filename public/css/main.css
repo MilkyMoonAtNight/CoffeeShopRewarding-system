@@ -3731,6 +3731,28 @@ body.home-page .strip-section { position: relative; z-index: 1; }
 .bp-prefs-saved { font-size: 0.8rem; color: #1D9E75; font-weight: 600; margin-top: 0.5rem; }
 .bp-prefs-saved.hidden { display: none; }
 
+/* ── Notification channel selector ── */
+.bp-channel-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+.bp-channel-opt {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  padding: 0.85rem 0.5rem; border: 2px solid rgba(44,44,44,0.12); border-radius: 10px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  font-size: 0.82rem; font-weight: 600; color: rgba(44,44,44,0.55);
+}
+.bp-channel-opt input[type="radio"] { display: none; }
+.bp-channel-opt.active { border-color: #581217; color: #581217; background: rgba(88,18,23,0.04); }
+.bp-channel-icon { font-size: 1.3rem; line-height: 1; display: flex; align-items: center; }
+.bp-channel-name { font-size: 0.82rem; }
+.bp-wa-phone-row { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.5rem; }
+.bp-wa-label { font-size: 0.8rem; font-weight: 600; color: rgba(44,44,44,0.6); }
+.bp-wa-input {
+  width: 100%; padding: 0.55rem 0.75rem; border: 1.5px solid rgba(44,44,44,0.15);
+  border-radius: 8px; font-size: 0.92rem; outline: none; box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.bp-wa-input:focus { border-color: #581217; }
+.bp-wa-hint { font-size: 0.75rem; color: rgba(44,44,44,0.4); }
+
 /* ── Admin: notifications form layout ── */
 .admin-form-grid { display: flex; flex-direction: column; gap: 1rem; }
 .admin-form-row { display: flex; gap: 1rem; flex-wrap: wrap; }

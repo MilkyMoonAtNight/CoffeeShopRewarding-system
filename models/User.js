@@ -40,11 +40,15 @@ const userSchema = new mongoose.Schema({
   resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
 
-  // ── Email notification preferences ──
+  // ── Notification preferences ──
+  whatsappPhone:       { type: String, default: null },  // e.g. "27821234567" (no + or spaces)
+  notificationChannel: { type: String, enum: ['email', 'whatsapp'], default: 'email' },
+
   emailPreferences: {
-    specials:  { type: Boolean, default: true },   // weekly specials, monthly drinks, new arrivals
-    events:    { type: Boolean, default: true },   // upcoming truck locations & events
-    birthday:  { type: Boolean, default: true },   // birthday treat email
+    specials:          { type: Boolean, default: true },   // weekly specials, monthly drinks, new arrivals
+    events:            { type: Boolean, default: true },   // upcoming truck locations & events
+    birthday:          { type: Boolean, default: true },   // birthday treat email
+    marketingWhatsapp: { type: Boolean, default: false },  // opt-in: marketing msgs on WhatsApp
   },
 
   // ── Cash / pay-in-store trust tracking ──

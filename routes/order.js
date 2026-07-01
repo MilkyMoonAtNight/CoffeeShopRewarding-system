@@ -5,7 +5,9 @@ const Pastry  = require('../models/Pastry');
 const User    = require('../models/User');
 const Admin   = require('../models/Admin');
 const { notifyStaffNewOrder, notifyCustomerStatusUpdate } = require('../utils/mailer');
+const { notifyCustomerWhatsApp } = require('../utils/whatsapp');
 const { asString, cleanText } = require('../utils/security');
+const { buildWaMeUrl }  = require('../utils/whatsapp');
 
 // Statuses an admin is allowed to set — prevents arbitrary/script values being
 // stored on the order and later rendered in the dashboard / emailed out.
@@ -99,11 +101,12 @@ router.get('/slip/:ref', requireUser, async (req, res) => {
   const order = user && user.pastOrders
     ? user.pastOrders.find(o => o.ref === ref)
     : null;
-  if (!order) return res.status(404).render('pages/order-slip', { title: 'Slip — Con Leche', order: null, customerName: user ? user.name : '' });
+  if (!order) return res.status(404).render('pages/order-slip', { title: 'Slip — Con Leche', order: null, customerName: user ? user.name : '', waMeUrl: null });
   res.render('pages/order-slip', {
     title: `Slip ${order.ref} — Con Leche`,
     order,
     customerName: order.name || (user ? user.name : ''),
+    waMeUrl: buildWaMeUrl(order.ref),
   });
 });
 
@@ -214,19 +217,31 @@ router.post('/status/:userId/:ref', async (req, res) => {
       { $set: { 'pastOrders.$.status': status } }
     );
 
-    // Email the customer about the status update
+    // Notify the customer — WhatsApp if they prefer it, email as fallback
     const user = await User.findOne(
       { _id: req.params.userId, 'pastOrders.ref': req.params.ref },
-      { 'pastOrders.$': 1, email: 1 }
+      { 'pastOrders.$': 1, email: 1, notificationChannel: 1, whatsappPhone: 1 }
     ).lean();
 
     if (user) {
-      const order       = user.pastOrders && user.pastOrders[0];
-      const orderEmail  = (order && order.email) || user.email;
-      if (orderEmail && order) {
-        notifyCustomerStatusUpdate(order, orderEmail, status).catch(err =>
-          console.error('Customer status email error:', err.message)
-        );
+      const order      = user.pastOrders && user.pastOrders[0];
+      const orderEmail = (order && order.email) || user.email;
+      if (order) {
+        const useWhatsApp = user.notificationChannel === 'whatsapp' && user.whatsappPhone;
+        if (useWhatsApp) {
+          notifyCustomerWhatsApp(order, user.whatsappPhone, status).then(sent => {
+            if (!sent && orderEmail) {
+              // WhatsApp failed — fallback to email
+              notifyCustomerStatusUpdate(order, orderEmail, status).catch(err =>
+                console.error('Customer status email fallback error:', err.message)
+              );
+            }
+          });
+        } else if (orderEmail) {
+          notifyCustomerStatusUpdate(order, orderEmail, status).catch(err =>
+            console.error('Customer status email error:', err.message)
+          );
+        }
       }
     }
 

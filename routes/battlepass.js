@@ -179,15 +179,33 @@ router.post('/redeem-voucher/:rewardId', requireAuth, async (req, res) => {
   }
 });
 
-// ── UPDATE EMAIL PREFERENCES ──────────────────────────────────────
+// ── UPDATE PREFERENCES (email + notification channel) ────────────
 router.post('/preferences', requireAuth, async (req, res) => {
+  const { normalisePhone } = require('../utils/whatsapp');
   try {
     const user = await User.findById(req.session.userId);
+
+    // Email marketing toggles
     user.emailPreferences = {
-      specials: req.body.specials === 'on',
-      events:   req.body.events   === 'on',
-      birthday: req.body.birthday === 'on',
+      specials:          req.body.specials          === 'on',
+      events:            req.body.events            === 'on',
+      birthday:          req.body.birthday          === 'on',
+      marketingWhatsapp: req.body.marketingWhatsapp === 'on',
     };
+
+    // Notification channel (order status updates)
+    if (req.body.notificationChannel === 'whatsapp') {
+      const phone = normalisePhone(asString(req.body.whatsappPhone, 20));
+      if (phone) {
+        user.notificationChannel = 'whatsapp';
+        user.whatsappPhone = phone;
+      } else {
+        user.notificationChannel = 'email'; // no valid number → stay on email
+      }
+    } else if (req.body.notificationChannel === 'email') {
+      user.notificationChannel = 'email';
+    }
+
     await user.save();
     res.json({ success: true });
   } catch (err) {

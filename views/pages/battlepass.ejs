@@ -65,6 +65,37 @@
         </div>
       </div>
 
+      <!-- ── Notification channel ── -->
+      <div class="bp-section-card bp-prefs-card">
+        <p class="bp-section-label">Order Notifications</p>
+        <p class="bp-section-hint">How should we notify you when your order status changes?</p>
+        <form id="channelForm" class="bp-prefs-form">
+          <div class="bp-channel-row">
+            <label class="bp-channel-opt <%= (!user.notificationChannel || user.notificationChannel === 'email') ? 'active' : '' %>" id="chanEmail">
+              <input type="radio" name="notificationChannel" value="email" <%= (!user.notificationChannel || user.notificationChannel === 'email') ? 'checked' : '' %> />
+              <span class="bp-channel-icon">✉️</span>
+              <span class="bp-channel-name">Email</span>
+            </label>
+            <label class="bp-channel-opt <%= user.notificationChannel === 'whatsapp' ? 'active' : '' %>" id="chanWa">
+              <input type="radio" name="notificationChannel" value="whatsapp" <%= user.notificationChannel === 'whatsapp' ? 'checked' : '' %> />
+              <span class="bp-channel-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </span>
+              <span class="bp-channel-name">WhatsApp</span>
+            </label>
+          </div>
+          <!-- WhatsApp number input — shown only when WA is selected -->
+          <div id="waPhoneRow" class="bp-wa-phone-row" style="<%= user.notificationChannel === 'whatsapp' ? '' : 'display:none;' %>">
+            <label class="bp-wa-label" for="waPhoneInput">Your WhatsApp number</label>
+            <input type="tel" id="waPhoneInput" name="whatsappPhone" class="bp-wa-input"
+                   placeholder="e.g. 082 123 4567"
+                   value="<%= user.whatsappPhone || '' %>" maxlength="20" />
+            <span class="bp-wa-hint">South African numbers — we'll add +27 automatically.</span>
+          </div>
+          <p class="bp-prefs-saved hidden" id="channelSaved">✓ Saved</p>
+        </form>
+      </div>
+
       <!-- ── Email preferences ── -->
       <div class="bp-section-card bp-prefs-card">
         <p class="bp-section-label">Email Notifications</p>
@@ -92,6 +123,14 @@
               <span class="bp-pref-desc">Free cookie + 10% off on your birthday</span>
             </div>
             <input type="checkbox" name="birthday" id="prefBirthday" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.birthday ? 'checked' : '' %> />
+            <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
+          </label>
+          <label class="bp-pref-toggle">
+            <div class="bp-pref-info">
+              <span class="bp-pref-name">Specials on WhatsApp</span>
+              <span class="bp-pref-desc">Receive marketing messages on WhatsApp (opt-in only)</span>
+            </div>
+            <input type="checkbox" name="marketingWhatsapp" id="prefMktWa" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.marketingWhatsapp ? 'checked' : '' %> />
             <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
           </label>
           <p class="bp-prefs-saved hidden" id="prefsSaved">✓ Saved</p>
@@ -488,6 +527,42 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeRedeem();
 });
 
+// ── Notification channel (email vs WhatsApp) ──────────────────────
+(function () {
+  const form      = document.getElementById('channelForm');
+  const phoneRow  = document.getElementById('waPhoneRow');
+  const phoneInput = document.getElementById('waPhoneInput');
+  if (!form) return;
+
+  form.querySelectorAll('input[name="notificationChannel"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isWa = radio.value === 'whatsapp';
+      phoneRow.style.display = isWa ? '' : 'none';
+      document.querySelectorAll('.bp-channel-opt').forEach(l => l.classList.remove('active'));
+      radio.closest('.bp-channel-opt').classList.add('active');
+    });
+  });
+
+  let saveTimer = null;
+  const save = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      const data = new FormData(form);
+      const body = new URLSearchParams(data);
+      const res  = await fetch('/battlepass/preferences', { method: 'POST', body });
+      const json = await res.json();
+      if (json.success) {
+        const saved = document.getElementById('channelSaved');
+        saved.classList.remove('hidden');
+        setTimeout(() => saved.classList.add('hidden'), 2500);
+      }
+    }, 600);
+  };
+
+  form.querySelectorAll('input[name="notificationChannel"]').forEach(r => r.addEventListener('change', save));
+  if (phoneInput) phoneInput.addEventListener('input', save);
+})();
+
 // ── Email preferences toggles ─────────────────────────────────────
 (function () {
   const form = document.getElementById('prefsForm');
@@ -499,7 +574,7 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
       saveTimer = setTimeout(async () => {
         const data = new FormData(form);
         // Unchecked boxes don't appear in FormData — explicitly add them
-        ['specials','events','birthday'].forEach(k => { if (!data.has(k)) data.append(k, 'off'); });
+        ['specials','events','birthday','marketingWhatsapp'].forEach(k => { if (!data.has(k)) data.append(k, 'off'); });
         const body = new URLSearchParams(data);
         const res  = await fetch('/battlepass/preferences', { method: 'POST', body });
         const json = await res.json();

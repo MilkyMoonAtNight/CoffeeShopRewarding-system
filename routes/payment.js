@@ -3,6 +3,7 @@ const router  = express.Router();
 const crypto  = require('crypto');
 const User    = require('../models/User');
 const { asString } = require('../utils/security');
+const { buildWaMeUrl } = require('../utils/whatsapp');
 
 function requireUser(req, res, next) {
   if (!req.session.userId) return res.redirect('/login');
@@ -59,6 +60,7 @@ router.post('/initiate', requireUser, async (req, res) => {
     };
 
     fields.HashCheck = generateOzowHash(fields, process.env.OZOW_PRIVATE_KEY);
+    req.session.lastOrderRef = orderRef; // so /success can build wa.me link
 
     res.render('pages/payment-redirect', {
       title:    'Redirecting to Ozow — Con Leche',
@@ -107,7 +109,9 @@ router.post('/notify', express.urlencoded({ extended: true }), async (req, res) 
 
 // ── Success / cancel / error pages ───────────────────────────────
 router.get('/success', requireUser, (req, res) => {
-  res.render('pages/payment-success', { title: 'Payment Successful — Con Leche' });
+  const ref    = req.session.lastOrderRef || null;
+  const waMeUrl = ref ? buildWaMeUrl(ref) : null;
+  res.render('pages/payment-success', { title: 'Payment Successful — Con Leche', waMeUrl, ref });
 });
 router.get('/cancel', requireUser, (req, res) => {
   res.render('pages/payment-cancel', { title: 'Payment Cancelled — Con Leche' });
