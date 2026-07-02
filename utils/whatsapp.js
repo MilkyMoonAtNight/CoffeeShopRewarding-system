@@ -37,8 +37,10 @@ function buildWaMeUrl(orderRef) {
   return `https://wa.me/${biz}?text=${text}`;
 }
 
-// Send a raw WhatsApp message via Twilio. Throws on failure so callers can fallback.
-async function sendWhatsAppMessage(toRaw, body) {
+// Send a raw WhatsApp message via Twilio.
+// Returns the Twilio message SID (use as messageId for webhook matching).
+// Throws on failure so callers can fallback to email.
+async function sendWhatsAppMessage(toRaw, body, statusCallbackUrl) {
   const client = getTwilioClient();
   if (!client) throw new Error('Twilio not configured');
 
@@ -46,11 +48,15 @@ async function sendWhatsAppMessage(toRaw, body) {
   const from = process.env.TWILIO_WHATSAPP_FROM; // e.g. "whatsapp:+14155238886"
   if (!to || !from) throw new Error('WhatsApp phone numbers not configured');
 
-  await client.messages.create({
+  const params = {
     from: from.startsWith('whatsapp:') ? from : `whatsapp:+${from}`,
     to:   `whatsapp:+${to}`,
     body,
-  });
+  };
+  if (statusCallbackUrl) params.statusCallback = statusCallbackUrl;
+
+  const message = await client.messages.create(params);
+  return message.sid; // Twilio SID — used as messageId for webhook matching
 }
 
 // Send an order status update via WhatsApp.
@@ -67,4 +73,4 @@ async function notifyCustomerWhatsApp(order, whatsappPhone, newStatus) {
   }
 }
 
-module.exports = { buildWaMeUrl, notifyCustomerWhatsApp, normalisePhone };
+module.exports = { buildWaMeUrl, notifyCustomerWhatsApp, normalisePhone, sendWhatsAppMessage };

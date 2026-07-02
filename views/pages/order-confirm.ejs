@@ -88,13 +88,20 @@ const cart = JSON.parse(sessionStorage.getItem('cl_cart') || '[]');
 let colMethod = 'Walk-up at truck';
 
 // Collection opt-cards
+function syncPaymentOptions() {
+  var isWalkup = colMethod === 'Walk-up at truck';
+  document.getElementById('payOnlineBtn').style.display  = isWalkup ? 'none' : '';
+  document.getElementById('payInstoreBtn').style.display = isWalkup ? '' : 'none';
+}
 document.querySelectorAll('#colPills .opt-card').forEach(btn => {
   btn.addEventListener('click', () => {
     colMethod = btn.dataset.val;
     document.querySelectorAll('#colPills .opt-card').forEach(b => b.classList.remove('opt-card-active'));
     btn.classList.add('opt-card-active');
+    syncPaymentOptions();
   });
 });
+syncPaymentOptions();
 
 function renderConfirm() {
   const el = document.getElementById('confirmItems');

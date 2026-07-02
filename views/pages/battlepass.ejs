@@ -19,16 +19,7 @@
         <div class="bp-card-logo">
           <img src="/images/logo_nav.png" alt="Con Leche" />
         </div>
-        <div class="bp-name-row">
-          <h2 class="bp-name" id="bpNameDisplay"><%= user.name %></h2>
-          <button class="bp-edit-name-btn" id="bpEditNameBtn" title="Edit name">&#9998;</button>
-        </div>
-        <form id="bpNameForm" class="bp-name-form hidden" autocomplete="off">
-          <input type="text" id="bpNameInput" class="bp-name-input" value="<%= user.name %>"
-                 pattern="[A-Za-z\s]+" maxlength="80" required />
-          <button type="submit" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.82rem;">Save</button>
-          <button type="button" id="bpNameCancel" style="background:none;border:none;cursor:pointer;font-size:0.82rem;color:rgba(253,246,237,0.4);">Cancel</button>
-        </form>
+        <h2 class="bp-name" id="bpNameDisplay"><%= user.name %></h2>
         <p class="bp-email"><%= user.email %></p>
         <div class="bp-qr-box">
           <img src="<%= qrDataUrl %>" alt="QR Code" class="bp-qr-img" />
@@ -65,15 +56,68 @@
         </div>
       </div>
 
-      <!-- ── Notification channel ── -->
+      <!-- ── Edit Profile ── -->
+      <div class="bp-section-card bp-profile-card">
+        <div class="bp-profile-header">
+          <p class="bp-section-label" style="margin:0;">Profile</p>
+          <button class="bp-profile-edit-btn" id="bpProfileEditBtn">Edit profile &#9998;</button>
+        </div>
+
+        <!-- Display view -->
+        <div id="bpProfileDisplay" class="bp-profile-display">
+          <div class="bp-profile-row"><span class="bp-profile-lbl">Name</span><span class="bp-profile-val"><%= user.name %></span></div>
+          <div class="bp-profile-row"><span class="bp-profile-lbl">Email</span><span class="bp-profile-val"><%= user.email %></span></div>
+          <div class="bp-profile-row"><span class="bp-profile-lbl">Phone</span><span class="bp-profile-val" id="bpPhoneDisplay"><%= user.phone || '—' %></span></div>
+        </div>
+
+        <!-- Edit form -->
+        <form id="bpProfileForm" class="bp-profile-form hidden" autocomplete="off">
+          <div class="bp-pf-group">
+            <label class="bp-pf-label" for="pfName">Name</label>
+            <input type="text" id="pfName" name="name" class="bp-pf-input" value="<%= user.name %>"
+                   pattern="[A-Za-z\s]+" maxlength="80" />
+          </div>
+          <div class="bp-pf-group">
+            <label class="bp-pf-label" for="pfEmail">Email <span class="bp-pf-verify-note">· verification code required</span></label>
+            <input type="email" id="pfEmail" name="email" class="bp-pf-input" value="<%= user.email %>" maxlength="200" />
+          </div>
+          <div class="bp-pf-group">
+            <label class="bp-pf-label" for="pfPhone">Phone <span class="bp-pf-verify-note">· verification code required</span></label>
+            <input type="tel" id="pfPhone" name="phone" class="bp-pf-input"
+                   value="<%= user.phone || '' %>" maxlength="30" placeholder="e.g. 082 123 4567" />
+          </div>
+          <p class="bp-pf-error hidden" id="bpPfError"></p>
+          <div class="bp-pf-actions" id="bpPfActions" style="display:none;">
+            <button type="submit" class="btn btn-primary bp-pf-save">Save changes</button>
+          </div>
+        </form>
+
+        <!-- OTP verification step (shown after profile save triggers verification) -->
+        <div id="bpOtpStep" class="bp-otp-step hidden">
+          <p class="bp-otp-hint" id="bpOtpHint"></p>
+          <div class="bp-otp-row">
+            <input type="text" id="bpOtpInput" class="bp-otp-input" inputmode="numeric"
+                   maxlength="6" placeholder="000000" />
+            <button class="btn btn-primary bp-otp-submit" id="bpOtpSubmit">Verify</button>
+          </div>
+          <p class="bp-pf-error hidden" id="bpOtpError"></p>
+          <button class="bp-otp-resend" id="bpOtpResend">Resend code</button>
+        </div>
+
+        <p class="bp-prefs-saved hidden" id="bpProfileSaved">✓ Profile updated</p>
+      </div>
+
+      <!-- ── Notifications (merged) ── -->
       <div class="bp-section-card bp-prefs-card">
-        <p class="bp-section-label">Order Notifications</p>
-        <p class="bp-section-hint">How should we notify you when your order status changes?</p>
-        <form id="channelForm" class="bp-prefs-form">
+        <p class="bp-section-label" id="notifPanelTitle"><%= user.notificationChannel === 'whatsapp' ? 'WhatsApp' : 'Email' %> Notifications</p>
+        <p class="bp-section-hint">Choose how and what Con Leche sends you. Changes save instantly.</p>
+
+        <!-- Channel selector -->
+        <form id="channelForm" class="bp-prefs-form" style="margin-bottom:0.5rem;">
           <div class="bp-channel-row">
             <label class="bp-channel-opt <%= (!user.notificationChannel || user.notificationChannel === 'email') ? 'active' : '' %>" id="chanEmail">
               <input type="radio" name="notificationChannel" value="email" <%= (!user.notificationChannel || user.notificationChannel === 'email') ? 'checked' : '' %> />
-              <span class="bp-channel-icon">✉️</span>
+              <span class="bp-channel-icon">&#x2709;&#xFE0F;</span>
               <span class="bp-channel-name">Email</span>
             </label>
             <label class="bp-channel-opt <%= user.notificationChannel === 'whatsapp' ? 'active' : '' %>" id="chanWa">
@@ -84,35 +128,18 @@
               <span class="bp-channel-name">WhatsApp</span>
             </label>
           </div>
-          <!-- WhatsApp number input — shown only when WA is selected -->
-          <div id="waPhoneRow" class="bp-wa-phone-row" style="<%= user.notificationChannel === 'whatsapp' ? '' : 'display:none;' %>">
-            <label class="bp-wa-label" for="waPhoneInput">Your WhatsApp number</label>
-            <input type="tel" id="waPhoneInput" name="whatsappPhone" class="bp-wa-input"
-                   placeholder="e.g. 082 123 4567"
-                   value="<%= user.whatsappPhone || '' %>" maxlength="20" />
-            <span class="bp-wa-hint">South African numbers — we'll add +27 automatically.</span>
-          </div>
-          <p class="bp-prefs-saved hidden" id="channelSaved">✓ Saved</p>
+          <p class="bp-section-hint" id="waPhoneHint" style="<%= (user.notificationChannel === 'whatsapp' && !user.phone) ? '' : 'display:none;' %>margin-top:0.4rem;color:rgba(88,18,23,0.75);">&#x26A0;&#xFE0F; Add your phone number in Profile above to receive WhatsApp messages.</p>
+          <p class="bp-prefs-saved hidden" id="channelSaved">&#10003; Saved</p>
         </form>
-      </div>
 
-      <!-- ── Email preferences ── -->
-      <div class="bp-section-card bp-prefs-card">
-        <p class="bp-section-label">Email Notifications</p>
-        <p class="bp-section-hint">Choose what Con Leche can send you. Changes save instantly.</p>
+        <div style="border-top:1px solid rgba(44,44,44,0.07);margin:0.1rem 0 0.85rem;"></div>
+
+        <!-- What we send you -->
         <form id="prefsForm" class="bp-prefs-form">
           <label class="bp-pref-toggle">
             <div class="bp-pref-info">
-              <span class="bp-pref-name">Specials &amp; new arrivals</span>
-              <span class="bp-pref-desc">Weekly drinks, monthly features, new menu items</span>
-            </div>
-            <input type="checkbox" name="specials" id="prefSpecials" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.specials ? 'checked' : '' %> />
-            <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
-          </label>
-          <label class="bp-pref-toggle">
-            <div class="bp-pref-info">
               <span class="bp-pref-name">Events &amp; truck locations</span>
-              <span class="bp-pref-desc">Where to find us — markets, pop-ups, run clubs</span>
+              <span class="bp-pref-desc">Where to find us &#8212; markets, pop-ups, run clubs</span>
             </div>
             <input type="checkbox" name="events" id="prefEvents" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.events ? 'checked' : '' %> />
             <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
@@ -125,15 +152,39 @@
             <input type="checkbox" name="birthday" id="prefBirthday" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.birthday ? 'checked' : '' %> />
             <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
           </label>
+          <p class="bp-prefs-saved hidden" id="prefsSaved">&#10003; Saved</p>
+        </form>
+
+        <form id="mktConsentForm" class="bp-prefs-form" style="border-top:1px solid rgba(44,44,44,0.06);padding-top:0.5rem;margin-top:0.25rem;">
           <label class="bp-pref-toggle">
             <div class="bp-pref-info">
-              <span class="bp-pref-name">Specials on WhatsApp</span>
-              <span class="bp-pref-desc">Receive marketing messages on WhatsApp (opt-in only)</span>
+              <span class="bp-pref-name">Specials &amp; promotions</span>
+              <span class="bp-pref-desc">New drinks, limited offers, seasonal features</span>
             </div>
-            <input type="checkbox" name="marketingWhatsapp" id="prefMktWa" class="bp-toggle-input" <%= user.emailPreferences && user.emailPreferences.marketingWhatsapp ? 'checked' : '' %> />
+            <input type="checkbox" name="marketingConsent" id="prefMktConsent" class="bp-toggle-input"
+                   <%= user.marketingConsent ? 'checked' : '' %> />
             <span class="bp-toggle-track"><span class="bp-toggle-thumb"></span></span>
           </label>
-          <p class="bp-prefs-saved hidden" id="prefsSaved">✓ Saved</p>
+          <div id="mktChannelPickerBp" style="<%= user.marketingConsent ? '' : 'display:none;' %>margin-top:0.6rem;">
+            <p style="font-size:0.78rem;color:rgba(44,44,44,0.5);font-weight:600;margin-bottom:0.4rem;">Preferred channel for promotions</p>
+            <div class="bp-channel-row" style="margin-bottom:0;">
+              <label class="bp-channel-opt <%= (!user.marketingChannel || user.marketingChannel === 'email') ? 'active' : '' %>" id="mktChanEmail">
+                <input type="radio" name="marketingChannel" value="email"
+                       <%= (!user.marketingChannel || user.marketingChannel === 'email') ? 'checked' : '' %> />
+                <span class="bp-channel-icon">&#x2709;&#xFE0F;</span>
+                <span class="bp-channel-name">Email</span>
+              </label>
+              <label class="bp-channel-opt <%= user.marketingChannel === 'whatsapp' ? 'active' : '' %>" id="mktChanWa">
+                <input type="radio" name="marketingChannel" value="whatsapp"
+                       <%= user.marketingChannel === 'whatsapp' ? 'checked' : '' %> />
+                <span class="bp-channel-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                </span>
+                <span class="bp-channel-name">WhatsApp</span>
+              </label>
+            </div>
+          </div>
+          <p class="bp-prefs-saved hidden" id="mktConsentSaved">&#10003; Saved</p>
         </form>
       </div>
 
@@ -527,65 +578,256 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeRedeem();
 });
 
+// ── Edit Profile ──────────────────────────────────────────────────
+(function () {
+  var editBtn    = document.getElementById('bpProfileEditBtn');
+  var display    = document.getElementById('bpProfileDisplay');
+  var form       = document.getElementById('bpProfileForm');
+  var actionsDiv = document.getElementById('bpPfActions');
+  var otpStep    = document.getElementById('bpOtpStep');
+  var otpInput   = document.getElementById('bpOtpInput');
+  var otpSubmit  = document.getElementById('bpOtpSubmit');
+  var otpResend  = document.getElementById('bpOtpResend');
+  var otpHint    = document.getElementById('bpOtpHint');
+  var otpErr     = document.getElementById('bpOtpError');
+  var pfErr      = document.getElementById('bpPfError');
+  var saved      = document.getElementById('bpProfileSaved');
+  var pfName     = document.getElementById('pfName');
+  var pfEmail    = document.getElementById('pfEmail');
+  var pfPhone    = document.getElementById('pfPhone');
+  var origValues = {};
+
+  function showDisplay() {
+    display.classList.remove('hidden');
+    form.classList.add('hidden');
+    otpStep.classList.add('hidden');
+    actionsDiv.style.display = 'none';
+    editBtn.textContent = 'Edit profile ✎';
+    editBtn.removeAttribute('data-mode');
+  }
+
+  function showEdit() {
+    origValues = { name: pfName.value, email: pfEmail.value, phone: pfPhone.value };
+    display.classList.add('hidden');
+    form.classList.remove('hidden');
+    otpStep.classList.add('hidden');
+    pfErr.classList.add('hidden');
+    actionsDiv.style.display = 'none';
+    editBtn.textContent = 'Cancel';
+    editBtn.dataset.mode = 'cancel';
+  }
+
+  function checkChanges() {
+    var changed = pfName.value !== origValues.name
+               || pfEmail.value !== origValues.email
+               || pfPhone.value !== origValues.phone;
+    actionsDiv.style.display = changed ? 'flex' : 'none';
+  }
+
+  editBtn.addEventListener('click', function () {
+    if (editBtn.dataset.mode === 'cancel') {
+      pfName.value  = origValues.name  || '';
+      pfEmail.value = origValues.email || '';
+      pfPhone.value = origValues.phone || '';
+      showDisplay();
+    } else {
+      showEdit();
+    }
+  });
+
+  pfName.addEventListener('input', checkChanges);
+  pfEmail.addEventListener('input', checkChanges);
+  pfPhone.addEventListener('input', checkChanges);
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    pfErr.classList.add('hidden');
+    var btn = form.querySelector('.bp-pf-save');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    var body = new URLSearchParams(new FormData(form));
+    fetch('/battlepass/update-profile', { method: 'POST', body: body })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        btn.disabled = false; btn.textContent = 'Save changes';
+        if (!json.success) {
+          pfErr.textContent = json.message || 'Something went wrong.';
+          pfErr.classList.remove('hidden'); return;
+        }
+        if (pfName.value.trim()) {
+          document.getElementById('bpNameDisplay').textContent = pfName.value.trim();
+        }
+        if (!json.verified) {
+          showDisplay();
+          var dispVals = display.querySelectorAll('.bp-profile-val');
+          if (dispVals[0]) dispVals[0].textContent = pfName.value;
+          saved.classList.remove('hidden');
+          setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+        } else {
+          form.classList.add('hidden');
+          otpStep.classList.remove('hidden');
+          otpHint.textContent = json.hint || 'Enter the code we sent you.';
+          otpInput.value = '';
+          otpInput.focus();
+        }
+      });
+  });
+
+  function submitOtp() {
+    otpErr.classList.add('hidden');
+    otpSubmit.disabled = true; otpSubmit.textContent = 'Verifying…';
+    var body = new URLSearchParams({ code: otpInput.value });
+    fetch('/battlepass/verify-profile', { method: 'POST', body: body })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        otpSubmit.disabled = false; otpSubmit.textContent = 'Verify';
+        if (!json.success) {
+          otpErr.textContent = json.message || 'Incorrect code.';
+          otpErr.classList.remove('hidden'); return;
+        }
+        showDisplay();
+        var dispVals = display.querySelectorAll('.bp-profile-val');
+        if (pfEmail.value && dispVals[1]) dispVals[1].textContent = pfEmail.value;
+        if (pfPhone.value && dispVals[2]) dispVals[2].textContent = pfPhone.value;
+        saved.classList.remove('hidden');
+        setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+      });
+  }
+
+  otpSubmit.addEventListener('click', submitOtp);
+  otpInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitOtp(); }
+  });
+  otpInput.addEventListener('input', function () {
+    otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
+    if (otpInput.value.length === 6) submitOtp();
+  });
+  otpResend.addEventListener('click', function () {
+    otpResend.disabled = true; otpResend.textContent = 'Sending…';
+    fetch('/battlepass/resend-profile-otp', { method: 'POST' })
+      .then(function () {
+        otpResend.textContent = 'Sent!';
+        setTimeout(function () { otpResend.disabled = false; otpResend.textContent = 'Resend code'; }, 3000);
+      });
+  });
+})();
+
 // ── Notification channel (email vs WhatsApp) ──────────────────────
 (function () {
-  const form      = document.getElementById('channelForm');
-  const phoneRow  = document.getElementById('waPhoneRow');
-  const phoneInput = document.getElementById('waPhoneInput');
+  var form     = document.getElementById('channelForm');
+  var titleEl  = document.getElementById('notifPanelTitle');
+  var waHint   = document.getElementById('waPhoneHint');
+  var hasPhone = <%= user.phone ? 'true' : 'false' %>;
   if (!form) return;
 
-  form.querySelectorAll('input[name="notificationChannel"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const isWa = radio.value === 'whatsapp';
-      phoneRow.style.display = isWa ? '' : 'none';
-      document.querySelectorAll('.bp-channel-opt').forEach(l => l.classList.remove('active'));
+  function updateTitle(channel) {
+    if (titleEl) titleEl.textContent = (channel === 'whatsapp' ? 'WhatsApp' : 'Email') + ' Notifications';
+  }
+
+  form.querySelectorAll('input[name="notificationChannel"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      var isWa = radio.value === 'whatsapp';
+      form.querySelectorAll('.bp-channel-opt').forEach(function (l) { l.classList.remove('active'); });
       radio.closest('.bp-channel-opt').classList.add('active');
+      updateTitle(radio.value);
+      if (waHint) waHint.style.display = (isWa && !hasPhone) ? '' : 'none';
     });
   });
 
-  let saveTimer = null;
-  const save = () => {
+  var saveTimer = null;
+  function save() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      const data = new FormData(form);
-      const body = new URLSearchParams(data);
-      const res  = await fetch('/battlepass/preferences', { method: 'POST', body });
-      const json = await res.json();
-      if (json.success) {
-        const saved = document.getElementById('channelSaved');
-        saved.classList.remove('hidden');
-        setTimeout(() => saved.classList.add('hidden'), 2500);
-      }
+    saveTimer = setTimeout(function () {
+      var data = new FormData(form);
+      var body = new URLSearchParams(data);
+      fetch('/battlepass/preferences', { method: 'POST', body: body })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+          if (json.success) {
+            var saved = document.getElementById('channelSaved');
+            saved.classList.remove('hidden');
+            setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+          }
+        });
     }, 600);
-  };
+  }
 
-  form.querySelectorAll('input[name="notificationChannel"]').forEach(r => r.addEventListener('change', save));
-  if (phoneInput) phoneInput.addEventListener('input', save);
+  form.querySelectorAll('input[name="notificationChannel"]').forEach(function (r) {
+    r.addEventListener('change', save);
+  });
 })();
 
 // ── Email preferences toggles ─────────────────────────────────────
 (function () {
-  const form = document.getElementById('prefsForm');
+  var form = document.getElementById('prefsForm');
   if (!form) return;
-  let saveTimer = null;
-  form.querySelectorAll('.bp-toggle-input').forEach(input => {
-    input.addEventListener('change', () => {
+  var saveTimer = null;
+  form.querySelectorAll('.bp-toggle-input').forEach(function (input) {
+    input.addEventListener('change', function () {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(async () => {
-        const data = new FormData(form);
-        // Unchecked boxes don't appear in FormData — explicitly add them
-        ['specials','events','birthday','marketingWhatsapp'].forEach(k => { if (!data.has(k)) data.append(k, 'off'); });
-        const body = new URLSearchParams(data);
-        const res  = await fetch('/battlepass/preferences', { method: 'POST', body });
-        const json = await res.json();
-        if (json.success) {
-          const saved = document.getElementById('prefsSaved');
-          saved.classList.remove('hidden');
-          setTimeout(() => saved.classList.add('hidden'), 2500);
-        }
+      saveTimer = setTimeout(function () {
+        var data = new FormData(form);
+        ['events','birthday'].forEach(function (k) { if (!data.has(k)) data.append(k, 'off'); });
+        var body = new URLSearchParams(data);
+        fetch('/battlepass/preferences', { method: 'POST', body: body })
+          .then(function (r) { return r.json(); })
+          .then(function (json) {
+            if (json.success) {
+              var saved = document.getElementById('prefsSaved');
+              saved.classList.remove('hidden');
+              setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+            }
+          });
       }, 400);
     });
   });
+})();
+
+// ── Marketing consent ─────────────────────────────────────────────
+(function () {
+  var form         = document.getElementById('mktConsentForm');
+  var consentChk   = document.getElementById('prefMktConsent');
+  var channelPicker = document.getElementById('mktChannelPickerBp');
+  if (!form) return;
+
+  function togglePicker() {
+    channelPicker.style.display = consentChk.checked ? '' : 'none';
+    document.querySelectorAll('#mktChannelPickerBp .bp-channel-opt').forEach(function (l) {
+      l.classList.remove('active');
+    });
+    var checked = form.querySelector('input[name="marketingChannel"]:checked');
+    if (checked) checked.closest('.bp-channel-opt').classList.add('active');
+  }
+
+  consentChk.addEventListener('change', function () { togglePicker(); save(); });
+
+  form.querySelectorAll('input[name="marketingChannel"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      document.querySelectorAll('#mktChannelPickerBp .bp-channel-opt').forEach(function (l) {
+        l.classList.remove('active');
+      });
+      r.closest('.bp-channel-opt').classList.add('active');
+      save();
+    });
+  });
+
+  var saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      var data = new FormData(form);
+      if (!data.has('marketingConsent')) data.append('marketingConsent', 'off');
+      var body = new URLSearchParams(data);
+      fetch('/battlepass/marketing-consent', { method: 'POST', body: body })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+          if (json.success) {
+            var saved = document.getElementById('mktConsentSaved');
+            saved.classList.remove('hidden');
+            setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+          }
+        });
+    }, 400);
+  }
 })();
 
 // ── Delete account ────────────────────────────────────────────────

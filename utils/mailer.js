@@ -301,7 +301,60 @@ async function sendNotificationEmail(user, notification) {
   });
 }
 
-module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendPasswordReset, sendBirthdayEmail, sendNotificationEmail };
+// ── OTP / verification code email ────────────────────────────────
+async function sendOtpEmail(toEmail, code, purpose = 'login') {
+  const PURPOSES = {
+    register:     { emoji: '✅', headline: 'Verify your account',       sub: 'Enter this code to confirm your email and activate your account. It expires in 10 minutes.' },
+    login:        { emoji: '🔐', headline: 'Your login code',           sub: 'Enter this code to complete sign-in. It expires in 10 minutes.' },
+    email_change: { emoji: '✉️', headline: 'Confirm your new email',    sub: 'Enter this code to update your email address. It expires in 10 minutes.' },
+    phone_change: { emoji: '📱', headline: 'Confirm your phone number', sub: 'Enter this code to save your phone number. It expires in 10 minutes.' },
+  };
+  const { emoji, headline, sub } = PURPOSES[purpose] || PURPOSES.login;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5ede4;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5ede4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#581217;padding:24px 32px;text-align:center;">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#fdf6ed;">☕ Con Leche</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px 32px;text-align:center;">
+            <p style="margin:0;font-size:40px;">${emoji}</p>
+            <h1 style="margin:14px 0 8px;font-size:20px;color:#2c2c2c;">${headline}</h1>
+            <p style="margin:0 0 28px;font-size:13px;color:#888;">${sub}</p>
+            <div style="display:inline-block;background:#fdf6ed;border:2px solid #E2C9A0;border-radius:12px;padding:18px 36px;">
+              <span style="font-family:monospace;font-size:2.4rem;font-weight:700;color:#581217;letter-spacing:0.22em;">${code}</span>
+            </div>
+            <p style="margin:24px 0 0;font-size:12px;color:#bbb;">If you didn't request this, you can safely ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;text-align:center;border-top:1px solid #f0e8df;">
+            <p style="margin:0;font-size:11px;color:#bbb;">Con Leche · Do not reply to this email</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await getTransporter().sendMail({
+    from:    `"Con Leche" <${process.env.EMAIL_USER}>`,
+    to:      toEmail,
+    subject: `${emoji} ${code} — ${headline}`,
+    html,
+  });
+}
+
+module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendPasswordReset, sendBirthdayEmail, sendNotificationEmail, sendOtpEmail };
 
 async function sendPasswordReset(toEmail, resetUrl, name) {
   const html = `

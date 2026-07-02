@@ -14,7 +14,10 @@
       "Bash(node -c utils/scanState.js)",
       "Skill(anthropic-skills:humanizer)",
       "Skill(anthropic-skills:humanizer:*)",
-      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),800\\);\")"
+      "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),800\\);\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm audit *)",
+      "Bash(cat \"/c/Users/Iwang/.claude/projects/C--Users-Iwang-OneDrive---belgiumcampus-ac-za-Con-Leche-CoffeeShopRewarding-system/memory/MEMORY.md\" 2>/dev/null)"
     ]
   }
 }

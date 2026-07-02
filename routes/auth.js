@@ -3,7 +3,9 @@ const router   = express.Router();
 const User     = require('../models/User');
 const QRCode   = require('qrcode');
 const crypto   = require('crypto');
-const { sendPasswordReset } = require('../utils/mailer');
+const { sendPasswordReset, sendOtpEmail } = require('../utils/mailer');
+const { sendWhatsAppMessage, normalisePhone } = require('../utils/whatsapp');
+const { sendOtpWhatsAppFirst } = require('../utils/sendOtp');
 const { rateLimit, asString } = require('../utils/security');
 
 // Throttle credential / reset endpoints to blunt brute-force and reset-spam.
@@ -18,55 +20,188 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', loginLimiter, async (req, res) => {
+  const RENDER = (error) => res.render('pages/register', { title: 'Join the Pack — Con Leche', error });
   try {
-    const name     = asString(req.body.name, 100);
-    const email    = asString(req.body.email, 200).toLowerCase();
+    const name     = asString(req.body.name, 100).trim();
+    const email    = asString(req.body.email, 200).toLowerCase().trim();
+    const phone    = asString(req.body.phone, 30).trim();
     const password = asString(req.body.password, 200);
     const confirmPassword = asString(req.body.confirmPassword, 200);
     const bdYear  = parseInt(asString(req.body.birthdayYear,  6)) || null;
     const bdMonth = parseInt(asString(req.body.birthdayMonth, 4)) || null;
     const bdDay   = parseInt(asString(req.body.birthdayDay,   4)) || null;
 
-    if (!name || !email || !password)
-      return res.render('pages/register', { title: 'Join the Pack', error: 'All fields are required' });
-    if (!/^[A-Za-z\s]+$/.test(name))
-      return res.render('pages/register', { title: 'Join the Pack', error: 'Name may only contain letters and spaces' });
-    if (!EMAIL_RE.test(email))
-      return res.render('pages/register', { title: 'Join the Pack', error: 'Please enter a valid email address' });
-    if (password.length < 8)
-      return res.render('pages/register', { title: 'Join the Pack', error: 'Password must be at least 8 characters' });
-    if (password !== confirmPassword)
-      return res.render('pages/register', { title: 'Join the Pack', error: 'Passwords do not match' });
+    if (!name || !email || !password) return RENDER('Name, email and password are required.');
+    if (!/^[A-Za-z\s]+$/.test(name))  return RENDER('Name may only contain letters and spaces.');
+    if (!EMAIL_RE.test(email))         return RENDER('Please enter a valid email address.');
+    if (password.length < 8)           return RENDER('Password must be at least 8 characters.');
+    if (password !== confirmPassword)  return RENDER('Passwords do not match.');
+
     const exists = await User.findOne({ email });
-    if (exists)
-      return res.render('pages/register', { title: 'Join the Pack', error: 'Email already registered' });
-    // Title-case each word
+    if (exists) return RENDER('That email is already registered. Sign in instead?');
+
     const titledName = name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    // Birthday: need at least month + day to be useful for birthday emails
+
     let birthday = null;
     if (bdMonth && bdDay) {
       const year = (bdYear && bdYear >= 1920 && bdYear <= new Date().getFullYear()) ? bdYear : 1900;
       const d = new Date(year, bdMonth - 1, bdDay);
       if (!isNaN(d.getTime())) birthday = d;
     } else if (bdYear && bdYear >= 1920 && bdYear <= new Date().getFullYear()) {
-      birthday = new Date(bdYear, 0, 1); // year only, Jan 1 placeholder
+      birthday = new Date(bdYear, 0, 1);
     }
 
+    const marketingConsent  = req.body.marketingConsent === 'on';
+    const marketingChannel  = marketingConsent ? asString(req.body.marketingChannel, 20) : null;
+    const normChannel       = (marketingChannel === 'whatsapp') ? 'whatsapp' : 'email';
+
+    const normPhone = phone ? normalisePhone(phone) : null;
+
     const emailPreferences = {
-      specials: req.body.notifySpecials === 'on',
-      events:   req.body.notifyEvents   === 'on',
-      birthday: req.body.notifyBirthday === 'on',
+      specials:          marketingConsent && normChannel === 'email',
+      events:            req.body.notifyEvents   === 'on',
+      birthday:          req.body.notifyBirthday === 'on',
+      marketingWhatsapp: marketingConsent && normChannel === 'whatsapp',
     };
 
+    const otp     = String(Math.floor(100000 + Math.random() * 900000));
     const qrToken = crypto.randomBytes(16).toString('hex');
-    const user = new User({ name: titledName, email, password, qrCode: qrToken, birthday, emailPreferences });
+
+    const user = new User({
+      name:          titledName,
+      email,
+      password,
+      phone:         phone || null,
+      whatsappPhone: normPhone,
+      qrCode:        qrToken,
+      birthday,
+      emailPreferences,
+      marketingConsent,
+      marketingChannel:   marketingConsent ? normChannel : null,
+      marketingConsentAt: marketingConsent ? new Date() : null,
+      verified: false,
+      otp: {
+        code:      otp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        attempts:  0,
+      },
+    });
     await user.save();
-    req.session.userId   = user._id;
-    req.session.userName = user.name;
+
+    // Fire-and-forget: OTP send (updates otp.channel + otp.messageId on user)
+    sendOtpWhatsAppFirst(user, otp, 'register').catch(err =>
+      console.error('OTP dispatch error:', err.message)
+    );
+
+    req.session.pendingVerifyUserId = String(user._id);
+    res.redirect('/verify');
+  } catch (err) {
+    console.error(err);
+    RENDER('Something went wrong. Please try again.');
+  }
+});
+
+// ── VERIFY ACCOUNT ────────────────────────────────────────────────
+router.get('/verify', async (req, res) => {
+  if (!req.session.pendingVerifyUserId) return res.redirect('/login');
+  const user = await User.findById(req.session.pendingVerifyUserId)
+    .select('otp name verified').lean().catch(() => null);
+  if (!user) { req.session.pendingVerifyUserId = null; return res.redirect('/register'); }
+  if (user.verified) { req.session.userId = req.session.pendingVerifyUserId; req.session.pendingVerifyUserId = null; return res.redirect('/battlepass'); }
+  res.render('pages/verify', {
+    title:   'Verify your account — Con Leche',
+    error:   null,
+    channel: (user.otp && user.otp.channel) || 'email',
+    name:    user.name,
+  });
+});
+
+// Channel-status poll (called every 3s from the verify page)
+router.get('/verify/status', async (req, res) => {
+  if (!req.session.pendingVerifyUserId) return res.json({ ok: false });
+  const user = await User.findById(req.session.pendingVerifyUserId)
+    .select('otp verified').lean().catch(() => null);
+  if (!user) return res.json({ ok: false });
+  const locked = !!(user.otp && user.otp.lockedUntil && new Date() < new Date(user.otp.lockedUntil));
+  res.json({
+    ok:      true,
+    channel: (user.otp && user.otp.channel) || 'email',
+    locked,
+  });
+});
+
+router.post('/verify', loginLimiter, async (req, res) => {
+  if (!req.session.pendingVerifyUserId) return res.redirect('/login');
+  const RENDER = (error, channel) =>
+    res.render('pages/verify', { title: 'Verify — Con Leche', error, channel: channel || 'email', name: '' });
+
+  try {
+    const user    = await User.findById(req.session.pendingVerifyUserId);
+    if (!user) return res.redirect('/login');
+    const entered = asString(req.body.code, 10).replace(/\s/g, '');
+    const channel = (user.otp && user.otp.channel) || 'email';
+
+    if (user.otp && user.otp.lockedUntil && new Date() < user.otp.lockedUntil) {
+      return RENDER('Too many incorrect attempts. Please wait 15 minutes or request a new code.', channel);
+    }
+    if (!user.otp || !user.otp.code || new Date() > user.otp.expiresAt) {
+      return RENDER('Your code has expired. Please request a new one below.', channel);
+    }
+    if (entered !== user.otp.code) {
+      user.otp.attempts = (user.otp.attempts || 0) + 1;
+      if (user.otp.attempts >= 5) user.otp.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+      const left = Math.max(0, 5 - user.otp.attempts);
+      return RENDER(
+        left > 0 ? `Incorrect code — ${left} attempt${left === 1 ? '' : 's'} remaining.`
+                 : 'Account locked for 15 minutes. Use "Resend code" to get a fresh one.',
+        channel
+      );
+    }
+
+    // ✓ Correct — activate account and log in
+    user.verified      = true;
+    user.otp.code      = null;
+    user.otp.expiresAt = null;
+    user.otp.channel   = null;
+    user.otp.messageId = null;
+    user.otp.attempts  = 0;
+    user.otp.lockedUntil = null;
+    await user.save();
+
+    req.session.userId              = String(user._id);
+    req.session.userName            = user.name;
+    req.session.pendingVerifyUserId = null;
     res.redirect('/battlepass');
   } catch (err) {
     console.error(err);
-    res.render('pages/register', { title: 'Join the Pack', error: 'Something went wrong. Try again.' });
+    RENDER('Something went wrong. Please try again.', 'email');
+  }
+});
+
+// Resend OTP (on verify page)
+router.post('/verify/resend', loginLimiter, async (req, res) => {
+  if (!req.session.pendingVerifyUserId) return res.json({ ok: false, message: 'Session expired.' });
+  try {
+    const user = await User.findById(req.session.pendingVerifyUserId);
+    if (!user) return res.json({ ok: false, message: 'User not found.' });
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.otp.code        = otp;
+    user.otp.expiresAt   = new Date(Date.now() + 10 * 60 * 1000);
+    user.otp.attempts    = 0;
+    user.otp.lockedUntil = null;
+    user.otp.channel     = null;
+    user.otp.messageId   = null;
+    await user.save();
+
+    sendOtpWhatsAppFirst(user, otp, 'register').catch(err =>
+      console.error('Resend OTP error:', err.message)
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false, message: err.message });
   }
 });
 
@@ -82,13 +217,65 @@ router.post('/login', loginLimiter, async (req, res) => {
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password)))
       return res.render('pages/login', { title: 'Sign In', error: 'Invalid email or password', success: null });
-    req.session.userId   = user._id;
-    req.session.userName = user.name;
-    res.redirect('/battlepass');
+
+    // Redirect unverified accounts back to the verify flow
+    if (!user.verified) {
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      user.otp = { code: otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000), attempts: 0 };
+      await user.save();
+      sendOtpWhatsAppFirst(user, otp, 'register').catch(() => {});
+      req.session.pendingVerifyUserId = String(user._id);
+      return res.redirect('/verify');
+    }
+
+    // Generate 6-digit OTP and store in session
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    req.session.pendingUserId    = String(user._id);
+    req.session.pendingUserName  = user.name;
+    req.session.loginOtp         = otp;
+    req.session.loginOtpExpiry   = Date.now() + 10 * 60 * 1000;
+
+    // Send OTP — WhatsApp first if configured, else email
+    let sentViaWa = false;
+    if (user.whatsappPhone) {
+      try {
+        await sendWhatsAppMessage(user.whatsappPhone, `🔐 Your Con Leche login code is *${otp}*. It expires in 10 minutes.`);
+        sentViaWa = true;
+      } catch {}
+    }
+    if (!sentViaWa) await sendOtpEmail(user.email, otp, 'login');
+
+    res.redirect('/verify-login');
   } catch (err) {
     console.error(err);
     res.render('pages/login', { title: 'Sign In', error: 'Something went wrong.', success: null });
   }
+});
+
+// ── VERIFY LOGIN (2FA) ────────────────────────────────────────────
+router.get('/verify-login', (req, res) => {
+  if (!req.session.pendingUserId) return res.redirect('/login');
+  res.render('pages/verify-login', { title: 'Verify — Con Leche', error: null });
+});
+
+router.post('/verify-login', loginLimiter, (req, res) => {
+  if (!req.session.pendingUserId) return res.redirect('/login');
+  const entered = asString(req.body.code, 10).replace(/\s/g, '');
+  if (Date.now() > req.session.loginOtpExpiry) {
+    req.session.pendingUserId = null;
+    return res.render('pages/verify-login', { title: 'Verify — Con Leche', error: 'Code expired. Please sign in again.' });
+  }
+  if (entered !== req.session.loginOtp) {
+    return res.render('pages/verify-login', { title: 'Verify — Con Leche', error: 'Incorrect code. Please try again.' });
+  }
+  // OTP correct — complete login
+  req.session.userId   = req.session.pendingUserId;
+  req.session.userName = req.session.pendingUserName;
+  req.session.pendingUserId   = null;
+  req.session.pendingUserName = null;
+  req.session.loginOtp        = null;
+  req.session.loginOtpExpiry  = null;
+  res.redirect('/battlepass');
 });
 
 // ── LOGOUT ────────────────────────────────────────────────────────

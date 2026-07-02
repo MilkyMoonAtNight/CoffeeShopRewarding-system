@@ -4,7 +4,10 @@ const User = require('../models/User');
 const Admin = require('../models/Admin');
 const QRCode = require('qrcode');
 const { getMilestoneForDrink } = require('../models/User');
-const { asString } = require('../utils/security');
+const { asString, cleanText } = require('../utils/security');
+const { sendOtpEmail } = require('../utils/mailer');
+const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const { isPending } = require('../utils/scanState');
 const ActivityLog = require('../models/ActivityLog');
 
@@ -207,6 +210,150 @@ router.post('/preferences', requireAuth, async (req, res) => {
     }
 
     await user.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ── UPDATE PROFILE (name saves immediately; email/phone needs OTP) ─
+router.post('/update-profile', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const newName  = cleanText(asString(req.body.name, 100), 100).trim();
+    const newEmail = asString(req.body.email, 200).toLowerCase().trim();
+    const newPhone = cleanText(asString(req.body.phone, 30), 30).trim();
+
+    // Name — save immediately (letters + spaces only)
+    if (newName && /^[A-Za-z\s]+$/.test(newName)) {
+      const titled = newName.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      user.name = titled;
+      req.session.userName = titled;
+    }
+
+    // Check which sensitive field changed
+    const emailChanged = newEmail && newEmail !== user.email;
+    const phoneChanged = newPhone && newPhone !== (user.phone || '');
+
+    if (!emailChanged && !phoneChanged) {
+      await user.save();
+      return res.json({ success: true, verified: false });
+    }
+
+    // Generate OTP and decide which field to verify first (email takes priority)
+    const otp    = String(Math.floor(100000 + Math.random() * 900000));
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    if (emailChanged) {
+      if (!EMAIL_RE.test(newEmail)) return res.json({ success: false, message: 'Invalid email address.' });
+      const taken = await User.findOne({ email: newEmail });
+      if (taken) return res.json({ success: false, message: 'That email is already in use.' });
+      user.pendingEmail     = newEmail;
+      user.pendingPhone     = phoneChanged ? newPhone : null;
+      user.profileOtp       = otp;
+      user.profileOtpExpiry = expiry;
+      user.profileOtpField  = 'email';
+      await user.save();
+      await sendOtpEmail(newEmail, otp, 'email_change');
+      return res.json({ success: true, verified: true, field: 'email', hint: `Code sent to ${newEmail}` });
+    }
+
+    // Phone only
+    user.pendingPhone     = newPhone;
+    user.profileOtp       = otp;
+    user.profileOtpExpiry = expiry;
+    user.profileOtpField  = 'phone';
+    await user.save();
+
+    let sentWa = false;
+    const { normalisePhone } = require('../utils/whatsapp');
+    const normPhone = normalisePhone(newPhone);
+    if (normPhone) {
+      try {
+        await sendWhatsAppMessage(normPhone, `📱 Your Con Leche verification code is *${otp}*. It expires in 10 minutes.`);
+        sentWa = true;
+      } catch {}
+    }
+    if (!sentWa) await sendOtpEmail(user.email, otp, 'phone_change');
+
+    const hint = sentWa ? `Code sent to WhatsApp ${newPhone}` : `Code sent to ${user.email}`;
+    res.json({ success: true, verified: true, field: 'phone', hint });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ── VERIFY PROFILE CHANGE ──────────────────────────────────────────
+router.post('/verify-profile', requireAuth, async (req, res) => {
+  try {
+    const user    = await User.findById(req.session.userId);
+    const entered = asString(req.body.code, 10).replace(/\s/g, '');
+    if (!user.profileOtp) return res.json({ success: false, message: 'No pending verification.' });
+    if (new Date() > user.profileOtpExpiry) {
+      user.profileOtp = null; user.profileOtpExpiry = null;
+      await user.save();
+      return res.json({ success: false, message: 'Code expired. Please try again.' });
+    }
+    if (entered !== user.profileOtp) return res.json({ success: false, message: 'Incorrect code.' });
+
+    // Apply the change
+    if (user.profileOtpField === 'email' && user.pendingEmail) {
+      user.email = user.pendingEmail;
+      // If phone was also pending, apply it now without a second OTP
+      if (user.pendingPhone) user.phone = user.pendingPhone;
+    } else if (user.profileOtpField === 'phone' && user.pendingPhone) {
+      user.phone = user.pendingPhone;
+    }
+
+    user.pendingEmail = null; user.pendingPhone = null;
+    user.profileOtp   = null; user.profileOtpExpiry = null; user.profileOtpField = null;
+    await user.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ── MARKETING CONSENT (POPIA) ──────────────────────────────────────
+router.post('/marketing-consent', requireAuth, async (req, res) => {
+  try {
+    const user    = await User.findById(req.session.userId);
+    const consent = req.body.marketingConsent === 'on';
+    const channel = consent ? asString(req.body.marketingChannel, 20) : null;
+    const norm    = (channel === 'whatsapp') ? 'whatsapp' : 'email';
+
+    user.marketingConsent   = consent;
+    user.marketingChannel   = consent ? norm : null;
+    user.marketingConsentAt = consent ? (user.marketingConsentAt || new Date()) : null;
+
+    user.emailPreferences.specials          = consent && norm === 'email';
+    user.emailPreferences.marketingWhatsapp = consent && norm === 'whatsapp';
+
+    await user.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ── RESEND PROFILE OTP ─────────────────────────────────────────────
+router.post('/resend-profile-otp', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user.profileOtpField) return res.json({ success: false, message: 'Nothing pending.' });
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.profileOtp       = otp;
+    user.profileOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+    if (user.profileOtpField === 'email' && user.pendingEmail) {
+      await sendOtpEmail(user.pendingEmail, otp, 'email_change');
+    } else {
+      const { normalisePhone } = require('../utils/whatsapp');
+      const norm = normalisePhone(user.pendingPhone || user.phone);
+      let sent = false;
+      if (norm) { try { await sendWhatsAppMessage(norm, `📱 Your Con Leche code is *${otp}*. It expires in 10 minutes.`); sent = true; } catch {} }
+      if (!sent) await sendOtpEmail(user.email, otp, 'phone_change');
+    }
     res.json({ success: true });
   } catch (err) {
     res.json({ success: false, message: err.message });

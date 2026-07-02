@@ -8,72 +8,85 @@
         <img src="/images/logo_nav.png" alt="Con Leche" />
       </div>
       <h1 class="auth-title">Join Con Leche</h1>
-      <p class="auth-sub">Create your account and get your unique QR battlepass code.</p>
+      <p class="auth-sub">Create your account and earn your very first stamp. 🐾</p>
 
       <% if (error) { %>
       <div class="auth-error"><%= error %></div>
       <% } %>
 
-      <form action="/register" method="POST" class="auth-form">
+      <form action="/register" method="POST" class="auth-form" autocomplete="off">
+
         <div class="form-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" name="name" required placeholder="e.g. Iwan Rademan"
-                 pattern="[A-Za-z\s]+" title="Letters only — no numbers or special characters" autocomplete="name" />
-          <span class="form-hint">First and last name preferred. Letters only.</span>
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required
+                 placeholder="e.g. Iwan Rademan"
+                 pattern="[A-Za-z\s]+" title="Letters only — no numbers or special characters"
+                 autocomplete="name" />
+          <span class="form-hint">Letters only. First and last name preferred.</span>
         </div>
+
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email" required placeholder="you@example.com" />
+          <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email" />
         </div>
+
         <div class="form-group">
-          <label>Birthday <span style="opacity:0.45;font-weight:400;">(optional — any fields)</span></label>
+          <label for="phone">WhatsApp / Phone number</label>
+          <input type="tel" id="phone" name="phone" required placeholder="e.g. 082 123 4567" autocomplete="tel" />
+          <span class="form-hint">Required — we use this to send your OTP and order notifications. South African numbers; we'll add +27 automatically.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Date of birth <span style="opacity:0.45;font-weight:400;">(optional)</span></label>
           <div class="birthday-fields">
             <input type="number" name="birthdayYear"  placeholder="Year"  min="1920" max="2009" style="flex:2;" />
             <input type="number" name="birthdayMonth" placeholder="Month" min="1"    max="12"   style="flex:1;" />
             <input type="number" name="birthdayDay"   placeholder="Day"   min="1"    max="31"   style="flex:1;" />
           </div>
-          <span class="form-hint">Adding your birthday month &amp; day means we'll send you a birthday treat voucher.</span>
+          <span class="form-hint">We'll send you a birthday treat.</span>
         </div>
+
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" required placeholder="8+ characters" minlength="8" />
+          <input type="password" id="password" name="password" required placeholder="8+ characters" minlength="8" autocomplete="new-password" />
         </div>
+
         <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="••••••••" />
+          <label for="confirmPassword">Confirm password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="••••••••" autocomplete="new-password" />
         </div>
-        <!-- Notification opt-ins -->
+
         <div class="form-group notify-optin-group">
-          <p class="notify-optin-label">Email notifications <span class="notify-optin-sub">(you can change these any time in your profile)</span></p>
-          <label class="notify-check">
-            <input type="checkbox" name="notifySpecials" value="on" checked />
-            <span>Weekly specials, new drinks &amp; arrivals</span>
-          </label>
           <label class="notify-check">
             <input type="checkbox" name="notifyEvents" value="on" checked />
             <span>Upcoming events &amp; truck locations</span>
           </label>
           <label class="notify-check">
             <input type="checkbox" name="notifyBirthday" value="on" checked />
-            <span>Birthday treat email</span>
+            <span>Birthday treat</span>
           </label>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-full">Create Account & Get QR Code</button>
+        <div class="form-group">
+          <label class="notify-check reg-marketing-check">
+            <input type="checkbox" name="marketingConsent" id="marketingConsent" value="on" />
+            <span>Send me specials &amp; promotions</span>
+          </label>
+          <div id="mktChannelGroup" style="display:none;margin-top:0.6rem;padding:0.75rem 0.9rem;background:rgba(88,18,23,0.04);border-radius:8px;border:1px solid rgba(88,18,23,0.1);">
+            <p style="font-size:0.8rem;color:rgba(44,44,44,0.55);margin-bottom:0.5rem;font-weight:600;">Preferred channel for promotions</p>
+            <label class="notify-check" style="margin-bottom:0.3rem;">
+              <input type="radio" name="marketingChannel" value="email" checked />
+              <span>Email</span>
+            </label>
+            <label class="notify-check">
+              <input type="radio" name="marketingChannel" value="whatsapp" />
+              <span>WhatsApp</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Create account &amp; get QR code →</button>
       </form>
-<script>
-// Auto-capitalize each word and restrict to letters+spaces
-const nameInput = document.getElementById('name');
-if (nameInput) {
-  nameInput.addEventListener('input', function () {
-    const pos = this.selectionStart;
-    this.value = this.value
-      .replace(/[^A-Za-z\s]/g, '')
-      .replace(/\b\w/g, c => c.toUpperCase());
-    this.setSelectionRange(pos, pos);
-  });
-}
-</script>
 
       <p class="auth-switch">Already have an account? <a href="/login">Sign in →</a></p>
     </div>
@@ -81,3 +94,30 @@ if (nameInput) {
 </main>
 
 <%- include('../partials/footer') %>
+
+<script>
+(function () {
+  var nameInput = document.getElementById('name');
+  if (nameInput) {
+    nameInput.addEventListener('input', function () {
+      var pos = this.selectionStart;
+      this.value = this.value
+        .replace(/[^A-Za-z\s]/g, '')
+        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+      this.setSelectionRange(pos, pos);
+    });
+  }
+
+  var mktCheck    = document.getElementById('marketingConsent');
+  var mktGroup    = document.getElementById('mktChannelGroup');
+
+  function toggleMktGroup() {
+    mktGroup.style.display = mktCheck.checked ? '' : 'none';
+  }
+
+  if (mktCheck) {
+    mktCheck.addEventListener('change', toggleMktGroup);
+    toggleMktGroup();
+  }
+})();
+</script>

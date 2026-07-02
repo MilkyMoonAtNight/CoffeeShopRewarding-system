@@ -1,11 +1,12 @@
 <%- include('./layout-top') %>
 
-<div class="admin-page-header">
+<div class="admin-page-header orders-page-header">
+  <p class="section-eyebrow" style="margin-bottom:0.4rem;">Admin</p>
   <h1 class="admin-page-title">Online Orders</h1>
   <p class="admin-page-sub">Live incoming orders — tap an order to view details and update status</p>
 </div>
 
-<div class="orders-filter-row">
+<div class="orders-filter-row orders-filter-centered">
   <button class="order-filter-btn active" data-filter="new">New <span class="ofb-count" id="cntNew">0</span></button>
   <button class="order-filter-btn" data-filter="progress">In Progress <span class="ofb-count" id="cntProg">0</span></button>
   <button class="order-filter-btn" data-filter="finished">Finished</button>
@@ -39,8 +40,6 @@
     </div>
   </div>
 </div>
-
-<%- include('./layout-bottom') %>
 
 <div class="orders-daily-bar" id="ordersDailyBar">
   <span class="odb-label">Today's revenue</span>
@@ -301,3 +300,5 @@ async function settleCash(outcome) {
 loadOrders();
 setInterval(loadOrders, 15000);
 </script>
+
+<%- include('./layout-bottom') %>

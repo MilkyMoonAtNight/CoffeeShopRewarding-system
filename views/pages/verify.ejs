@@ -1,0 +1,133 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="auth-section">
+    <div class="auth-card">
+
+      <div class="auth-logo">
+        <img src="/images/logo_nav.png" alt="Con Leche" />
+      </div>
+
+      <p style="text-align:center;font-size:2.4rem;margin-bottom:0.4rem;">
+        <% if (channel === 'whatsapp') { %>📱<% } else { %>✉️<% } %>
+      </p>
+
+      <h1 class="auth-title">Check your <span id="channelLabel"><%= channel === 'whatsapp' ? 'WhatsApp' : 'email' %></span></h1>
+
+      <p class="auth-sub" id="channelSub">
+        <% if (channel === 'whatsapp') { %>
+          We sent a 6-digit code to your WhatsApp. Enter it below.
+        <% } else { %>
+          We sent a 6-digit code to your email. Check your inbox (and spam folder).
+        <% } %>
+      </p>
+
+      <div id="channelSwitchNotice" style="display:none;background:#fff8e1;border:1px solid #E2C9A0;border-radius:8px;padding:0.7rem 0.9rem;font-size:0.84rem;color:#5a4200;margin-bottom:1rem;"></div>
+
+      <% if (error) { %>
+      <div class="auth-error" id="serverError"><%= error %></div>
+      <% } %>
+
+      <div id="clientError" class="auth-error" style="display:none;"></div>
+
+      <form action="/verify" method="POST" class="auth-form" id="verifyForm" autocomplete="off">
+        <div class="form-group">
+          <label for="code">Verification code</label>
+          <input type="text" id="code" name="code" inputmode="numeric"
+                 maxlength="6" required placeholder="000000"
+                 style="font-family:monospace;font-size:1.8rem;letter-spacing:0.2em;text-align:center;padding:0.6rem 0.5rem;" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="verifyBtn">Verify →</button>
+      </form>
+
+      <div style="text-align:center;margin-top:1.1rem;">
+        <p style="font-size:0.82rem;color:rgba(44,44,44,0.5);margin-bottom:0.4rem;">Didn't receive it?</p>
+        <button id="resendBtn" class="btn btn-outline" style="font-size:0.84rem;padding:0.45rem 1.1rem;">Resend code</button>
+        <p id="resendMsg" style="display:none;font-size:0.8rem;color:#1D9E75;margin-top:0.4rem;">✓ New code sent!</p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+
+<script>
+(function () {
+  var currentChannel = '<%= channel %>';
+  var codeInput      = document.getElementById('code');
+  var verifyForm     = document.getElementById('verifyForm');
+  var resendBtn      = document.getElementById('resendBtn');
+  var resendMsg      = document.getElementById('resendMsg');
+  var switchNotice   = document.getElementById('channelSwitchNotice');
+  var channelLabel   = document.getElementById('channelLabel');
+  var channelSub     = document.getElementById('channelSub');
+  var clientError    = document.getElementById('clientError');
+
+  if (codeInput) {
+    codeInput.focus();
+    codeInput.addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '').slice(0, 6);
+      if (this.value.length === 6) {
+        verifyForm.submit();
+      }
+    });
+  }
+
+  function updateChannelUI(newChannel) {
+    if (newChannel === currentChannel) return;
+    currentChannel = newChannel;
+    var isWa = newChannel === 'whatsapp';
+    channelLabel.textContent = isWa ? 'WhatsApp' : 'email';
+    channelSub.textContent   = isWa
+      ? 'We sent a 6-digit code to your WhatsApp. Enter it below.'
+      : 'We sent a 6-digit code to your email. Check your inbox (and spam folder).';
+    switchNotice.style.display = '';
+    switchNotice.textContent   = isWa
+      ? 'Code resent to your WhatsApp.'
+      : 'WhatsApp delivery failed — we\'ve sent the code to your email instead.';
+  }
+
+  var pollTimer = setInterval(function () {
+    fetch('/verify/status')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) { clearInterval(pollTimer); return; }
+        updateChannelUI(data.channel);
+        if (data.locked) {
+          clearInterval(pollTimer);
+          clientError.textContent = 'Too many attempts — please request a new code.';
+          clientError.style.display = '';
+          if (codeInput) codeInput.disabled = true;
+          document.getElementById('verifyBtn').disabled = true;
+        }
+      })
+      .catch(function () {});
+  }, 3000);
+
+  if (resendBtn) {
+    resendBtn.addEventListener('click', function () {
+      resendBtn.disabled    = true;
+      resendBtn.textContent = 'Sending…';
+      fetch('/verify/resend', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          resendBtn.disabled    = false;
+          resendBtn.textContent = 'Resend code';
+          if (data.ok) {
+            resendMsg.style.display = '';
+            setTimeout(function () { resendMsg.style.display = 'none'; }, 4000);
+          } else {
+            clientError.textContent = data.message || 'Could not resend code.';
+            clientError.style.display = '';
+          }
+        })
+        .catch(function () {
+          resendBtn.disabled    = false;
+          resendBtn.textContent = 'Resend code';
+        });
+    });
+  }
+})();
+</script>

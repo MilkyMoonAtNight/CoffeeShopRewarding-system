@@ -1,0 +1,47 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<main>
+  <section class="auth-section">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="/images/logo_nav.png" alt="Con Leche" />
+      </div>
+      <p style="font-size:2rem;text-align:center;margin-bottom:0.5rem;">🔐</p>
+      <h1 class="auth-title">Check your messages</h1>
+      <p class="auth-sub">We sent a 6-digit code to your email (or WhatsApp if configured). Enter it below to complete sign-in.</p>
+
+      <% if (error) { %>
+      <div class="auth-error"><%= error %></div>
+      <% } %>
+
+      <form action="/verify-login" method="POST" class="auth-form" autocomplete="off">
+        <div class="form-group">
+          <label for="code">Verification code</label>
+          <input type="text" id="code" name="code" inputmode="numeric" pattern="\d{6}"
+                 maxlength="6" required placeholder="000000"
+                 style="font-family:monospace;font-size:1.6rem;letter-spacing:0.2em;text-align:center;" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Verify →</button>
+      </form>
+
+      <p class="auth-switch" style="margin-top:1.25rem;">
+        Wrong account? <a href="/login">Sign in again</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+
+<script>
+  // Auto-focus and auto-submit on 6 digits
+  const input = document.getElementById('code');
+  if (input) {
+    input.focus();
+    input.addEventListener('input', () => {
+      input.value = input.value.replace(/\D/g, '').slice(0, 6);
+      if (input.value.length === 6) input.closest('form').submit();
+    });
+  }
+</script>

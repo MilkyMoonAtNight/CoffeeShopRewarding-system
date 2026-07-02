@@ -49,6 +49,7 @@ app.use((req, res, next) => {
 });
 
 // Routes — order matters, most specific first
+app.use('/webhooks',   require('./routes/webhooks'));
 app.use('/admin',      require('./routes/admin'));
 app.use('/battlepass', require('./routes/battlepass'));
 app.use('/order',      require('./routes/order'));

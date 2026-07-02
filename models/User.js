@@ -40,6 +40,34 @@ const userSchema = new mongoose.Schema({
   resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
 
+  // ── Account state ──
+  verified: { type: Boolean, default: false },
+
+  // ── Registration / action OTP ──
+  otp: {
+    code:        { type: String, default: null },
+    expiresAt:   { type: Date,   default: null },
+    attempts:    { type: Number, default: 0 },
+    channel:     { type: String, default: null },   // 'whatsapp' | 'email'
+    messageId:   { type: String, default: null },   // Twilio SID for webhook matching
+    lockedUntil: { type: Date,   default: null },
+  },
+
+  // ── Marketing consent (POPIA) ──
+  marketingConsent:   { type: Boolean, default: false },
+  marketingChannel:   { type: String,  default: null }, // 'email' | 'whatsapp'
+  marketingConsentAt: { type: Date,    default: null },
+
+  // ── Profile ──
+  phone: { type: String, default: null },  // display phone (user-entered, not normalised)
+
+  // ── Profile-change verification ──
+  pendingEmail:      { type: String, default: null },
+  pendingPhone:      { type: String, default: null },
+  profileOtp:        { type: String, default: null },
+  profileOtpExpiry:  { type: Date,   default: null },
+  profileOtpField:   { type: String, default: null }, // 'email' | 'phone'
+
   // ── Notification preferences ──
   whatsappPhone:       { type: String, default: null },  // e.g. "27821234567" (no + or spaces)
   notificationChannel: { type: String, enum: ['email', 'whatsapp'], default: 'email' },
