@@ -14,23 +14,29 @@
       <div class="auth-success"><%= success %></div>
       <% } %>
       <% if (error) { %>
-      <div class="auth-error"><%= error %></div>
+      <div class="auth-error">
+        <%= error %>
+        <% if (lockedUntil) { %> <span id="lockCountdown"></span><% } %>
+      </div>
       <% } %>
 
       <form action="/login" method="POST" class="auth-form">
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email" required placeholder="you@example.com" />
+          <input type="email" id="email" name="email" required placeholder="you@example.com" <%= lockedUntil ? 'disabled' : '' %> />
         </div>
         <div class="form-group">
           <label for="password" style="display:flex;justify-content:space-between;align-items:center;">
             Password
             <a href="/forgot-password" style="font-size:0.75rem;color:var(--maroon);font-weight:400;">Forgot password?</a>
           </label>
-          <input type="password" id="password" name="password" required placeholder="••••••••" />
+          <input type="password" id="password" name="password" required placeholder="••••••••" <%= lockedUntil ? 'disabled' : '' %> />
         </div>
-        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        <button type="submit" class="btn btn-primary btn-full" <%= lockedUntil ? 'disabled' : '' %>>Sign In</button>
       </form>
+      <% if (lockedUntil) { %>
+      <script>window.__lockedUntil = <%- JSON.stringify(lockedUntil) %>;</script>
+      <% } %>
 
       <p class="auth-switch">Don't have an account? <a href="/register">Join Con Leche →</a></p>
     </div>
@@ -38,3 +44,33 @@
 </main>
 
 <%- include('../partials/footer') %>
+
+<script>
+  // Prevent double-click / double-submit from sending two OTPs
+  const loginForm = document.querySelector('.auth-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', () => {
+      const btn = loginForm.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Signing in…';
+      }
+    });
+  }
+
+  // Live countdown for a 24h lockout after too many wrong codes
+  if (window.__lockedUntil) {
+    const target = new Date(window.__lockedUntil).getTime();
+    const el = document.getElementById('lockCountdown');
+    const tick = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) { window.location.reload(); return; }
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      if (el) el.textContent = `Try again in ${h}:${m}:${s}.`;
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>

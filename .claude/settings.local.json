@@ -17,7 +17,15 @@
       "Bash(node -e \"require\\('./app'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),800\\);\")",
       "mcp__Claude_Preview__preview_start",
       "Bash(npm audit *)",
-      "Bash(cat \"/c/Users/Iwang/.claude/projects/C--Users-Iwang-OneDrive---belgiumcampus-ac-za-Con-Leche-CoffeeShopRewarding-system/memory/MEMORY.md\" 2>/dev/null)"
+      "Bash(cat \"/c/Users/Iwang/.claude/projects/C--Users-Iwang-OneDrive---belgiumcampus-ac-za-Con-Leche-CoffeeShopRewarding-system/memory/MEMORY.md\" 2>/dev/null)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 5\")",
+      "Bash(ping -n 6 127.0.0.1)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 4\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 2\")",
+      "Bash(rm -f _tmp_make_test_user.js)",
+      "Bash(node -c routes/auth.js)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 3\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 1\")"
     ]
   }
 }

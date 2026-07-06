@@ -207,7 +207,7 @@ router.post('/verify/resend', loginLimiter, async (req, res) => {
 
 // ── LOGIN ─────────────────────────────────────────────────────────
 router.get('/login', (req, res) => {
-  res.render('pages/login', { title: 'Sign In — Con Leche', error: null, success: null });
+  res.render('pages/login', { title: 'Sign In — Con Leche', error: null, success: null, lockedUntil: null });
 });
 
 router.post('/login', loginLimiter, async (req, res) => {
@@ -216,7 +216,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const password = asString(req.body.password, 200);
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password)))
-      return res.render('pages/login', { title: 'Sign In', error: 'Invalid email or password', success: null });
+      return res.render('pages/login', { title: 'Sign In', error: 'Invalid email or password', success: null, lockedUntil: null });
 
     // Redirect unverified accounts back to the verify flow
     if (!user.verified) {
@@ -228,12 +228,22 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.redirect('/verify');
     }
 
-    // Generate 6-digit OTP and store in session
+    // Refuse a fresh code while the account is locked out from prior failed attempts
+    if (user.loginOtp && user.loginOtp.lockedUntil && new Date() < user.loginOtp.lockedUntil) {
+      return res.render('pages/login', {
+        title: 'Sign In', success: null,
+        error: 'Too many incorrect codes.',
+        lockedUntil: user.loginOtp.lockedUntil.toISOString()
+      });
+    }
+
+    // Generate 6-digit OTP and store on the user (survives session/server restarts)
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    req.session.pendingUserId    = String(user._id);
-    req.session.pendingUserName  = user.name;
-    req.session.loginOtp         = otp;
-    req.session.loginOtpExpiry   = Date.now() + 10 * 60 * 1000;
+    user.loginOtp = { code: otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000), attempts: 0, lockedUntil: null };
+    await user.save();
+
+    req.session.pendingUserId   = String(user._id);
+    req.session.pendingUserName = user.name;
 
     // Send OTP — WhatsApp first if configured, else email
     let sentViaWa = false;
@@ -248,34 +258,69 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.redirect('/verify-login');
   } catch (err) {
     console.error(err);
-    res.render('pages/login', { title: 'Sign In', error: 'Something went wrong.', success: null });
+    res.render('pages/login', { title: 'Sign In', error: 'Something went wrong.', success: null, lockedUntil: null });
   }
 });
 
 // ── VERIFY LOGIN (2FA) ────────────────────────────────────────────
-router.get('/verify-login', (req, res) => {
+router.get('/verify-login', async (req, res) => {
   if (!req.session.pendingUserId) return res.redirect('/login');
-  res.render('pages/verify-login', { title: 'Verify — Con Leche', error: null });
+  const user = await User.findById(req.session.pendingUserId);
+  if (!user) { req.session.pendingUserId = null; return res.redirect('/login'); }
+  const lockedUntil = (user.loginOtp && user.loginOtp.lockedUntil && new Date() < user.loginOtp.lockedUntil)
+    ? user.loginOtp.lockedUntil.toISOString() : null;
+  res.render('pages/verify-login', {
+    title: 'Verify — Con Leche',
+    error: lockedUntil ? 'Too many incorrect attempts.' : null,
+    lockedUntil
+  });
 });
 
-router.post('/verify-login', loginLimiter, (req, res) => {
+router.post('/verify-login', loginLimiter, async (req, res) => {
   if (!req.session.pendingUserId) return res.redirect('/login');
-  const entered = asString(req.body.code, 10).replace(/\s/g, '');
-  if (Date.now() > req.session.loginOtpExpiry) {
-    req.session.pendingUserId = null;
-    return res.render('pages/verify-login', { title: 'Verify — Con Leche', error: 'Code expired. Please sign in again.' });
+  const RENDER = (error, lockedUntil) =>
+    res.render('pages/verify-login', { title: 'Verify — Con Leche', error, lockedUntil: lockedUntil || null });
+
+  try {
+    const user = await User.findById(req.session.pendingUserId);
+    if (!user) { req.session.pendingUserId = null; return res.redirect('/login'); }
+
+    if (user.loginOtp && user.loginOtp.lockedUntil && new Date() < user.loginOtp.lockedUntil) {
+      return RENDER('Too many incorrect attempts.', user.loginOtp.lockedUntil.toISOString());
+    }
+    if (!user.loginOtp || !user.loginOtp.code || new Date() > user.loginOtp.expiresAt) {
+      return RENDER('Code expired. Please sign in again.');
+    }
+
+    const entered = asString(req.body.code, 10).replace(/\s/g, '');
+    if (entered !== user.loginOtp.code) {
+      user.loginOtp.attempts = (user.loginOtp.attempts || 0) + 1;
+      if (user.loginOtp.attempts >= 3) {
+        user.loginOtp.lockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        user.loginOtp.code = null;
+      }
+      await user.save();
+      const left = Math.max(0, 3 - user.loginOtp.attempts);
+      return RENDER(
+        left > 0 ? `Incorrect code — ${left} attempt${left === 1 ? '' : 's'} remaining.`
+                 : 'Too many incorrect attempts.',
+        user.loginOtp.lockedUntil ? user.loginOtp.lockedUntil.toISOString() : null
+      );
+    }
+
+    // OTP correct — complete login
+    user.loginOtp = { code: null, expiresAt: null, attempts: 0, lockedUntil: null };
+    await user.save();
+
+    req.session.userId   = req.session.pendingUserId;
+    req.session.userName = req.session.pendingUserName;
+    req.session.pendingUserId   = null;
+    req.session.pendingUserName = null;
+    res.redirect('/battlepass');
+  } catch (err) {
+    console.error(err);
+    RENDER('Something went wrong. Please try again.');
   }
-  if (entered !== req.session.loginOtp) {
-    return res.render('pages/verify-login', { title: 'Verify — Con Leche', error: 'Incorrect code. Please try again.' });
-  }
-  // OTP correct — complete login
-  req.session.userId   = req.session.pendingUserId;
-  req.session.userName = req.session.pendingUserName;
-  req.session.pendingUserId   = null;
-  req.session.pendingUserName = null;
-  req.session.loginOtp        = null;
-  req.session.loginOtpExpiry  = null;
-  res.redirect('/battlepass');
 });
 
 // ── LOGOUT ────────────────────────────────────────────────────────
@@ -367,7 +412,8 @@ router.post('/reset-password/:token', resetLimiter, async (req, res) => {
     res.render('pages/login', {
       title: 'Sign In — Con Leche',
       error: null,
-      success: 'Password updated! You can now sign in with your new password.'
+      success: 'Password updated! You can now sign in with your new password.',
+      lockedUntil: null
     });
   } catch (err) {
     console.error(err);

@@ -12,7 +12,10 @@
       <p class="auth-sub">We sent a 6-digit code to your email (or WhatsApp if configured). Enter it below to complete sign-in.</p>
 
       <% if (error) { %>
-      <div class="auth-error"><%= error %></div>
+      <div class="auth-error">
+        <%= error %>
+        <% if (lockedUntil) { %> <span id="lockCountdown"></span><% } %>
+      </div>
       <% } %>
 
       <form action="/verify-login" method="POST" class="auth-form" autocomplete="off">
@@ -20,10 +23,14 @@
           <label for="code">Verification code</label>
           <input type="text" id="code" name="code" inputmode="numeric" pattern="\d{6}"
                  maxlength="6" required placeholder="000000"
-                 style="font-family:monospace;font-size:1.6rem;letter-spacing:0.2em;text-align:center;" />
+                 style="font-family:monospace;font-size:1.6rem;letter-spacing:0.2em;text-align:center;"
+                 <%= lockedUntil ? 'disabled' : '' %> />
         </div>
-        <button type="submit" class="btn btn-primary btn-full">Verify →</button>
+        <button type="submit" class="btn btn-primary btn-full" <%= lockedUntil ? 'disabled' : '' %>>Verify →</button>
       </form>
+      <% if (lockedUntil) { %>
+      <script>window.__lockedUntil = <%- JSON.stringify(lockedUntil) %>;</script>
+      <% } %>
 
       <p class="auth-switch" style="margin-top:1.25rem;">
         Wrong account? <a href="/login">Sign in again</a>
@@ -35,13 +42,48 @@
 <%- include('../partials/footer') %>
 
 <script>
-  // Auto-focus and auto-submit on 6 digits
+  // Auto-focus and auto-submit on 6 digits — guarded so autofill / fast typing
+  // can't fire two overlapping POSTs (which was racing the session and
+  // bouncing the user back to /login even though the first request succeeded).
   const input = document.getElementById('code');
+  const form  = document.querySelector('.auth-form');
+  let submitted = false;
+
+  function lockForm() {
+    submitted = true;
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+    // Note: don't disable #code here — a disabled field is excluded from the
+    // submitted form data, which would send an empty code to the server.
+    if (input) input.readOnly = true;
+  }
+
+  if (form) form.addEventListener('submit', () => { if (submitted) return false; lockForm(); });
+
   if (input) {
     input.focus();
     input.addEventListener('input', () => {
       input.value = input.value.replace(/\D/g, '').slice(0, 6);
-      if (input.value.length === 6) input.closest('form').submit();
+      if (input.value.length === 6 && !submitted) {
+        lockForm();
+        form.submit();
+      }
     });
+  }
+
+  // Live countdown for a 24h lockout after too many wrong codes
+  if (window.__lockedUntil) {
+    const target = new Date(window.__lockedUntil).getTime();
+    const el = document.getElementById('lockCountdown');
+    const tick = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) { window.location.reload(); return; }
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      if (el) el.textContent = `Try again in ${h}:${m}:${s}.`;
+    };
+    tick();
+    setInterval(tick, 1000);
   }
 </script>

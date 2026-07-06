@@ -53,6 +53,14 @@ const userSchema = new mongoose.Schema({
     lockedUntil: { type: Date,   default: null },
   },
 
+  // ── Login 2FA OTP ──
+  loginOtp: {
+    code:        { type: String, default: null },
+    expiresAt:   { type: Date,   default: null },
+    attempts:    { type: Number, default: 0 },
+    lockedUntil: { type: Date,   default: null },
+  },
+
   // ── Marketing consent (POPIA) ──
   marketingConsent:   { type: Boolean, default: false },
   marketingChannel:   { type: String,  default: null }, // 'email' | 'whatsapp'
