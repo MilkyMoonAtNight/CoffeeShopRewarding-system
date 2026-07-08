@@ -92,6 +92,30 @@
           </div>
         </form>
 
+        <!-- Password change (nested toggle inside edit mode) -->
+        <div id="bpPasswordSection" class="bp-pw-section hidden">
+          <button type="button" class="bp-pw-toggle" id="bpPwToggle">Change password &#9998;</button>
+          <form id="bpPasswordForm" class="bp-profile-form hidden" autocomplete="off">
+            <div class="bp-pf-group">
+              <label class="bp-pf-label" for="pfOldPassword">Current password</label>
+              <input type="password" id="pfOldPassword" name="oldPassword" class="bp-pf-input" maxlength="200" autocomplete="current-password" />
+              <a href="/forgot-password" class="bp-pw-forgot-link">Forgot password?</a>
+            </div>
+            <div class="bp-pf-group">
+              <label class="bp-pf-label" for="pfNewPassword">New password</label>
+              <input type="password" id="pfNewPassword" name="newPassword" class="bp-pf-input" minlength="8" maxlength="200" autocomplete="new-password" />
+            </div>
+            <div class="bp-pf-group">
+              <label class="bp-pf-label" for="pfConfirmNewPassword">Confirm new password</label>
+              <input type="password" id="pfConfirmNewPassword" name="confirmNewPassword" class="bp-pf-input" minlength="8" maxlength="200" autocomplete="new-password" />
+            </div>
+            <p class="bp-pf-error hidden" id="bpPwError"></p>
+            <div class="bp-pf-actions">
+              <button type="submit" class="btn btn-primary bp-pf-save">Update password</button>
+            </div>
+          </form>
+        </div>
+
         <!-- OTP verification step (shown after profile save triggers verification) -->
         <div id="bpOtpStep" class="bp-otp-step hidden">
           <p class="bp-otp-hint" id="bpOtpHint"></p>
@@ -268,12 +292,14 @@
         <div class="bp-claim-list">
           <% claimableItems.forEach(reward => { %>
           <div class="bp-claim-item" data-reward-id="<%= reward._id %>">
-            <span class="bp-claim-icon">
-              <%= reward.type === 'free_drink' ? '☕' : reward.type === 'special' ? '✨' : reward.type === 'merch' ? '🎁' : '💳' %>
-            </span>
-            <div class="bp-claim-body">
-              <p class="bp-claim-title"><%= reward.description %></p>
-              <p class="bp-claim-earned">Earned at drink #<%= reward.drinkNumber %></p>
+            <div class="bp-claim-top">
+              <span class="bp-claim-icon">
+                <%= reward.type === 'free_drink' ? '☕' : reward.type === 'special' ? '✨' : reward.type === 'merch' ? '🎁' : '💳' %>
+              </span>
+              <div class="bp-claim-body">
+                <p class="bp-claim-title"><%= reward.description %></p>
+                <p class="bp-claim-earned">Earned at drink #<%= reward.drinkNumber %></p>
+              </div>
             </div>
             <div class="bp-claim-action">
               <% const codeAge = reward.claimCodeGeneratedAt ? (new Date() - new Date(reward.claimCodeGeneratedAt)) / 1000 / 60 : 99; %>
@@ -597,10 +623,27 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
   var pfPhone    = document.getElementById('pfPhone');
   var origValues = {};
 
+  var pwSection  = document.getElementById('bpPasswordSection');
+  var pwToggle   = document.getElementById('bpPwToggle');
+  var pwForm     = document.getElementById('bpPasswordForm');
+  var pwErr      = document.getElementById('bpPwError');
+  var pfOld      = document.getElementById('pfOldPassword');
+  var pfNew      = document.getElementById('pfNewPassword');
+  var pfConfirm  = document.getElementById('pfConfirmNewPassword');
+  var otpSource  = 'profile'; // 'profile' | 'password' — which form triggered the OTP step
+
+  function resetPasswordForm() {
+    pwForm.classList.add('hidden');
+    pwForm.reset();
+    pwErr.classList.add('hidden');
+  }
+
   function showDisplay() {
     display.classList.remove('hidden');
     form.classList.add('hidden');
     otpStep.classList.add('hidden');
+    pwSection.classList.add('hidden');
+    resetPasswordForm();
     actionsDiv.style.display = 'none';
     editBtn.textContent = 'Edit profile ✎';
     editBtn.removeAttribute('data-mode');
@@ -611,6 +654,8 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
     display.classList.add('hidden');
     form.classList.remove('hidden');
     otpStep.classList.add('hidden');
+    pwSection.classList.remove('hidden');
+    resetPasswordForm();
     pfErr.classList.add('hidden');
     actionsDiv.style.display = 'none';
     editBtn.textContent = 'Cancel';
@@ -639,6 +684,11 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
   pfEmail.addEventListener('input', checkChanges);
   pfPhone.addEventListener('input', checkChanges);
 
+  pwToggle.addEventListener('click', function () {
+    pwForm.classList.toggle('hidden');
+    if (!pwForm.classList.contains('hidden')) pfOld.focus();
+  });
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     pfErr.classList.add('hidden');
@@ -663,12 +713,38 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
           saved.classList.remove('hidden');
           setTimeout(function () { saved.classList.add('hidden'); }, 2500);
         } else {
+          otpSource = 'profile';
           form.classList.add('hidden');
+          pwSection.classList.add('hidden');
           otpStep.classList.remove('hidden');
           otpHint.textContent = json.hint || 'Enter the code we sent you.';
           otpInput.value = '';
           otpInput.focus();
         }
+      });
+  });
+
+  pwForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    pwErr.classList.add('hidden');
+    var btn = pwForm.querySelector('.bp-pf-save');
+    btn.disabled = true; btn.textContent = 'Sending code…';
+    var body = new URLSearchParams(new FormData(pwForm));
+    fetch('/battlepass/change-password', { method: 'POST', body: body })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        btn.disabled = false; btn.textContent = 'Update password';
+        if (!json.success) {
+          pwErr.textContent = json.message || 'Something went wrong.';
+          pwErr.classList.remove('hidden'); return;
+        }
+        otpSource = 'password';
+        form.classList.add('hidden');
+        pwSection.classList.add('hidden');
+        otpStep.classList.remove('hidden');
+        otpHint.textContent = json.hint || 'Enter the code we sent you.';
+        otpInput.value = '';
+        otpInput.focus();
       });
   });
 
@@ -684,12 +760,20 @@ document.getElementById('redeemOverlay').addEventListener('click', function(e) {
           otpErr.textContent = json.message || 'Incorrect code.';
           otpErr.classList.remove('hidden'); return;
         }
+        if (otpSource === 'password') {
+          resetPasswordForm();
+        } else {
+          var dispVals = display.querySelectorAll('.bp-profile-val');
+          if (pfEmail.value && dispVals[1]) dispVals[1].textContent = pfEmail.value;
+          if (pfPhone.value && dispVals[2]) dispVals[2].textContent = pfPhone.value;
+        }
         showDisplay();
-        var dispVals = display.querySelectorAll('.bp-profile-val');
-        if (pfEmail.value && dispVals[1]) dispVals[1].textContent = pfEmail.value;
-        if (pfPhone.value && dispVals[2]) dispVals[2].textContent = pfPhone.value;
+        saved.textContent = otpSource === 'password' ? '✓ Password updated' : '✓ Profile updated';
         saved.classList.remove('hidden');
-        setTimeout(function () { saved.classList.add('hidden'); }, 2500);
+        setTimeout(function () {
+          saved.classList.add('hidden');
+          saved.textContent = '✓ Profile updated';
+        }, 2500);
       });
   }
 

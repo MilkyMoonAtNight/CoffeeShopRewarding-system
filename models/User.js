@@ -36,9 +36,15 @@ const userSchema = new mongoose.Schema({
   scanHistory: [scanHistorySchema],
   rewards:    [rewardSchema],
   tier:       { type: String, enum: ['Kitten', 'Cat', 'Tom Cat', 'Panther'], default: 'Kitten' },
-  resetToken:      { type: String, default: null },
-  resetTokenExpiry:{ type: Date, default: null },
   createdAt:  { type: Date, default: Date.now },
+
+  // ── Forgot-password OTP ──
+  resetOtp: {
+    code:        { type: String, default: null },
+    expiresAt:   { type: Date,   default: null },
+    attempts:    { type: Number, default: 0 },
+    lockedUntil: { type: Date,   default: null },
+  },
 
   // ── Account state ──
   verified: { type: Boolean, default: false },
@@ -70,11 +76,12 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: null },  // display phone (user-entered, not normalised)
 
   // ── Profile-change verification ──
-  pendingEmail:      { type: String, default: null },
-  pendingPhone:      { type: String, default: null },
+  pendingEmail:        { type: String, default: null },
+  pendingPhone:        { type: String, default: null },
+  pendingPasswordHash: { type: String, default: null },
   profileOtp:        { type: String, default: null },
   profileOtpExpiry:  { type: Date,   default: null },
-  profileOtpField:   { type: String, default: null }, // 'email' | 'phone'
+  profileOtpField:   { type: String, default: null }, // 'email' | 'phone' | 'password'
 
   // ── Notification preferences ──
   whatsappPhone:       { type: String, default: null },  // e.g. "27821234567" (no + or spaces)

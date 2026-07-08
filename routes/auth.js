@@ -3,7 +3,7 @@ const router   = express.Router();
 const User     = require('../models/User');
 const QRCode   = require('qrcode');
 const crypto   = require('crypto');
-const { sendPasswordReset, sendOtpEmail } = require('../utils/mailer');
+const { sendOtpEmail } = require('../utils/mailer');
 const { sendWhatsAppMessage, normalisePhone } = require('../utils/whatsapp');
 const { sendOtpWhatsAppFirst } = require('../utils/sendOtp');
 const { rateLimit, asString } = require('../utils/security');
@@ -329,98 +329,119 @@ router.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-// ── FORGOT PASSWORD ───────────────────────────────────────────────
+// ── FORGOT PASSWORD (OTP flow: email → code → new password) ───────
+async function sendResetOtp(user, otp) {
+  let sentWa = false;
+  if (user.whatsappPhone) {
+    try {
+      await sendWhatsAppMessage(user.whatsappPhone, `🔑 Your Con Leche password reset code is *${otp}*. It expires in 10 minutes.`);
+      sentWa = true;
+    } catch {}
+  }
+  if (!sentWa) await sendOtpEmail(user.email, otp, 'password_reset');
+}
+
 router.get('/forgot-password', (req, res) => {
-  res.render('pages/forgot-password', { title: 'Forgot Password — Con Leche', error: null, success: null });
+  res.render('pages/forgot-password', { title: 'Forgot Password — Con Leche' });
 });
 
-router.post('/forgot-password', resetLimiter, async (req, res) => {
+router.post('/forgot-password/request', resetLimiter, async (req, res) => {
   try {
     const email = asString(req.body.email, 200).toLowerCase();
-    const user = await User.findOne({ email });
+    const user  = await User.findOne({ email });
 
-    // Always show success — don't reveal if email exists
-    const successMsg = "If that email is registered you'll receive a reset link shortly.";
+    // Always respond ok — don't reveal whether the email is registered
+    if (!user) return res.json({ ok: true });
 
-    if (!user) return res.render('pages/forgot-password', { title: 'Forgot Password', error: null, success: successMsg });
-
-    const token   = crypto.randomBytes(32).toString('hex');
-    user.resetToken       = token;
-    user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.resetOtp = { code: otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000), attempts: 0, lockedUntil: null };
     await user.save();
+    req.session.pwResetUserId   = String(user._id);
+    req.session.pwResetVerified = false;
 
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${token}`;
-    await sendPasswordReset(user.email, resetUrl, user.name);
-
-    res.render('pages/forgot-password', { title: 'Forgot Password', error: null, success: successMsg });
+    sendResetOtp(user, otp).catch(err => console.error('Reset OTP send error:', err.message));
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
-    res.render('pages/forgot-password', { title: 'Forgot Password', error: 'Something went wrong. Try again.', success: null });
+    res.json({ ok: false, message: 'Something went wrong. Please try again.' });
   }
 });
 
-// ── RESET PASSWORD ────────────────────────────────────────────────
-router.get('/reset-password/:token', async (req, res) => {
-  const user = await User.findOne({
-    resetToken: req.params.token,
-    resetTokenExpiry: { $gt: new Date() }
-  });
-  if (!user) {
-    return res.render('pages/reset-password', {
-      title: 'Reset Password — Con Leche',
-      error: 'This reset link has expired or is invalid. Please request a new one.',
-      success: null, token: null, valid: false
-    });
-  }
-  res.render('pages/reset-password', {
-    title: 'Reset Password — Con Leche',
-    error: null, success: null, token: req.params.token, valid: true
-  });
-});
-
-router.post('/reset-password/:token', resetLimiter, async (req, res) => {
+router.post('/forgot-password/resend', resetLimiter, async (req, res) => {
+  if (!req.session.pwResetUserId) return res.json({ ok: false, message: 'Session expired.' });
   try {
-    const user = await User.findOne({
-      resetToken: req.params.token,
-      resetTokenExpiry: { $gt: new Date() }
-    });
-    if (!user) {
-      return res.render('pages/reset-password', {
-        title: 'Reset Password', error: 'Link expired — please request a new one.',
-        success: null, token: null, valid: false
+    const user = await User.findById(req.session.pwResetUserId);
+    if (!user) return res.json({ ok: false, message: 'Session expired.' });
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.resetOtp = { code: otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000), attempts: 0, lockedUntil: null };
+    await user.save();
+
+    sendResetOtp(user, otp).catch(err => console.error('Reset OTP resend error:', err.message));
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false, message: err.message });
+  }
+});
+
+router.post('/forgot-password/verify', resetLimiter, async (req, res) => {
+  if (!req.session.pwResetUserId) return res.json({ ok: false, message: 'Session expired. Please start again.' });
+  try {
+    const user = await User.findById(req.session.pwResetUserId);
+    if (!user) return res.json({ ok: false, message: 'Session expired. Please start again.' });
+
+    const entered = asString(req.body.code, 10).replace(/\s/g, '');
+    const otp = user.resetOtp || {};
+
+    if (otp.lockedUntil && new Date() < otp.lockedUntil) {
+      return res.json({ ok: false, message: 'Too many incorrect attempts. Please wait 15 minutes or request a new code.' });
+    }
+    if (!otp.code || new Date() > otp.expiresAt) {
+      return res.json({ ok: false, message: 'Your code has expired. Please request a new one.' });
+    }
+    if (entered !== otp.code) {
+      user.resetOtp.attempts = (user.resetOtp.attempts || 0) + 1;
+      if (user.resetOtp.attempts >= 5) user.resetOtp.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+      const left = Math.max(0, 5 - user.resetOtp.attempts);
+      return res.json({
+        ok: false,
+        message: left > 0 ? `Incorrect code — ${left} attempt${left === 1 ? '' : 's'} remaining.`
+                           : 'Account locked for 15 minutes. Use "Resend code" to get a fresh one.',
       });
     }
+
+    req.session.pwResetVerified = true;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ ok: false, message: 'Something went wrong. Please try again.' });
+  }
+});
+
+router.post('/forgot-password/reset', resetLimiter, async (req, res) => {
+  if (!req.session.pwResetUserId || !req.session.pwResetVerified) {
+    return res.json({ ok: false, message: 'Please verify your code first.' });
+  }
+  try {
+    const user = await User.findById(req.session.pwResetUserId);
+    if (!user) return res.json({ ok: false, message: 'Session expired. Please start again.' });
+
     const password        = asString(req.body.password, 200);
     const confirmPassword = asString(req.body.confirmPassword, 200);
-    if (password !== confirmPassword) {
-      return res.render('pages/reset-password', {
-        title: 'Reset Password', error: 'Passwords do not match.',
-        success: null, token: req.params.token, valid: true
-      });
-    }
-    if (password.length < 8) {
-      return res.render('pages/reset-password', {
-        title: 'Reset Password', error: 'Password must be at least 8 characters.',
-        success: null, token: req.params.token, valid: true
-      });
-    }
-    user.password         = password; // pre-save hook hashes it
-    user.resetToken       = null;
-    user.resetTokenExpiry = null;
+    if (password.length < 8) return res.json({ ok: false, message: 'Password must be at least 8 characters.' });
+    if (password !== confirmPassword) return res.json({ ok: false, message: 'Passwords do not match.' });
+
+    user.password = password; // pre-save hook hashes it
+    user.resetOtp = { code: null, expiresAt: null, attempts: 0, lockedUntil: null };
     await user.save();
 
-    res.render('pages/login', {
-      title: 'Sign In — Con Leche',
-      error: null,
-      success: 'Password updated! You can now sign in with your new password.',
-      lockedUntil: null
-    });
+    req.session.pwResetUserId   = null;
+    req.session.pwResetVerified = false;
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
-    res.render('pages/reset-password', {
-      title: 'Reset Password', error: 'Something went wrong.',
-      success: null, token: req.params.token, valid: true
-    });
+    res.json({ ok: false, message: 'Something went wrong. Please try again.' });
   }
 });
 

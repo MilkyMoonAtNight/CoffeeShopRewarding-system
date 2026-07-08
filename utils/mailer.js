@@ -308,6 +308,8 @@ async function sendOtpEmail(toEmail, code, purpose = 'login') {
     login:        { emoji: '🔐', headline: 'Your login code',           sub: 'Enter this code to complete sign-in. It expires in 10 minutes.' },
     email_change: { emoji: '✉️', headline: 'Confirm your new email',    sub: 'Enter this code to update your email address. It expires in 10 minutes.' },
     phone_change: { emoji: '📱', headline: 'Confirm your phone number', sub: 'Enter this code to save your phone number. It expires in 10 minutes.' },
+    password_change: { emoji: '🔑', headline: 'Confirm your new password', sub: 'Enter this code to confirm your password change. It expires in 10 minutes.' },
+    password_reset:  { emoji: '🔑', headline: 'Reset your password',       sub: 'Enter this code to reset your password. It expires in 10 minutes.' },
   };
   const { emoji, headline, sub } = PURPOSES[purpose] || PURPOSES.login;
 
@@ -354,55 +356,4 @@ async function sendOtpEmail(toEmail, code, purpose = 'login') {
   });
 }
 
-module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendPasswordReset, sendBirthdayEmail, sendNotificationEmail, sendOtpEmail };
-
-async function sendPasswordReset(toEmail, resetUrl, name) {
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#f5ede4;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5ede4;padding:32px 0;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-        <tr>
-          <td style="background:#581217;padding:24px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:700;color:#fdf6ed;">☕ Con Leche</p>
-            <p style="margin:6px 0 0;font-size:13px;color:rgba(253,246,237,0.65);">Password reset request</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:36px 32px;text-align:center;">
-            <p style="margin:0 0 8px;font-size:28px;">🔑</p>
-            <h1 style="margin:0 0 12px;font-size:20px;color:#2c2c2c;">Hi ${name},</h1>
-            <p style="margin:0 0 24px;font-size:14px;color:#888;line-height:1.6;">
-              We received a request to reset your password. Click the button below — this link expires in 1 hour.
-            </p>
-            <a href="${resetUrl}"
-               style="display:inline-block;background:#581217;color:#fdf6ed;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;">
-              Reset my password
-            </a>
-            <p style="margin:24px 0 0;font-size:12px;color:#bbb;">
-              If you didn't request this, you can safely ignore this email.<br/>
-              Your password won't change until you click the link above.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px;text-align:center;border-top:1px solid #f0e8df;">
-            <p style="margin:0;font-size:11px;color:#bbb;">Con Leche · Do not reply to this email</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-
-  await getTransporter().sendMail({
-    from:    `"Con Leche" <${process.env.EMAIL_USER}>`,
-    to:      toEmail,
-    subject: '🔑 Reset your Con Leche password',
-    html,
-  });
-}
+module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendBirthdayEmail, sendNotificationEmail, sendOtpEmail };

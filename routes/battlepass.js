@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 const QRCode = require('qrcode');
@@ -283,6 +284,48 @@ router.post('/update-profile', requireAuth, async (req, res) => {
   }
 });
 
+// ── CHANGE PASSWORD (old password + new/confirm → OTP to confirm) ──
+router.post('/change-password', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const oldPassword        = asString(req.body.oldPassword, 200);
+    const newPassword        = asString(req.body.newPassword, 200);
+    const confirmNewPassword = asString(req.body.confirmNewPassword, 200);
+
+    if (!oldPassword || !newPassword || !confirmNewPassword)
+      return res.json({ success: false, message: 'All password fields are required.' });
+    if (!(await user.comparePassword(oldPassword)))
+      return res.json({ success: false, message: 'Current password is incorrect.' });
+    if (newPassword.length < 8)
+      return res.json({ success: false, message: 'New password must be at least 8 characters.' });
+    if (newPassword !== confirmNewPassword)
+      return res.json({ success: false, message: 'New passwords do not match.' });
+
+    const otp    = String(Math.floor(100000 + Math.random() * 900000));
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.pendingPasswordHash = await bcrypt.hash(newPassword, 12);
+    user.profileOtp          = otp;
+    user.profileOtpExpiry    = expiry;
+    user.profileOtpField     = 'password';
+    await user.save();
+
+    let sentWa = false;
+    if (user.whatsappPhone) {
+      try {
+        await sendWhatsAppMessage(user.whatsappPhone, `🔑 Your Con Leche verification code is *${otp}*. It expires in 10 minutes.`);
+        sentWa = true;
+      } catch {}
+    }
+    if (!sentWa) await sendOtpEmail(user.email, otp, 'password_change');
+
+    const hint = sentWa ? 'Code sent to your WhatsApp' : `Code sent to ${user.email}`;
+    res.json({ success: true, verified: true, field: 'password', hint });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
 // ── VERIFY PROFILE CHANGE ──────────────────────────────────────────
 router.post('/verify-profile', requireAuth, async (req, res) => {
   try {
@@ -296,6 +339,8 @@ router.post('/verify-profile', requireAuth, async (req, res) => {
     }
     if (entered !== user.profileOtp) return res.json({ success: false, message: 'Incorrect code.' });
 
+    const changedField = user.profileOtpField;
+
     // Apply the change
     if (user.profileOtpField === 'email' && user.pendingEmail) {
       user.email = user.pendingEmail;
@@ -303,12 +348,19 @@ router.post('/verify-profile', requireAuth, async (req, res) => {
       if (user.pendingPhone) user.phone = user.pendingPhone;
     } else if (user.profileOtpField === 'phone' && user.pendingPhone) {
       user.phone = user.pendingPhone;
+    } else if (user.profileOtpField === 'password' && user.pendingPasswordHash) {
+      // Hash is already computed — write it directly to skip the pre-save hash hook
+      await User.updateOne({ _id: user._id }, { $set: {
+        password: user.pendingPasswordHash, pendingPasswordHash: null,
+        profileOtp: null, profileOtpExpiry: null, profileOtpField: null,
+      } });
+      return res.json({ success: true, field: 'password' });
     }
 
     user.pendingEmail = null; user.pendingPhone = null;
     user.profileOtp   = null; user.profileOtpExpiry = null; user.profileOtpField = null;
     await user.save();
-    res.json({ success: true });
+    res.json({ success: true, field: changedField });
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
@@ -347,6 +399,10 @@ router.post('/resend-profile-otp', requireAuth, async (req, res) => {
     await user.save();
     if (user.profileOtpField === 'email' && user.pendingEmail) {
       await sendOtpEmail(user.pendingEmail, otp, 'email_change');
+    } else if (user.profileOtpField === 'password') {
+      let sent = false;
+      if (user.whatsappPhone) { try { await sendWhatsAppMessage(user.whatsappPhone, `🔑 Your Con Leche verification code is *${otp}*. It expires in 10 minutes.`); sent = true; } catch {} }
+      if (!sent) await sendOtpEmail(user.email, otp, 'password_change');
     } else {
       const { normalisePhone } = require('../utils/whatsapp');
       const norm = normalisePhone(user.pendingPhone || user.phone);
