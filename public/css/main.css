@@ -3894,3 +3894,95 @@ body.home-page .strip-section { position: relative; z-index: 1; }
   background: #fff; padding: 6px; border-radius: 10px;
 }
 .bp-claim-qr-hint { font-size: 0.68rem; color: rgba(253,246,237,0.55); letter-spacing: 0.03em; }
+
+/* ====== FIND US / MAP ====== */
+.find-us { background: var(--cream-dark); text-align: center; }
+.find-us-sub { margin: 0 auto 2.5rem; text-align: center; }
+.map-embed {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 4px solid var(--white);
+  line-height: 0;
+}
+.map-embed iframe {
+  width: 100%;
+  height: 460px;
+  display: block;
+  filter: saturate(1.05);
+}
+@media (max-width: 640px) {
+  .map-embed iframe { height: 340px; }
+}
+
+/* ====== CONTACT US ====== */
+.contact-section { background: var(--cream); }
+.contact-card {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.contact-intro {
+  background: var(--maroon);
+  color: var(--cream);
+  padding: 3rem 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.contact-intro .section-eyebrow { color: var(--accent); margin-bottom: 0.75rem; }
+.contact-intro .section-title { color: var(--cream); text-align: left; margin-bottom: 1rem; }
+.contact-intro .section-title em { color: var(--accent); }
+.contact-lead { font-size: 1rem; line-height: 1.7; color: rgba(253,246,237,0.8); margin-bottom: 2rem; }
+.contact-details { display: flex; flex-direction: column; gap: 0.9rem; }
+.contact-detail {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.92rem; color: rgba(253,246,237,0.9);
+  transition: color var(--transition);
+}
+a.contact-detail:hover { color: var(--accent); }
+.contact-detail-icon { font-size: 1.05rem; line-height: 1; }
+
+.contact-form {
+  background: var(--white);
+  padding: 3rem 2.75rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.contact-optional { color: rgba(44,44,44,0.4); font-weight: 400; }
+.contact-textarea {
+  padding: 0.75rem 1rem;
+  border: 1.5px solid rgba(44,44,44,0.15);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  background: var(--cream);
+  transition: border-color var(--transition);
+  width: 100%;
+  resize: vertical;
+  min-height: 110px;
+  color: var(--charcoal);
+}
+.contact-textarea:focus { outline: none; border-color: var(--maroon); background: var(--white); }
+.contact-submit { margin-top: 0.5rem; width: 100%; }
+.contact-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+/* Honeypot — hidden from real visitors, visible to bots */
+.contact-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.contact-status { display: none; padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.88rem; }
+.contact-status-ok  { display: block; background: rgba(46,125,50,0.12); color: #1b5e20; border: 1px solid rgba(46,125,50,0.3); }
+.contact-status-err { display: block; background: rgba(88,18,23,0.08); color: var(--maroon); border: 1px solid rgba(88,18,23,0.25); }
+@media (max-width: 780px) {
+  .contact-card { grid-template-columns: 1fr; }
+  .contact-intro, .contact-form { padding: 2.25rem 1.5rem; }
+}
+
+/* ====== SCROLL REVEAL (fade sections in on view) ====== */
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.is-visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}

@@ -5,6 +5,7 @@ const Drink  = require('../models/Drink');
 const Pastry = require('../models/Pastry');
 const Special = require('../models/Special');
 const { loadUpcomingEvents } = require('../utils/eventOccurrence');
+const { sendContactEmail } = require('../utils/mailer');
 
 router.get('/', async (req, res) => {
   const upcomingEvents = await loadUpcomingEvents(Event, { limit: 3 });
@@ -21,6 +22,35 @@ router.get('/', async (req, res) => {
     upcomingEvents,
     specials
   });
+});
+
+// ── Contact form (home page) ──────────────────────────────────────
+router.post('/contact', async (req, res) => {
+  const name    = (req.body.name    || '').trim();
+  const email   = (req.body.email   || '').trim();
+  const phone   = (req.body.phone   || '').trim();
+  const message = (req.body.message || '').trim();
+
+  // Honeypot — bots fill hidden fields; humans never see it.
+  if (req.body.website) return res.json({ ok: true });
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ ok: false, error: 'Please fill in your name, email and message.' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
+  }
+  if (message.length > 3000) {
+    return res.status(400).json({ ok: false, error: 'That message is a little too long — please shorten it.' });
+  }
+
+  try {
+    await sendContactEmail({ name, email, phone, message });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Contact email failed:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong sending your message. Please try again later.' });
+  }
 });
 
 // ── 🤫 Not linked anywhere. If you found this, you know the way. ──

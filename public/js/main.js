@@ -75,6 +75,36 @@ document.querySelectorAll('.pw-eye').forEach(btn => {
   btn.addEventListener('touchend',   e => { e.preventDefault(); hide();   }, { passive: false });
 });
 
+// ── Scroll reveal: fade sections in as they enter the viewport ────
+// Progressive enhancement — sections already in view (or if the browser
+// lacks IntersectionObserver / user prefers reduced motion) stay visible.
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // Fade content sections, but never the hero or the marquee strip
+  // (those have their own above-the-fold behaviour).
+  const sections = document.querySelectorAll('main section:not(.hero):not(.strip-section)');
+  if (!sections.length) return;
+
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+  const triggerLine = window.innerHeight * 0.9;
+  sections.forEach(section => {
+    // Skip anything already on screen at load — avoids a hide/flash flicker.
+    if (section.getBoundingClientRect().top < triggerLine) return;
+    section.classList.add('reveal');
+    io.observe(section);
+  });
+})();
+
 // ── Admin check-in toggle ─────────────────────────────────────────
 const checkinBtn = document.getElementById('checkinBtn');
 if (checkinBtn) {

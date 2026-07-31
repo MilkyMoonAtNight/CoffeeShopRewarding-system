@@ -373,6 +373,67 @@
     </div>
   </section>
 
+  <!-- Find us on the map -->
+  <section class="section find-us">
+    <div class="container">
+      <p class="section-eyebrow">Come Say Hi</p>
+      <h2 class="section-title">Find <em>Con Leche</em></h2>
+      <p class="section-body find-us-sub">Pretoria's cat-friendly specialty coffee. Tap the map for directions.</p>
+      <div class="map-embed">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3310.016427999998!2d28.211105399999997!3d-25.6843911!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1ebfdfddcb1d7b23%3A0x5702b241a9124fc4!2sCon%20Leche%20Coffee!5e1!3m2!1sen!2sza!4v1785488189439!5m2!1sen!2sza"
+          style="border:0;" allowfullscreen="" loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          title="Con Leche Coffee location on Google Maps"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact us -->
+  <section class="section contact-section" id="contact">
+    <div class="container">
+      <div class="contact-card">
+        <div class="contact-intro">
+          <p class="section-eyebrow">Get In Touch</p>
+          <h2 class="section-title light">Contact <em>Us!</em></h2>
+          <p class="contact-lead">Questions, bookings, or just want to say hi? Drop us a message and we'll get back to you.</p>
+          <div class="contact-details">
+            <a href="https://wa.me/27782185170" target="_blank" rel="noopener" class="contact-detail">
+              <span class="contact-detail-icon">💬</span> WhatsApp: +27 78 218 5170
+            </a>
+            <a href="https://www.instagram.com/conleche_coffee" target="_blank" rel="noopener" class="contact-detail">
+              <span class="contact-detail-icon">📸</span> @conleche_coffee
+            </a>
+            <span class="contact-detail"><span class="contact-detail-icon">📍</span> Pretoria, Gauteng</span>
+          </div>
+        </div>
+
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="contact-status" id="contactStatus" role="status" aria-live="polite"></div>
+          <div class="form-group">
+            <label for="contactName">Name</label>
+            <input type="text" id="contactName" name="name" autocomplete="name" required maxlength="120" />
+          </div>
+          <div class="form-group">
+            <label for="contactEmail">Email</label>
+            <input type="email" id="contactEmail" name="email" autocomplete="email" required maxlength="200" />
+          </div>
+          <div class="form-group">
+            <label for="contactPhone">Phone <span class="contact-optional">(optional)</span></label>
+            <input type="tel" id="contactPhone" name="phone" autocomplete="tel" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label for="contactMessage">Message</label>
+            <textarea id="contactMessage" name="message" rows="4" required maxlength="3000" class="contact-textarea"></textarea>
+          </div>
+          <!-- Honeypot — leave empty; hidden from real users -->
+          <input type="text" name="website" class="contact-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit" class="btn btn-primary contact-submit" id="contactSubmit">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Grogu easter egg (rare — 1 in 30 chance per visit) ── -->
   <div class="bean-field" id="beanField" aria-hidden="true"></div>
 </main>
@@ -567,6 +628,45 @@ document.querySelectorAll('.review-card').forEach(card => {
 
   buildDots();
   start();
+})();
+
+// ── Contact form — submit via fetch, show inline status ───────────
+(function () {
+  const form   = document.getElementById('contactForm');
+  const status = document.getElementById('contactStatus');
+  const btn    = document.getElementById('contactSubmit');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.className = 'contact-status';
+    status.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res  = await fetch('/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form).entries())),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        status.className = 'contact-status contact-status-ok';
+        status.textContent = 'Thanks! Your message is on its way — we\'ll be in touch soon. ☕';
+        form.reset();
+      } else {
+        status.className = 'contact-status contact-status-err';
+        status.textContent = data.error || 'Something went wrong. Please try again.';
+      }
+    } catch (err) {
+      status.className = 'contact-status contact-status-err';
+      status.textContent = 'Network error — please check your connection and try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
+  });
 })();
 </script>
 
