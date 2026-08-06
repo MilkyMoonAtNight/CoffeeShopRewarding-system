@@ -21,7 +21,7 @@
 
       <!-- HOT -->
       <div class="drinks-panel" id="tab-hot">
-        <div class="drinks-size-legend"><span>Regular — 250ml</span><span class="legend-sep">·</span><span>Large — 350ml</span></div>
+        <div class="drinks-size-legend"><span>Sml — 250ml</span><span class="legend-sep">·</span><span>Lrg — 350ml</span><span class="legend-sep">·</span><span>Grande — soon</span></div>
         <div class="drink-grid">
           <% hot.forEach((drink, idx) => { %>
           <%
@@ -31,30 +31,24 @@
           <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
                data-drink-idx="<%= idx %>" data-drink-cat="hot">
             <div class="drink-card-inner-wrap">
-              <div class="drink-img-wrap drink-img-wrap-cup">
-                <% if (drink.image) { %>
+              <div class="drink-card-media">
+                <% if (drink.image && !drink.image.toLowerCase().endsWith('.svg')) { %>
                   <img src="<%= drink.image.startsWith('/') ? drink.image : '/images/drinks/' + drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
-                  <div class="drink-cup-wrap">
-                    <%- include('../partials/drink-cup', { drink: drink }) %>
-                  </div>
+                  <%- include('../partials/drink-panel', { drink: drink, textures: textures }) %>
                 <% } %>
               </div>
-              <div class="drink-card-top">
-                <span class="drink-name"><%= drink.name %></span>
-                <div class="drink-prices">
-                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
-                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
-                </div>
-              </div>
-              <% if (dispFlavours.length) { %>
-              <div class="drink-flavours">
-                <span class="flavours-label">Flavours</span>
-                <span class="flavours-list"><%= dispFlavours.slice(0,4).join(' · ') %><%= dispFlavours.length>4?'…':'' %></span>
-              </div>
-              <% } %>
+              <div class="drink-card-scrim"></div>
+              <span class="drink-name-center"><%= drink.name %></span>
               <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
-              <span class="order-add-hint">Tap to customise →</span>
+              <div class="drink-card-foot">
+                <div class="drink-prices">
+                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> sml</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lrg</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.grande)  { %><span class="drink-price-pill drink-price-grande">R<%= drink.prices.grande %><span class="drink-size-label"> grande</span></span><% } %>
+                </div>
+                <span class="order-add-hint">Tap to customise →</span>
+              </div>
             </div>
           </div>
           <% }) %>
@@ -64,7 +58,7 @@
 
       <!-- COLD -->
       <div class="drinks-panel hidden" id="tab-cold">
-        <div class="drinks-size-legend"><span>Regular — 350ml</span><span class="legend-sep">·</span><span>Large — 500ml</span></div>
+        <div class="drinks-size-legend"><span>Sml — 350ml</span><span class="legend-sep">·</span><span>Lrg — 500ml</span><span class="legend-sep">·</span><span>Grande — soon</span></div>
         <div class="drink-grid">
           <% cold.forEach((drink, idx) => { %>
           <%
@@ -82,30 +76,24 @@
           <div class="drink-card order-item-card <%= drink.isSpecial ? 'drink-card-special' : '' %>"
                data-drink-idx="<%= idx %>" data-drink-cat="cold">
             <div class="drink-card-inner-wrap">
-              <div class="drink-img-wrap drink-img-wrap-cup">
-                <% if (drink.image) { %>
+              <div class="drink-card-media">
+                <% if (drink.image && !drink.image.toLowerCase().endsWith('.svg')) { %>
                   <img src="<%= drink.image.startsWith('/') ? drink.image : '/images/drinks/' + drink.image %>" alt="<%= drink.name %>" loading="lazy" />
                 <% } else { %>
-                  <div class="drink-cup-wrap">
-                    <%- include('../partials/drink-cup', { drink: drink }) %>
-                  </div>
+                  <%- include('../partials/drink-panel', { drink: drink, textures: textures }) %>
                 <% } %>
               </div>
-              <div class="drink-card-top">
-                <span class="drink-name"><%= drink.name %></span>
-                <div class="drink-prices">
-                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> reg</span></span><% } %>
-                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lge</span></span><% } %>
-                </div>
-              </div>
-              <% if (dispFlavours.length) { %>
-              <div class="drink-flavours">
-                <span class="flavours-label">Flavours</span>
-                <span class="flavours-list"><%= dispFlavours.slice(0,4).join(' · ') %><%= dispFlavours.length>4?'…':'' %></span>
-              </div>
-              <% } %>
+              <div class="drink-card-scrim"></div>
+              <span class="drink-name-center"><%= drink.name %></span>
               <% if (drink.isSpecial) { %><span class="drink-special-tag">✦ Special</span><% } %>
-              <span class="order-add-hint">Tap to customise →</span>
+              <div class="drink-card-foot">
+                <div class="drink-prices">
+                  <% if (drink.prices&&drink.prices.regular) { %><span class="drink-price-pill">R<%= drink.prices.regular %><span class="drink-size-label"> sml</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.large)   { %><span class="drink-price-pill drink-price-large">R<%= drink.prices.large %><span class="drink-size-label"> lrg</span></span><% } %>
+                  <% if (drink.prices&&drink.prices.grande)  { %><span class="drink-price-pill drink-price-grande">R<%= drink.prices.grande %><span class="drink-size-label"> grande</span></span><% } %>
+                </div>
+                <span class="order-add-hint">Tap to customise →</span>
+              </div>
             </div>
           </div>
           <% }) %>
@@ -115,31 +103,55 @@
 
     </div>
   </section>
+
+  <!-- Speciality drink advert — managed in /admin/advert -->
+  <section class="section drinks-ad-section">
+    <div class="container">
+      <% if (ad && ad.image) { %>
+        <% if (ad.link) { %><a href="<%= ad.link %>" class="drinks-ad" aria-label="<%= ad.caption || 'Speciality drink' %>"><% } else { %><div class="drinks-ad"><% } %>
+          <img src="<%= ad.image %>" alt="<%= ad.caption || 'Speciality drink advert' %>" class="drinks-ad-img" loading="lazy" />
+          <% if (ad.caption) { %><span class="drinks-ad-caption"><%= ad.caption %></span><% } %>
+        <% if (ad.link) { %></a><% } else { %></div><% } %>
+      <% } else { %>
+        <div class="drinks-ad drinks-ad-placeholder">
+          <span class="drinks-ad-ph-icon">✦</span>
+          <span class="drinks-ad-ph-title">Speciality drink advert</span>
+          <span class="drinks-ad-ph-sub">Upload a banner in the admin panel → Products → Advert</span>
+        </div>
+      <% } %>
+    </div>
+  </section>
 </main>
 
 <!-- Inject menu data for shared modal -->
 <script>
 window.CL_DATA = {
   loggedIn: <%= !!(locals.session && session.userId) %>,
+  textures: <%- JSON.stringify(textures || {}).replace(/</g,"\\u003c") %>,
   hot: <%- JSON.stringify(hot.map(d => ({
     name:d.name, category:'hot', subcategory:d.subcategory, isSpecial:d.isSpecial,
-    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    image:(d.image && !d.image.toLowerCase().endsWith('.svg'))?('/images/drinks/'+d.image):null,
+    flavours:d.flavours||[], layers:d.layers||[],
     sizes:[
-      d.prices&&d.prices.regular?{label:'Regular',ml:'250ml',price:d.prices.regular}:null,
-      d.prices&&d.prices.large  ?{label:'Large',  ml:'350ml',price:d.prices.large  }:null
+      d.prices&&d.prices.regular?{label:'Sml',   ml:(d.sizeLabels&&d.sizeLabels.regular)||'250ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Lrg',   ml:(d.sizeLabels&&d.sizeLabels.large)  ||'350ml',price:d.prices.large  }:null,
+      d.prices&&d.prices.grande ?{label:'Grande',ml:(d.sizeLabels&&d.sizeLabels.grande) ||'450ml',price:d.prices.grande }:null
     ].filter(Boolean)
   }))).replace(/</g,"\\u003c") %>,
   cold: <%- JSON.stringify(cold.map(d => ({
     name:d.name, category:'cold', subcategory:d.subcategory, isSpecial:d.isSpecial,
-    image:d.image?'/images/drinks/'+d.image:null, flavours:d.flavours||[],
+    image:(d.image && !d.image.toLowerCase().endsWith('.svg'))?('/images/drinks/'+d.image):null,
+    flavours:d.flavours||[], layers:d.layers||[],
     sizes:[
-      d.prices&&d.prices.regular?{label:'Regular',ml:'350ml',price:d.prices.regular}:null,
-      d.prices&&d.prices.large  ?{label:'Large',  ml:'500ml',price:d.prices.large  }:null
+      d.prices&&d.prices.regular?{label:'Sml',   ml:(d.sizeLabels&&d.sizeLabels.regular)||'350ml',price:d.prices.regular}:null,
+      d.prices&&d.prices.large  ?{label:'Lrg',   ml:(d.sizeLabels&&d.sizeLabels.large)  ||'500ml',price:d.prices.large  }:null,
+      d.prices&&d.prices.grande ?{label:'Grande',ml:(d.sizeLabels&&d.sizeLabels.grande) ||'650ml',price:d.prices.grande }:null
     ].filter(Boolean)
   }))).replace(/</g,"\\u003c") %>,
   pastries: []
 };
 </script>
+<script src="/js/drink-panel.js"></script>
 
 <%- include('../partials/item-modal') %>
 

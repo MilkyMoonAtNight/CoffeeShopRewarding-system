@@ -1,0 +1,76 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Speciality Advert</h1>
+  <p class="admin-page-sub">The banner shown above the footer on the Drinks page. Upload a new picture anytime — no code change needed.</p>
+</div>
+
+<% if (msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<div class="admin-two-col">
+
+  <!-- Upload / edit -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Advert Banner</h3>
+    <form action="/admin/advert/save" method="POST" enctype="multipart/form-data" class="auth-form">
+      <div class="form-group">
+        <label>Banner image</label>
+        <div class="upload-zone" id="adUploadZone" onclick="document.getElementById('adImageFile').click()">
+          <div class="upload-zone-inner" id="adUploadInner">
+            <span class="upload-icon">📷</span>
+            <span class="upload-label">Tap to upload banner</span>
+            <span class="upload-hint">JPG, PNG or WebP · wide image works best · max 10MB</span>
+          </div>
+        </div>
+        <input type="file" id="adImageFile" name="imageFile" accept="image/*" style="display:none;"
+               onchange="previewUpload(this,'adUploadInner','adUploadZone')" />
+      </div>
+      <div class="form-group">
+        <label>Caption <span class="contact-optional">(optional)</span></label>
+        <input type="text" name="caption" maxlength="200" value="<%= ad && ad.caption ? ad.caption : '' %>" placeholder="e.g. Latte of the Month — Salted Caramel" />
+      </div>
+      <div class="form-group">
+        <label>Link <span class="contact-optional">(optional)</span></label>
+        <input type="text" name="link" maxlength="500" value="<%= ad && ad.link ? ad.link : '' %>" placeholder="e.g. /drinks/latte-of-the-month" />
+      </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem;">
+        <input type="checkbox" name="active" id="adActive" style="width:auto;" <%= (!ad || ad.active) ? 'checked' : '' %> />
+        <label for="adActive" style="margin:0;font-size:0.85rem;">Show on the Drinks page</label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Save Advert</button>
+    </form>
+  </div>
+
+  <!-- Current preview -->
+  <div>
+    <div class="admin-card">
+      <h3 class="admin-card-title">Currently showing</h3>
+      <% if (ad && ad.image) { %>
+        <img src="/images/ads/<%= ad.image %>" alt="Advert" style="width:100%;border-radius:10px;display:block;" />
+        <% if (ad.caption) { %><p style="font-size:0.85rem;color:rgba(44,44,44,0.6);margin-top:0.5rem;"><%= ad.caption %></p><% } %>
+        <p style="font-size:0.75rem;color:rgba(44,44,44,0.4);margin-top:0.35rem;">
+          <%= ad.active ? '✓ Visible on /drinks' : '✕ Hidden' %>
+        </p>
+      <% } else { %>
+        <p class="admin-empty">No banner uploaded yet — a placeholder shows on the Drinks page until you add one.</p>
+      <% } %>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function previewUpload(input, innerId, zoneId) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(innerId).innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`;
+    document.getElementById(zoneId).style.border = '2px solid var(--maroon)';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+
+<%- include('./layout-bottom') %>

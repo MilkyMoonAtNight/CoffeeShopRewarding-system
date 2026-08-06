@@ -4,8 +4,26 @@ const Event  = require('../models/Event');
 const Drink  = require('../models/Drink');
 const Pastry = require('../models/Pastry');
 const Special = require('../models/Special');
+const Texture = require('../models/Texture');
+const ContactMessage = require('../models/ContactMessage');
+const Review = require('../models/Review');
+const Ad = require('../models/Ad');
 const { loadUpcomingEvents } = require('../utils/eventOccurrence');
-const { sendContactEmail } = require('../utils/mailer');
+const { sendContactMessageEmail } = require('../utils/mailer');
+
+// Load every texture as a { slug: {...} } map for the drink-panel renderer.
+async function loadTextureMap() {
+  const list = await Texture.find().lean().catch(() => []);
+  const map = {};
+  list.forEach(t => {
+    map[t.slug] = { baseColor: t.baseColor, dots: t.dots, dotColor: t.dotColor, dotDensity: t.dotDensity, name: t.name };
+  });
+  return map;
+}
+// An uploaded photo wins; legacy .svg filenames are treated as "no photo".
+function hasPhoto(image) {
+  return !!image && !String(image).toLowerCase().endsWith('.svg');
+}
 
 router.get('/', async (req, res) => {
   const upcomingEvents = await loadUpcomingEvents(Event, { limit: 3 });
@@ -17,38 +35,44 @@ router.get('/', async (req, res) => {
     image: s.image ? (s.image.startsWith('/') ? s.image : '/images/specials/' + s.image) : null
   }));
 
+  const reviews = await Review.find({ active: true })
+    .sort({ order: 1, createdAt: -1 }).catch(() => []);
+
   res.render('pages/home', {
     title: 'Con Leche — Cat-Friendly Specialty Coffee',
     upcomingEvents,
-    specials
+    specials,
+    reviews
   });
 });
 
-// ── Contact form (home page) ──────────────────────────────────────
+// ── Contact form (home page) — anonymous Username / Subject / Details ──
 router.post('/contact', async (req, res) => {
-  const name    = (req.body.name    || '').trim();
-  const email   = (req.body.email   || '').trim();
-  const phone   = (req.body.phone   || '').trim();
-  const message = (req.body.message || '').trim();
-
   // Honeypot — bots fill hidden fields; humans never see it.
   if (req.body.website) return res.json({ ok: true });
 
-  if (!name || !email || !message) {
-    return res.status(400).json({ ok: false, error: 'Please fill in your name, email and message.' });
+  const username = (req.body.username || '').trim().slice(0, 120) || 'Anonymous';
+  const subject  = (req.body.subject  || '').trim();
+  const details  = (req.body.details  || '').trim();
+
+  if (!subject || !details) {
+    return res.status(400).json({ ok: false, error: 'Please fill in a subject and some details.' });
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
+  if (subject.length > 200) {
+    return res.status(400).json({ ok: false, error: 'That subject is a little too long — please shorten it.' });
   }
-  if (message.length > 3000) {
+  if (details.length > 3000) {
     return res.status(400).json({ ok: false, error: 'That message is a little too long — please shorten it.' });
   }
 
   try {
-    await sendContactEmail({ name, email, phone, message });
+    // Save first — the message is captured even if the email heads-up fails.
+    await ContactMessage.create({ username, subject, details });
+    sendContactMessageEmail({ username, subject, details })
+      .catch(err => console.error('Contact email failed:', err.message));
     res.json({ ok: true });
   } catch (err) {
-    console.error('Contact email failed:', err.message);
+    console.error('Contact message save failed:', err.message);
     res.status(500).json({ ok: false, error: 'Something went wrong sending your message. Please try again later.' });
   }
 });
@@ -89,38 +113,17 @@ router.get('/pastries', async (req, res) => {
 
 
 router.get('/drinks', async (req, res) => {
+  // All drinks come from the database — managed in /admin/drinks.
+  // Priority: uploaded photo > layered texture panel > neutral panel.
+  // Legacy .svg filenames are ignored (the panel replaces them).
   let allDrinks = await Drink.find({ available: true }).sort({ category: 1, order: 1 }).catch(() => []);
+  const textures = await loadTextureMap();
 
-  // All drinks come from the database — managed in /admin/drinks
-
-  // For each drink, check if a matching SVG/image icon exists in /images/drinks/
-  // Priority: DB image > named file in /images/drinks/ > generated SVG cup
-  const fs   = require('fs');
-  const path = require('path');
-  const drinksImgDir = path.join(__dirname, '..', 'public', 'images', 'drinks');
-
-  function svgSlug(name) {
-    return (name||'').toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  }
-
-  const resolvedDrinks = allDrinks.map(function(d) {
-    if (d.image) return d; // DB image set — use it
-    var slug = svgSlug(d.name || '');
-    var candidates = [slug+'.svg', slug+'.png', slug+'.jpg', slug+'.webp'];
-    for (var i = 0; i < candidates.length; i++) {
-      if (fs.existsSync(path.join(drinksImgDir, candidates[i]))) {
-        var base = d.toObject ? d.toObject() : Object.assign({}, d);
-        base.image = candidates[i];
-        return base;
-      }
-    }
-    return d; // no file — fall through to generated SVG
-  });
-
-  const hot  = resolvedDrinks.filter(d => d.category === 'hot');
-  const cold = resolvedDrinks.filter(d => d.category === 'cold');
-  res.render('pages/drinks', { title: 'Drinks — Con Leche', hot, cold });
+  const hot  = allDrinks.filter(d => d.category === 'hot');
+  const cold = allDrinks.filter(d => d.category === 'cold');
+  const adDoc = await Ad.findOne({ active: true }).sort({ updatedAt: -1 }).catch(() => null);
+  const ad = adDoc ? { image: adDoc.image ? '/images/ads/' + adDoc.image : null, caption: adDoc.caption, link: adDoc.link } : null;
+  res.render('pages/drinks', { title: 'Drinks — Con Leche', hot, cold, textures, ad });
 });
 
 const LATTE_FLAVOURS      = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
@@ -177,16 +180,19 @@ router.get('/drinks/:id', async (req, res) => {
   else if (dn.includes('latte'))   d.flavours = LATTE_FLAVOURS;
   else if (!d.flavours || !d.flavours.length) d.flavours = [];
 
-  // Size objects
+  // Size objects — Sml / Lrg / Grande (label from sizeLabels if set)
+  const ml = (key, def) => (d.sizeLabels && d.sizeLabels[key]) ? d.sizeLabels[key] : def;
   d.sizes = [
-    d.prices && d.prices.regular ? { label: 'Regular', ml: d.category === 'hot' ? '250ml' : '350ml', price: d.prices.regular } : null,
-    d.prices && d.prices.large   ? { label: 'Large',   ml: d.category === 'hot' ? '350ml' : '500ml', price: d.prices.large   } : null,
+    d.prices && d.prices.regular ? { label: 'Sml',    ml: ml('regular', d.category === 'hot' ? '250ml' : '350ml'), price: d.prices.regular } : null,
+    d.prices && d.prices.large   ? { label: 'Lrg',    ml: ml('large',   d.category === 'hot' ? '350ml' : '500ml'), price: d.prices.large   } : null,
+    d.prices && d.prices.grande  ? { label: 'Grande', ml: ml('grande',  d.category === 'hot' ? '450ml' : '650ml'), price: d.prices.grande  } : null,
   ].filter(Boolean);
 
   const info = FILLER[d.subcategory] || FILLER.other;
   const loggedIn = !!(req.session && req.session.userId);
+  const textures = await loadTextureMap();
 
-  res.render('pages/drink-detail', { title: `${d.name} — Con Leche`, drink: d, info, loggedIn });
+  res.render('pages/drink-detail', { title: `${d.name} — Con Leche`, drink: d, info, loggedIn, textures });
 });
 
 router.get('/events', async (req, res) => {

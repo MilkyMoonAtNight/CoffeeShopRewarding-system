@@ -82,15 +82,16 @@ document.querySelectorAll('.pw-eye').forEach(btn => {
   if (!('IntersectionObserver' in window)) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // Fade content sections, but never the hero or the marquee strip
-  // (those have their own above-the-fold behaviour).
+  // Fade the CONTENT inside each section (its .container), never the section
+  // itself — so section backgrounds/panels stay put and only the content fades.
+  // Hero and marquee strip keep their own above-the-fold behaviour.
   const sections = document.querySelectorAll('main section:not(.hero):not(.strip-section)');
   if (!sections.length) return;
 
   const io = new IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
+        (entry.target._revealTarget || entry.target).classList.add('is-visible');
         obs.unobserve(entry.target);
       }
     });
@@ -100,9 +101,36 @@ document.querySelectorAll('.pw-eye').forEach(btn => {
   sections.forEach(section => {
     // Skip anything already on screen at load — avoids a hide/flash flicker.
     if (section.getBoundingClientRect().top < triggerLine) return;
-    section.classList.add('reveal');
+    const target = section.querySelector(':scope > .container') || section;
+    target.classList.add('reveal');
+    section._revealTarget = target;
     io.observe(section);
   });
+})();
+
+// ── Whole-page cursor spotlight ───────────────────────────────────
+// A soft glow that follows the mouse across every page. Fine-pointer only
+// (skipped on touch) and disabled for reduced-motion.
+(function () {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia && !window.matchMedia('(pointer: fine)').matches) return;
+
+  const spot = document.createElement('div');
+  spot.className = 'cursor-spotlight';
+  document.body.appendChild(spot);
+
+  let x = 0, y = 0, raf = null;
+  function apply() {
+    raf = null;
+    spot.style.setProperty('--mx', x + 'px');
+    spot.style.setProperty('--my', y + 'px');
+  }
+  window.addEventListener('mousemove', e => {
+    x = e.clientX; y = e.clientY;
+    spot.style.opacity = '1';
+    if (!raf) raf = requestAnimationFrame(apply);
+  }, { passive: true });
+  document.addEventListener('mouseleave', () => { spot.style.opacity = '0'; });
 })();
 
 // ── Admin check-in toggle ─────────────────────────────────────────

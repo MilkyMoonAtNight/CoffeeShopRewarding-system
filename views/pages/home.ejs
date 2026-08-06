@@ -190,7 +190,22 @@
       </div>
 
       <div class="reviews-carousel">
+        <button class="reviews-arrow reviews-arrow-prev" id="reviewsPrev" type="button" aria-label="Previous reviews">‹</button>
         <div class="reviews-track" id="reviewsTrack">
+        <% if (reviews && reviews.length) { %>
+          <% reviews.forEach((r, i) => { %>
+          <div class="review-card review-live review-theme-<%= (i % 3) + 1 %>">
+            <span class="review-live-stars"><%= '★'.repeat(Math.max(1, Math.min(5, r.stars || 5))) %></span>
+            <p class="review-live-text">"<%= r.details %>"</p>
+            <div class="review-live-author">
+              <div>
+                <span class="review-live-name"><%= r.person %></span>
+                <span class="review-live-when"><%= r.platform %></span>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        <% } else { %>
 
         <div class="review-card review-live review-theme-1">
           <span class="review-live-stars">★★★★★</span>
@@ -268,8 +283,10 @@
             </div>
           </div>
         </div>
+        <% } %>
 
         </div>
+        <button class="reviews-arrow reviews-arrow-next" id="reviewsNext" type="button" aria-label="Next reviews">›</button>
       </div>
       <div class="reviews-dots" id="reviewsDots" aria-hidden="true"></div>
 
@@ -379,13 +396,8 @@
       <p class="section-eyebrow">Come Say Hi</p>
       <h2 class="section-title">Find <em>Con Leche</em></h2>
       <p class="section-body find-us-sub">Pretoria's cat-friendly specialty coffee. Tap the map for directions.</p>
-      <div class="map-embed">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3310.016427999998!2d28.211105399999997!3d-25.6843911!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1ebfdfddcb1d7b23%3A0x5702b241a9124fc4!2sCon%20Leche%20Coffee!5e1!3m2!1sen!2sza!4v1785488189439!5m2!1sen!2sza"
-          style="border:0;" allowfullscreen="" loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-          title="Con Leche Coffee location on Google Maps"></iframe>
-      </div>
+      <!-- Map iframe is injected per-device by JS below (small/medium/large) -->
+      <div class="map-embed" id="mapEmbed"></div>
     </div>
   </section>
 
@@ -411,20 +423,16 @@
         <form class="contact-form" id="contactForm" novalidate>
           <div class="contact-status" id="contactStatus" role="status" aria-live="polite"></div>
           <div class="form-group">
-            <label for="contactName">Name</label>
-            <input type="text" id="contactName" name="name" autocomplete="name" required maxlength="120" />
+            <label for="contactName">Username <span class="contact-optional">(optional — stays anonymous)</span></label>
+            <input type="text" id="contactName" name="username" autocomplete="off" maxlength="120" placeholder="Anonymous" />
           </div>
           <div class="form-group">
-            <label for="contactEmail">Email</label>
-            <input type="email" id="contactEmail" name="email" autocomplete="email" required maxlength="200" />
+            <label for="contactSubject">Subject</label>
+            <input type="text" id="contactSubject" name="subject" autocomplete="off" required maxlength="200" />
           </div>
           <div class="form-group">
-            <label for="contactPhone">Phone <span class="contact-optional">(optional)</span></label>
-            <input type="tel" id="contactPhone" name="phone" autocomplete="tel" maxlength="30" />
-          </div>
-          <div class="form-group">
-            <label for="contactMessage">Message</label>
-            <textarea id="contactMessage" name="message" rows="4" required maxlength="3000" class="contact-textarea"></textarea>
+            <label for="contactMessage">Details</label>
+            <textarea id="contactMessage" name="details" rows="4" required maxlength="3000" class="contact-textarea"></textarea>
           </div>
           <!-- Honeypot — leave empty; hidden from real users -->
           <input type="text" name="website" class="contact-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
@@ -507,7 +515,10 @@ function openSpecialModal(card) {
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-document.getElementById('specialModalOverlay').addEventListener('click', function(e) {
+// This element is defined lower in the DOM; guard so a null here can't halt
+// the rest of this script (carousel, map, contact form all live below).
+const _specialOverlay = document.getElementById('specialModalOverlay');
+if (_specialOverlay) _specialOverlay.addEventListener('click', function(e) {
   if (e.target === this) { this.classList.remove('open'); document.body.style.overflow = ''; }
 });
 
@@ -560,6 +571,9 @@ document.querySelectorAll('.review-card').forEach(card => {
   const cards = Array.from(track.children);
   if (!cards.length) return;
 
+  const prevBtn = document.getElementById('reviewsPrev');
+  const nextBtn = document.getElementById('reviewsNext');
+
   let perView = 1, pages = 1, current = 0, timer = null, paused = false;
 
   function measure() {
@@ -587,6 +601,9 @@ document.querySelectorAll('.review-card').forEach(card => {
       dotsWrap.appendChild(dot);
     }
     dotsWrap.style.display = pages > 1 ? 'flex' : 'none';
+    // Arrows only make sense with more than one page
+    const multi = pages > 1;
+    [prevBtn, nextBtn].forEach(b => { if (b) b.style.visibility = multi ? 'visible' : 'hidden'; });
   }
 
   function setActive(i) {
@@ -623,11 +640,33 @@ document.querySelectorAll('.review-card').forEach(card => {
   ['mouseenter', 'touchstart'].forEach(ev => track.addEventListener(ev, () => paused = true, { passive: true }));
   ['mouseleave', 'touchend'].forEach(ev => track.addEventListener(ev, () => paused = false, { passive: true }));
 
+  // Prev / next arrows
+  if (prevBtn) prevBtn.addEventListener('click', () => { goTo(current - 1); restart(); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { goTo(current + 1); restart(); });
+
   let resizeT;
   window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(buildDots, 200); });
 
   buildDots();
   start();
+})();
+
+// ── Google Map — inject the right-sized embed for this device ──────
+(function () {
+  const el = document.getElementById('mapEmbed');
+  if (!el) return;
+  const SRC = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3310.0165629456264!2d28.2085304751412!3d-25.684386243005033!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1ebfdfddcb1d7b23%3A0x5702b241a9124fc4!2sCon%20Leche%20Coffee!5e1!3m2!1sen!2sza!4v1786013936007!5m2!1sen!2sza';
+  const w = window.innerWidth;
+  const h = w < 650 ? 300 : (w < 1024 ? 450 : 600); // small / medium / large
+  const f = document.createElement('iframe');
+  f.src = SRC;
+  f.loading = 'lazy';
+  f.title = 'Con Leche Coffee location on Google Maps';
+  f.setAttribute('allowfullscreen', '');
+  f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  f.style.cssText = 'width:100%;height:' + h + 'px;border:0;display:block;';
+  el.innerHTML = '';
+  el.appendChild(f);
 })();
 
 // ── Contact form — submit via fetch, show inline status ───────────

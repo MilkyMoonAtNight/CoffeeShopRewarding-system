@@ -39,20 +39,29 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
         <div class="form-group">
-          <label>Regular Price (R)</label>
+          <label>Sml Price (R)</label>
           <input type="number" name="priceRegular" placeholder="e.g. 35" min="0" />
         </div>
         <div class="form-group">
-          <label>Large Price (R)</label>
+          <label>Lrg Price (R)</label>
           <input type="number" name="priceLarge" placeholder="e.g. 45" min="0" />
         </div>
         <div class="form-group">
-          <label>Regular Size</label>
+          <label>Grande Price (R)</label>
+          <input type="number" name="priceGrande" placeholder="soon" min="0" />
+        </div>
+        <div class="form-group"></div>
+        <div class="form-group">
+          <label>Sml Size</label>
           <input type="text" name="sizeRegular" placeholder="e.g. 250ml" />
         </div>
         <div class="form-group">
-          <label>Large Size</label>
+          <label>Lrg Size</label>
           <input type="text" name="sizeLarge" placeholder="e.g. 350ml" />
+        </div>
+        <div class="form-group">
+          <label>Grande Size</label>
+          <input type="text" name="sizeGrande" placeholder="e.g. 450ml" />
         </div>
       </div>
       <div class="form-group">
@@ -136,7 +145,7 @@
           <form action="/admin/drinks/toggle/<%= drink._id %>" method="POST" style="display:inline;">
             <button type="submit" class="admin-toggle-btn"><%= drink.available ? 'Hide' : 'Show' %></button>
           </form>
-          <button onclick="toggleEdit('dedit-<%= drink._id %>')" class="admin-toggle-btn">Edit</button>
+          <button type="button" onclick="openDrinkEdit('<%= drink._id %>')" class="admin-toggle-btn">Edit</button>
           <form action="/admin/drinks/delete/<%= drink._id %>" method="POST" onsubmit="return confirm('Delete <%= drink.name %>?')" style="display:inline;">
             <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
           </form>
@@ -152,20 +161,28 @@
               <input type="text" name="name" value="<%= drink.name %>" required class="scan-input" />
             </div>
             <div class="form-group">
-              <label>Regular Price (R)</label>
+              <label>Sml Price (R)</label>
               <input type="number" name="priceRegular" value="<%= drink.prices.regular || '' %>" class="scan-input" />
             </div>
             <div class="form-group">
-              <label>Large Price (R)</label>
+              <label>Lrg Price (R)</label>
               <input type="number" name="priceLarge" value="<%= drink.prices.large || '' %>" class="scan-input" />
             </div>
             <div class="form-group">
-              <label>Regular Size</label>
+              <label>Grande Price (R)</label>
+              <input type="number" name="priceGrande" value="<%= drink.prices.grande || '' %>" class="scan-input" placeholder="soon" />
+            </div>
+            <div class="form-group">
+              <label>Sml Size</label>
               <input type="text" name="sizeRegular" value="<%= drink.sizeLabels?.regular || '' %>" class="scan-input" />
             </div>
             <div class="form-group">
-              <label>Large Size</label>
+              <label>Lrg Size</label>
               <input type="text" name="sizeLarge" value="<%= drink.sizeLabels?.large || '' %>" class="scan-input" />
+            </div>
+            <div class="form-group">
+              <label>Grande Size</label>
+              <input type="text" name="sizeGrande" value="<%= drink.sizeLabels?.grande || '' %>" class="scan-input" placeholder="e.g. 450ml" />
             </div>
             <div class="form-group" style="grid-column:span 2;">
               <label>Short description</label>
@@ -198,6 +215,34 @@
             <input type="hidden" name="subcategory" value="<%= drink.subcategory %>" />
             <input type="hidden" name="isSpecial" value="<%= drink.isSpecial %>" />
           </div>
+
+          <!-- Drink panel layer editor -->
+          <div class="layer-editor" data-drink="<%= drink._id %>">
+            <p class="detail-section-label" style="margin-top:0.75rem;">Drink panel layers</p>
+            <p class="form-hint">Drag a texture into the stack. The top row is the top of the cup.</p>
+            <div class="layer-editor-cols">
+              <div class="layer-col">
+                <span class="layer-col-title">Available textures</span>
+                <div class="layer-avail" id="avail-<%= drink._id %>"></div>
+              </div>
+              <div class="layer-col">
+                <span class="layer-col-title">Current drink</span>
+                <div class="layer-stack" id="layers-<%= drink._id %>"></div>
+              </div>
+            </div>
+            <div class="layer-preview-row">
+              <div>
+                <span class="layer-col-title">Size</span>
+                <div class="layer-size-toggle" id="size-<%= drink._id %>"></div>
+              </div>
+              <div>
+                <span class="layer-col-title">Live preview</span>
+                <div class="layer-preview" id="preview-<%= drink._id %>"></div>
+              </div>
+            </div>
+            <input type="hidden" name="layers" id="layersInput-<%= drink._id %>" value="<%= JSON.stringify(drink.layers || []) %>" />
+          </div>
+
           <button type="submit" class="btn btn-primary" style="margin-top:0.5rem;width:100%;">Save Changes</button>
         </form>
       </div>
@@ -244,6 +289,155 @@ function previewUpload(input, innerId, zoneId) {
   };
   reader.readAsDataURL(file);
 }
+</script>
+
+<!-- ── Drink panel layer editor ── -->
+<script>
+window.ADMIN_TEXTURES = <%- JSON.stringify(textures.map(t => ({ slug:t.slug, name:t.name, baseColor:t.baseColor, dots:t.dots, dotColor:t.dotColor, dotDensity:t.dotDensity }))).replace(/</g,"\\u003c") %>;
+window.ADMIN_DRINK_LAYERS = <%- JSON.stringify(drinks.reduce((acc, d) => {
+  acc[d._id] = {
+    layers: (d.layers || []).map(l => ({ textureSlug: l.textureSlug, pct: l.pct })),
+    sizes: {
+      regular: (d.sizeLabels && d.sizeLabels.regular) ? { label: 'Regular', ml: d.sizeLabels.regular } : null,
+      large:   (d.sizeLabels && d.sizeLabels.large)   ? { label: 'Large',   ml: d.sizeLabels.large   } : null
+    }
+  };
+  return acc;
+}, {})).replace(/</g,"\\u003c") %>;
+</script>
+<script src="/js/drink-panel.js"></script>
+<script>
+(function () {
+  var TEX = window.ADMIN_TEXTURES || [];
+  var TEXMAP = {};
+  TEX.forEach(function (t) { TEXMAP[t.slug] = { baseColor: t.baseColor, dots: t.dots, dotColor: t.dotColor, dotDensity: t.dotDensity, name: t.name }; });
+  var DRINKS = window.ADMIN_DRINK_LAYERS || {};
+  var initted = {};
+
+  window.openDrinkEdit = function (id) {
+    var panel = document.getElementById('dedit-' + id);
+    if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+    if (panel && panel.style.display === 'block' && !initted[id]) { initEditor(id); initted[id] = true; }
+  };
+
+  function initEditor(id) {
+    var info  = DRINKS[id] || { layers: [], sizes: {} };
+    var state = { layers: (info.layers || []).map(function (l) { return { textureSlug: l.textureSlug, pct: Number(l.pct) || 0 }; }) };
+    var sizes = info.sizes || {};
+    var sizeKeys = ['regular', 'large'].filter(function (k) { return sizes[k]; });
+    var selSize = sizeKeys[0] || null;
+
+    var availEl = document.getElementById('avail-' + id);
+    var stackEl = document.getElementById('layers-' + id);
+    var sizeEl  = document.getElementById('size-' + id);
+    var prevEl  = document.getElementById('preview-' + id);
+    var hidden  = document.getElementById('layersInput-' + id);
+    if (!availEl || !stackEl || !hidden) return;
+
+    // Available palette
+    availEl.innerHTML = TEX.length ? TEX.map(function (t) {
+      return '<div class="layer-chip" draggable="true" data-slug="' + t.slug + '">'
+        + '<span class="layer-swatch" style="background:' + t.baseColor + ';' + (t.dots ? 'outline:1px dashed #999;outline-offset:-3px;' : '') + '"></span>'
+        + '<span>' + t.name + '</span></div>';
+    }).join('') : '<span class="form-hint">No textures yet — add some under Textures.</span>';
+    availEl.querySelectorAll('.layer-chip').forEach(function (chip) {
+      chip.addEventListener('dragstart', function (e) { e.dataTransfer.setData('text/plain', 'add:' + chip.dataset.slug); });
+    });
+
+    // Size toggle
+    sizeEl.innerHTML = sizeKeys.length ? sizeKeys.map(function (k) {
+      return '<button type="button" class="layer-size-btn' + (k === selSize ? ' active' : '') + '" data-size="' + k + '">' + sizes[k].label + ' · ' + sizes[k].ml + '</button>';
+    }).join('') : '<span class="form-hint">No size set</span>';
+    sizeEl.querySelectorAll('.layer-size-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        selSize = b.dataset.size;
+        sizeEl.querySelectorAll('.layer-size-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+        renderStack();
+      });
+    });
+
+    function sizeMl() { return (selSize && sizes[selSize]) ? (parseInt(sizes[selSize].ml, 10) || 0) : 0; }
+
+    function sync() {
+      hidden.value = JSON.stringify(state.layers);
+      prevEl.innerHTML = buildDrinkPanelSVG(state.layers, TEXMAP, { w: 120, h: 90 });
+    }
+
+    function renderStack() {
+      if (!state.layers.length) {
+        stackEl.innerHTML = '<div class="layer-empty">Drag textures here</div>';
+      } else {
+        var ml = sizeMl();
+        stackEl.innerHTML = state.layers.map(function (l, i) {
+          var t = TEXMAP[l.textureSlug] || { baseColor: '#ccc', name: l.textureSlug };
+          var mlTxt = ml ? Math.round(l.pct / 100 * ml) + 'ml' : '—';
+          return '<div class="layer-row" data-idx="' + i + '">'
+            + '<span class="layer-drag" draggable="true">⠿</span>'
+            + '<span class="layer-swatch" style="background:' + t.baseColor + ';"></span>'
+            + '<span class="layer-name">' + t.name + '</span>'
+            + '<input type="range" min="0" max="100" value="' + l.pct + '" class="layer-slider">'
+            + '<span class="layer-pct">' + l.pct + '%</span>'
+            + '<span class="layer-ml">' + mlTxt + '</span>'
+            + '<button type="button" class="layer-remove" title="Remove">×</button>'
+            + '</div>';
+        }).join('');
+      }
+      bindRows();
+      sync();
+    }
+
+    function bindRows() {
+      stackEl.querySelectorAll('.layer-row').forEach(function (row) {
+        var i = parseInt(row.dataset.idx, 10);
+        var slider = row.querySelector('.layer-slider');
+        if (slider) slider.addEventListener('input', function () {
+          state.layers[i].pct = parseInt(slider.value, 10) || 0;
+          row.querySelector('.layer-pct').textContent = state.layers[i].pct + '%';
+          var ml = sizeMl();
+          row.querySelector('.layer-ml').textContent = ml ? Math.round(state.layers[i].pct / 100 * ml) + 'ml' : '—';
+          sync();
+        });
+        var rm = row.querySelector('.layer-remove');
+        if (rm) rm.addEventListener('click', function () { state.layers.splice(i, 1); renderStack(); });
+        var handle = row.querySelector('.layer-drag');
+        if (handle) handle.addEventListener('dragstart', function (e) { e.dataTransfer.setData('text/plain', 'move:' + i); });
+      });
+    }
+
+    function dropIndex(y) {
+      var rows = [].slice.call(stackEl.querySelectorAll('.layer-row'));
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i].getBoundingClientRect();
+        if (y < r.top + r.height / 2) return i;
+      }
+      return rows.length;
+    }
+
+    stackEl.addEventListener('dragover', function (e) { e.preventDefault(); });
+    stackEl.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var data = e.dataTransfer.getData('text/plain') || '';
+      var idx = dropIndex(e.clientY);
+      if (data.indexOf('add:') === 0) {
+        var slug = data.slice(4);
+        if (!TEXMAP[slug]) return;
+        var used = state.layers.reduce(function (s, l) { return s + l.pct; }, 0);
+        var pct = Math.max(5, Math.min(100 - used, 100)) || 20;
+        state.layers.splice(idx, 0, { textureSlug: slug, pct: pct });
+        renderStack();
+      } else if (data.indexOf('move:') === 0) {
+        var from = parseInt(data.slice(5), 10);
+        if (isNaN(from)) return;
+        var item = state.layers.splice(from, 1)[0];
+        if (from < idx) idx--;
+        state.layers.splice(idx, 0, item);
+        renderStack();
+      }
+    });
+
+    renderStack();
+  }
+})();
 </script>
 
 <%- include('./layout-bottom') %>

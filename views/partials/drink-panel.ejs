@@ -1,0 +1,46 @@
+<%
+/*
+ * Server-rendered drink panel — same look as public/js/drink-panel.js.
+ * Expects: drink (with .layers = [{textureSlug, pct}]) and textures (map
+ * slug -> { baseColor, dots, dotColor, dotDensity }). Layers run TOP → BOTTOM.
+ */
+var _W = 120, _H = 90, _S = 14, _XL = -20, _XR = _W + 20;
+var _NEUTRAL = '#F0E6D4';
+var _texMap = (typeof textures !== 'undefined' && textures) ? textures : {};
+var _uid = 'dp' + Math.random().toString(36).slice(2, 8);
+
+var _valid = ((drink && drink.layers) || []).filter(function (l) {
+  return l && _texMap[l.textureSlug] && Number(l.pct) > 0;
+});
+var _sum = _valid.reduce(function (s, l) { return s + Number(l.pct); }, 0);
+
+var _defs = '', _bands = '', _y = 0;
+if (_valid.length && _sum > 0) {
+  for (var _i = 0; _i < _valid.length; _i++) {
+    var _l = _valid[_i];
+    var _tex = _texMap[_l.textureSlug];
+    var _h = (Number(_l.pct) / _sum) * _H;
+    var _yTop = _y, _yBot = _y + _h; _y = _yBot;
+    var _tExt = (_i === 0) ? -40 : _yTop;
+    var _bExt = (_i === _valid.length - 1) ? _H + 40 : _yBot;
+    var _pts = _XL + ',' + (_tExt + _S).toFixed(1) + ' '
+             + _XR + ',' + (_tExt - _S).toFixed(1) + ' '
+             + _XR + ',' + (_bExt - _S).toFixed(1) + ' '
+             + _XL + ',' + (_bExt + _S).toFixed(1);
+    _bands += '<polygon points="' + _pts + '" fill="' + _tex.baseColor + '"/>';
+    if (_tex.dots) {
+      var _density = Math.max(1, Math.min(10, _tex.dotDensity || 5));
+      var _space = Math.round(18 - _density * 1.2);
+      var _pid = _uid + '_d' + _i;
+      _defs += '<pattern id="' + _pid + '" width="' + _space + '" height="' + _space
+            + '" patternUnits="userSpaceOnUse"><circle cx="' + (_space / 2).toFixed(1)
+            + '" cy="' + (_space / 2).toFixed(1) + '" r="1.3" fill="'
+            + (_tex.dotColor || '#9a9a9a') + '" opacity="0.55"/></pattern>';
+      _bands += '<polygon points="' + _pts + '" fill="url(#' + _pid + ')"/>';
+    }
+  }
+} else {
+  _bands = '<rect x="0" y="0" width="' + _W + '" height="' + _H + '" fill="' + _NEUTRAL + '"/>';
+}
+%>
+<svg viewBox="0 0 <%= _W %> <%= _H %>" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="drink-panel-svg"><% if (_defs) { %><defs><%- _defs %></defs><% } %><%- _bands %></svg>

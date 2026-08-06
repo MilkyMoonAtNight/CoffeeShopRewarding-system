@@ -5,6 +5,7 @@ const User   = require('./models/User');
 const Event  = require('./models/Event');
 const Drink  = require('./models/Drink');
 const Pastry = require('./models/Pastry');
+const Texture = require('./models/Texture');
 
 // ── LATTE FLAVOURS ───────────────────────────────────────────────
 const latteFlavours = [
@@ -290,6 +291,18 @@ async function seed() {
     ];
     const createdPastries = await Pastry.insertMany(pastries);
     console.log(`  ✓ Created ${createdPastries.length} pastries`);
+
+    // Textures — the drink-panel colour library (slugs kept stable so any
+    // existing drink layers keep resolving)
+    console.log('\nSeeding drink textures...');
+    await Texture.deleteMany({});
+    const createdTextures = await Texture.insertMany([
+      { name: 'Espresso',   slug: 'espresso',   baseColor: '#3D1A0E', dots: false, order: 1 },
+      { name: 'Water',      slug: 'water',       baseColor: '#3A78C4', dots: false, order: 2 },
+      { name: 'Milk',       slug: 'milk',        baseColor: '#F3EBD8', dots: true, dotColor: '#9a9a9a', dotDensity: 4, order: 3 },
+      { name: 'Milk Cream', slug: 'milk-cream',  baseColor: '#F7EEC4', dots: false, order: 4 },
+    ]);
+    console.log(`  ✓ Created ${createdTextures.length} textures`);
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Seed complete! Default credentials:');

@@ -20,6 +20,11 @@ const { rateLimit, asString } = require('../utils/security');
 const { markPending, clearPending } = require('../utils/scanState');
 const { loadUpcomingEvents } = require('../utils/eventOccurrence');
 const Notification = require('../models/Notification');
+const Texture = require('../models/Texture');
+const { ensureDefaultTextures } = require('../models/Texture');
+const ContactMessage = require('../models/ContactMessage');
+const Review = require('../models/Review');
+const Ad = require('../models/Ad');
 
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Please wait and try again.' });
 
@@ -72,6 +77,7 @@ function normalizeToken(raw) {
 const drinkUpload  = makeUploader('drinks');
 const pastryUpload = makeUploader('pastries');
 const specialUpload = makeUploader('specials');
+const adUpload      = makeUploader('ads');
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────
 async function requireAdmin(req, res, next) {
@@ -717,22 +723,40 @@ router.post('/events/delete/:id', ownerManager, async (req, res) => {
 });
 
 // ── DRINKS ────────────────────────────────────────────────────────
+// Parse the drag-and-drop layer stack (JSON string) into a clean array,
+// keeping only layers whose texture still exists. pct is clamped 0–100.
+function parseLayers(raw, validSlugs) {
+  let arr = [];
+  try { arr = JSON.parse(raw || '[]'); } catch { arr = []; }
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter(l => l && validSlugs.has(String(l.textureSlug)))
+    .slice(0, 6)
+    .map(l => ({
+      textureSlug: String(l.textureSlug),
+      pct: Math.max(0, Math.min(100, Math.round(Number(l.pct) || 0)))
+    }));
+}
+
 router.get('/drinks', ownerManager, async (req, res) => {
+  await ensureDefaultTextures();
   const drinks = await Drink.find().sort({ category: 1, order: 1 });
-  res.render('admin/drinks', { title: 'Drinks — Con Leche Admin', admin: req.admin, drinks, msg: req.query.msg || null });
+  const textures = await Texture.find().sort({ order: 1, name: 1 }).lean();
+  res.render('admin/drinks', { title: 'Drinks — Con Leche Admin', admin: req.admin, drinks, textures, msg: req.query.msg || null });
 });
 
 router.post('/drinks/add', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, category, subcategory, description, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, order, image } = req.body;
+    const { name, category, subcategory, description, priceRegular, priceLarge, priceGrande, sizeRegular, sizeLarge, sizeGrande, flavours, isSpecial, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     const imageFilename = req.file ? req.file.filename : (image || null);
+    const validSlugs = new Set((await Texture.find().select('slug').lean()).map(t => t.slug));
     await new Drink({
       name, category, subcategory, description: description || '',
-      prices: { regular: priceRegular || null, large: priceLarge || null },
-      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
+      prices: { regular: priceRegular || null, large: priceLarge || null, grande: priceGrande || null },
+      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null, grande: sizeGrande || null },
       flavours: flavourList, isSpecial: !!isSpecial, order: order || 99,
-      image: imageFilename, available: true
+      image: imageFilename, layers: parseLayers(req.body.layers, validSlugs), available: true
     }).save();
     res.redirect('/admin/drinks?msg=Drink+added');
   } catch (err) { res.redirect('/admin/drinks?msg=Error:+' + encodeURIComponent(err.message)); }
@@ -740,15 +764,17 @@ router.post('/drinks/add', ownerManager, drinkUpload.single('imageFile'), async 
 
 router.post('/drinks/edit/:id', ownerManager, drinkUpload.single('imageFile'), async (req, res) => {
   try {
-    const { name, category, subcategory, description, priceRegular, priceLarge, sizeRegular, sizeLarge, flavours, isSpecial, available, order, image } = req.body;
+    const { name, category, subcategory, description, priceRegular, priceLarge, priceGrande, sizeRegular, sizeLarge, sizeGrande, flavours, isSpecial, available, order, image } = req.body;
     const flavourList = flavours ? flavours.split(',').map(f => f.trim()).filter(Boolean) : [];
     const imageFilename = req.file ? req.file.filename : (image || null);
+    const validSlugs = new Set((await Texture.find().select('slug').lean()).map(t => t.slug));
     await Drink.findByIdAndUpdate(req.params.id, {
       name, category, subcategory, description: description || '',
-      prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null },
-      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null },
+      prices: { regular: priceRegular ? Number(priceRegular) : null, large: priceLarge ? Number(priceLarge) : null, grande: priceGrande ? Number(priceGrande) : null },
+      sizeLabels: { regular: sizeRegular || null, large: sizeLarge || null, grande: sizeGrande || null },
       flavours: flavourList, isSpecial: !!isSpecial,
       ...(imageFilename && { image: imageFilename }),
+      layers: parseLayers(req.body.layers, validSlugs),
       available: available !== 'false', order: Number(order) || 99, updatedAt: new Date()
     });
     res.redirect('/admin/drinks?msg=Drink+updated');
@@ -764,6 +790,54 @@ router.post('/drinks/toggle/:id', ownerManager, async (req, res) => {
   const drink = await Drink.findById(req.params.id);
   if (drink) { drink.available = !drink.available; await drink.save(); }
   res.redirect('/admin/drinks?msg=Updated');
+});
+
+// ── TEXTURES (drink-panel colour library) ─────────────────────────
+router.get('/textures', ownerManager, async (req, res) => {
+  await ensureDefaultTextures();
+  const textures = await Texture.find().sort({ order: 1, name: 1 });
+  res.render('admin/textures', { title: 'Textures — Con Leche Admin', admin: req.admin, textures, msg: req.query.msg || null });
+});
+
+router.post('/textures/add', ownerManager, async (req, res) => {
+  try {
+    const name = asString(req.body.name, 60).trim();
+    if (!name) return res.redirect('/admin/textures?msg=Error:+Name+required');
+    let slug = Texture.slugify(name);
+    if (!slug) return res.redirect('/admin/textures?msg=Error:+Invalid+name');
+    // Keep slugs unique by suffixing if needed.
+    if (await Texture.findOne({ slug })) slug = slug + '-' + Date.now().toString(36).slice(-4);
+    await Texture.create({
+      name, slug,
+      baseColor: asString(req.body.baseColor, 12) || '#C4845C',
+      dots: req.body.dots === 'on' || req.body.dots === 'true',
+      dotColor: asString(req.body.dotColor, 12) || '#9a9a9a',
+      dotDensity: Math.max(1, Math.min(10, parseInt(req.body.dotDensity) || 5)),
+      order: parseInt(req.body.order) || 99
+    });
+    res.redirect('/admin/textures?msg=Texture+added');
+  } catch (err) { res.redirect('/admin/textures?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/textures/edit/:id', ownerManager, async (req, res) => {
+  try {
+    const name = asString(req.body.name, 60).trim();
+    const update = {
+      baseColor: asString(req.body.baseColor, 12) || '#C4845C',
+      dots: req.body.dots === 'on' || req.body.dots === 'true',
+      dotColor: asString(req.body.dotColor, 12) || '#9a9a9a',
+      dotDensity: Math.max(1, Math.min(10, parseInt(req.body.dotDensity) || 5)),
+      order: parseInt(req.body.order) || 99
+    };
+    if (name) update.name = name;
+    await Texture.findByIdAndUpdate(req.params.id, update);
+    res.redirect('/admin/textures?msg=Texture+updated');
+  } catch (err) { res.redirect('/admin/textures?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/textures/delete/:id', ownerManager, async (req, res) => {
+  await Texture.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/textures?msg=Texture+deleted');
 });
 
 // ── PASTRIES ──────────────────────────────────────────────────────
@@ -1171,6 +1245,96 @@ router.post('/notifications/:id/toggle', ownerManager, async (req, res) => {
 router.post('/notifications/:id/delete', ownerOnly, async (req, res) => {
   await Notification.findByIdAndDelete(req.params.id);
   res.redirect('/admin/notifications?msg=Notification+deleted');
+});
+
+// ── CONTACT MESSAGES (anonymous website messages) ─────────────────
+router.get('/messages', ownerManager, async (req, res) => {
+  const messages = await ContactMessage.find().sort({ createdAt: -1 }).limit(200);
+  const unread = await ContactMessage.countDocuments({ read: false });
+  res.render('admin/messages', {
+    title: 'Messages — Con Leche Admin',
+    admin: req.admin, messages, unread,
+    msg: req.query.msg || null
+  });
+});
+
+router.post('/messages/:id/read', ownerManager, async (req, res) => {
+  const m = await ContactMessage.findById(req.params.id);
+  if (m) { m.read = !m.read; await m.save(); }
+  res.redirect('/admin/messages?msg=Updated');
+});
+
+router.post('/messages/:id/delete', ownerManager, async (req, res) => {
+  await ContactMessage.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/messages?msg=Message+deleted');
+});
+
+// ── REVIEWS (home-page customer reviews) ──────────────────────────
+router.get('/reviews', ownerManager, async (req, res) => {
+  const reviews = await Review.find().sort({ order: 1, createdAt: -1 });
+  res.render('admin/reviews', { title: 'Reviews — Con Leche Admin', admin: req.admin, reviews, msg: req.query.msg || null });
+});
+
+router.post('/reviews/add', ownerManager, async (req, res) => {
+  try {
+    const person  = asString(req.body.person, 120).trim();
+    const details = asString(req.body.details, 2000).trim();
+    if (!person || !details) return res.redirect('/admin/reviews?msg=Error:+Person+and+details+required');
+    await Review.create({
+      person, details,
+      stars: Math.max(1, Math.min(5, parseInt(req.body.stars) || 5)),
+      platform: asString(req.body.platform, 40).trim() || 'Google',
+      order: parseInt(req.body.order) || 99
+    });
+    res.redirect('/admin/reviews?msg=Review+added');
+  } catch (err) { res.redirect('/admin/reviews?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/reviews/edit/:id', ownerManager, async (req, res) => {
+  try {
+    const update = {
+      stars: Math.max(1, Math.min(5, parseInt(req.body.stars) || 5)),
+      platform: asString(req.body.platform, 40).trim() || 'Google',
+      order: parseInt(req.body.order) || 99
+    };
+    const person  = asString(req.body.person, 120).trim();
+    const details = asString(req.body.details, 2000).trim();
+    if (person)  update.person  = person;
+    if (details) update.details = details;
+    await Review.findByIdAndUpdate(req.params.id, update);
+    res.redirect('/admin/reviews?msg=Review+updated');
+  } catch (err) { res.redirect('/admin/reviews?msg=Error:+' + encodeURIComponent(err.message)); }
+});
+
+router.post('/reviews/toggle/:id', ownerManager, async (req, res) => {
+  const r = await Review.findById(req.params.id);
+  if (r) { r.active = !r.active; await r.save(); }
+  res.redirect('/admin/reviews?msg=Updated');
+});
+
+router.post('/reviews/delete/:id', ownerManager, async (req, res) => {
+  await Review.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/reviews?msg=Review+deleted');
+});
+
+// ── ADVERT (speciality-drink banner on /drinks) ───────────────────
+router.get('/advert', ownerManager, async (req, res) => {
+  const ad = await Ad.findOne().sort({ updatedAt: -1 });
+  res.render('admin/advert', { title: 'Advert — Con Leche Admin', admin: req.admin, ad, msg: req.query.msg || null });
+});
+
+router.post('/advert/save', ownerManager, adUpload.single('imageFile'), async (req, res) => {
+  try {
+    let ad = await Ad.findOne().sort({ updatedAt: -1 });
+    if (!ad) ad = new Ad();
+    if (req.file) ad.image = req.file.filename;
+    ad.caption = asString(req.body.caption, 200).trim();
+    ad.link    = asString(req.body.link, 500).trim();
+    ad.active  = req.body.active === 'on' || req.body.active === 'true';
+    ad.updatedAt = new Date();
+    await ad.save();
+    res.redirect('/admin/advert?msg=Advert+saved');
+  } catch (err) { res.redirect('/admin/advert?msg=Error:+' + encodeURIComponent(err.message)); }
 });
 
 // ── CHECK IN / OUT toggle ─────────────────────────────────────────

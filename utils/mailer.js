@@ -411,4 +411,60 @@ async function sendContactEmail({ name, email, phone, message }) {
   });
 }
 
-module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendBirthdayEmail, sendNotificationEmail, sendOtpEmail, sendContactEmail };
+// ── Anonymous contact message from the website (Username/Subject/Details) ──
+// No reply-to: these messages are intentionally anonymous.
+async function sendContactMessageEmail({ username, subject, details }) {
+  const safe = (s) => String(s || '').replace(/[<>]/g, (c) => (c === '<' ? '&lt;' : '&gt;'));
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f5ede4;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5ede4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:#581217;padding:24px 32px;text-align:center;">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#fdf6ed;letter-spacing:0.03em;">☕ Con Leche</p>
+            <p style="margin:6px 0 0;font-size:13px;color:rgba(253,246,237,0.65);">New anonymous message from the website</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 32px 8px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf6ed;border-radius:10px;">
+              <tr><td style="padding:16px 18px;">
+                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#aaa;">From</p>
+                <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#2c2c2c;">${safe(username || 'Anonymous')}</p>
+                <p style="margin:10px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#aaa;">Subject</p>
+                <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#581217;">${safe(subject)}</p>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px 8px;">
+            <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#aaa;">Details</p>
+            <p style="margin:0;font-size:15px;color:#2c2c2c;line-height:1.7;white-space:pre-line;">${safe(details)}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px;text-align:center;border-top:1px solid #f0e8df;margin-top:20px;">
+            <p style="margin:0;font-size:11px;color:#bbb;">Sent anonymously — no reply address is available. View it in the admin panel.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await getTransporter().sendMail({
+    from:    `"Con Leche Website" <${process.env.EMAIL_USER}>`,
+    to:      process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+    subject: `💬 Website message: ${subject}`,
+    html,
+  });
+}
+
+module.exports = { notifyStaffNewOrder, notifyCustomerStatusUpdate, sendBirthdayEmail, sendNotificationEmail, sendOtpEmail, sendContactEmail, sendContactMessageEmail };

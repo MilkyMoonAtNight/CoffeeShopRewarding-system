@@ -1,0 +1,113 @@
+<%- include('./layout-top') %>
+
+<div class="admin-page-header">
+  <h1 class="admin-page-title">Reviews</h1>
+  <p class="admin-page-sub">Add, edit or remove the customer reviews shown on the home page</p>
+</div>
+
+<% if (msg) { %>
+<div class="admin-alert <%= msg.startsWith('Error') ? 'admin-alert-error' : 'admin-alert-success' %>"><%= msg %></div>
+<% } %>
+
+<div class="admin-two-col">
+
+  <!-- Add review -->
+  <div class="admin-card">
+    <h3 class="admin-card-title">Add New Review</h3>
+    <form action="/admin/reviews/add" method="POST" class="auth-form">
+      <div class="form-group">
+        <label>Person</label>
+        <input type="text" name="person" required maxlength="120" placeholder="e.g. Andrew Kruger" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="form-group">
+          <label>Stars</label>
+          <select name="stars" class="scan-input">
+            <% [5,4,3,2,1].forEach(s => { %><option value="<%= s %>"><%= '★'.repeat(s) %> (<%= s %>)</option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Platform</label>
+          <input type="text" name="platform" maxlength="40" placeholder="Google / Facebook" value="Google" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Details</label>
+        <textarea name="details" rows="4" required maxlength="2000" class="scan-input" placeholder="What the customer said…"></textarea>
+      </div>
+      <input type="hidden" name="order" value="99" />
+      <button type="submit" class="btn btn-primary btn-full">Add Review</button>
+    </form>
+  </div>
+
+  <!-- Review list -->
+  <div>
+    <% if (!reviews.length) { %>
+      <div class="admin-card"><p class="admin-empty">No reviews yet — add one and it'll appear on the home page.</p></div>
+    <% } else { %>
+      <% reviews.forEach(review => { %>
+      <div class="admin-card admin-drink-row <%= !review.active ? 'drink-unavailable' : '' %>" style="margin-bottom:0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+          <div style="min-width:0;">
+            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+              <span style="color:var(--maroon);letter-spacing:1px;"><%= '★'.repeat(review.stars) %></span>
+              <strong style="font-size:0.92rem;"><%= review.person %></strong>
+              <% if (!review.active) { %><span class="admin-item-tag tag-off">Hidden</span><% } %>
+            </div>
+            <p style="font-size:0.78rem;color:rgba(44,44,44,0.55);margin-top:0.25rem;"><%= review.details %></p>
+            <p style="font-size:0.7rem;color:rgba(44,44,44,0.4);margin-top:0.15rem;"><%= review.platform %></p>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+            <form action="/admin/reviews/toggle/<%= review._id %>" method="POST" style="display:inline;">
+              <button type="submit" class="admin-toggle-btn"><%= review.active ? 'Hide' : 'Show' %></button>
+            </form>
+            <button onclick="toggleEdit('redit-<%= review._id %>')" class="admin-toggle-btn">Edit</button>
+            <form action="/admin/reviews/delete/<%= review._id %>" method="POST"
+                  onsubmit="return confirm('Delete this review?')" style="display:inline;">
+              <button type="submit" class="admin-toggle-btn" style="color:#c83232;border-color:#c83232;">Del</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Inline edit -->
+        <div id="redit-<%= review._id %>" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(44,44,44,0.08);">
+          <form action="/admin/reviews/edit/<%= review._id %>" method="POST">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Person</label>
+                <input type="text" name="person" value="<%= review.person %>" required maxlength="120" class="scan-input" />
+              </div>
+              <div class="form-group">
+                <label>Stars</label>
+                <select name="stars" class="scan-input">
+                  <% [5,4,3,2,1].forEach(s => { %><option value="<%= s %>" <%= review.stars===s?'selected':'' %>><%= '★'.repeat(s) %> (<%= s %>)</option><% }) %>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Platform</label>
+                <input type="text" name="platform" value="<%= review.platform %>" maxlength="40" class="scan-input" />
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label>Details</label>
+                <textarea name="details" rows="4" required maxlength="2000" class="scan-input"><%= review.details %></textarea>
+              </div>
+              <input type="hidden" name="order" value="<%= review.order %>" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem;width:100%;">Save Changes</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+function toggleEdit(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<%- include('./layout-bottom') %>

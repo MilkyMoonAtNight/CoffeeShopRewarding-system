@@ -14,11 +14,11 @@
       <!-- LEFT: image + identity -->
       <div class="detail-left-col">
         <div class="detail-img-frame">
-          <% if (drink.image) { %>
+          <% if (drink.image && !drink.image.toLowerCase().endsWith('.svg')) { %>
             <img src="/images/drinks/<%= drink.image %>" alt="<%= drink.name %>" class="detail-img" />
           <% } else { %>
-            <div class="drink-cup-wrap" style="width:100%;height:100%;background:linear-gradient(135deg,#2a2420,#1e1812);">
-              <%- include('../partials/drink-cup', { drink: drink }) %>
+            <div class="drink-panel-wrap drink-panel-wrap-detail">
+              <%- include('../partials/drink-panel', { drink: drink, textures: textures }) %>
             </div>
           <% } %>
           <% if (drink.isSpecial) { %><div class="detail-special-badge">✦ Special</div><% } %>

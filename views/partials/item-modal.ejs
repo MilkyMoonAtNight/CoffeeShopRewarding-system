@@ -127,58 +127,8 @@
 
 <!-- ===== SHARED MODAL JS ===== -->
 <script>
-// ── Cup SVG generator (fallback for drinks without a DB image) ────
-function getCupCfg(name, sub) {
-  var n = (name || '').toLowerCase();
-  if (n.indexOf('americano') > -1)       return { layers:[{c:'#1A3A6B',p:78},{c:'#3D1A0E',p:22}] };
-  if (n.indexOf('red cappuccino') > -1)  return { layers:[{c:'#EDD8C0',p:12},{c:'#C4845C',p:53},{c:'#7A2818',p:35}] };
-  if (n.indexOf('cappuccino') > -1)      return { layers:[{c:'#EEE0D0',p:34},{c:'#C4845C',p:33},{c:'#3D1A0E',p:33}] };
-  if (n.indexOf('flat white') > -1)      return { layers:[{c:'#EDD8C0',p:8},{c:'#C4845C',p:62},{c:'#3D1A0E',p:30}] };
-  if (n.indexOf('cortado') > -1)         return { sm:1, layers:[{c:'#EDD8C0',p:3},{c:'#C4845C',p:47},{c:'#3D1A0E',p:50}] };
-  if (n.indexOf('macchiato') > -1)       return { sm:1, layers:[{c:'#EDD8C0',p:20},{c:'#3D1A0E',p:80}] };
-  if (n.indexOf('chai') > -1)            return { layers:[{c:'#DDA870',p:15},{c:'#C8824A',p:85}] };
-  if (n.indexOf('amor') > -1)            return { layers:[{c:'#E8C89A',p:10},{c:'#C8824A',p:45},{c:'#7A2818',p:45}] };
-  if (n.indexOf('white choc') > -1)      return { layers:[{c:'#F5ECD8',p:15},{c:'#E0C89A',p:55},{c:'#8B5A2A',p:30}] };
-  if (n.indexOf('hot choc') > -1 || sub === 'chocolate') return { layers:[{c:'#C87840',p:15},{c:'#6B2C0A',p:85}] };
-  if (n.indexOf('flavoured latte') > -1) return { layers:[{c:'#F0D8A8',p:10},{c:'#D4924A',p:78},{c:'#8B5E2A',p:12}] };
-  if (n.indexOf('matcha') > -1 && n.indexOf('iced') < 0) return { layers:[{c:'#8ABD72',p:12},{c:'#4A7A3A',p:88}] };
-  if (n.indexOf('latte') > -1 && n.indexOf('iced') < 0)  return { layers:[{c:'#EDD8C0',p:8},{c:'#C4845C',p:77},{c:'#3D1A0E',p:15}] };
-  if (n.indexOf('slush') > -1)           return { cold:1, layers:[{c:'#FF6B8A',p:30},{c:'#FFB347',p:35},{c:'#4FC3F7',p:35}] };
-  if (n.indexOf('iced matcha') > -1)     return { cold:1, layers:[{c:'#6DB56D',p:35},{c:'#DCEDC8',p:8},{c:'#C8E6C9',p:50},{c:'#F9D38C',p:7}] };
-  if (n.indexOf('frozen') > -1 && n.indexOf('matcha') > -1) return { cold:1, layers:[{c:'#4CAF50',p:30},{c:'#E8F5E9',p:10},{c:'#F5E8D0',p:55},{c:'#E8C070',p:5}] };
-  if (n.indexOf('froyo') > -1 || n.indexOf('frozen yogurt') > -1) return { cold:1, layers:[{c:'#F5E8D0',p:15},{c:'#EAD08A',p:55},{c:'#F0C850',p:30}] };
-  if (n.indexOf('freezo') > -1)          return { cold:1, layers:[{c:'#90CAF9',p:18},{c:'#42A5F5',p:52},{c:'#1565C0',p:30}] };
-  if (n.indexOf('iced latte') > -1 || n.indexOf('iced coffee') > -1) return { cold:1, layers:[{c:'#3D1A0E',p:25},{c:'#D4A882',p:10},{c:'#EDD8C0',p:58},{c:'#C8724A',p:7}] };
-  if (sub === 'tea')      return { layers:[{c:'#DDA870',p:15},{c:'#C8824A',p:85}] };
-  if (sub === 'espresso') return { sm:1, layers:[{c:'#EDD8C0',p:8},{c:'#3D1A0E',p:92}] };
-  return { layers:[{c:'#EDD8C0',p:10},{c:'#C4845C',p:75},{c:'#3D1A0E',p:15}] };
-}
-
-function buildCupSvg(name, sub) {
-  var cfg = getCupCfg(name, sub);
-  var sm = cfg.sm ? 1 : 0;
-  var W = sm ? 70 : 90, H = sm ? 90 : 110;
-  var tW = sm ? 46 : 62, bW = sm ? 34 : 46;
-  var iH = sm ? 58 : 76, lH = sm ? 8 : 9, sH = sm ? 4 : 5;
-  var cx = W / 2, cTop = lH + sH + 4, cBot = cTop + iH;
-  var tl = cx - tW / 2, tr = cx + tW / 2, bl = cx - bW / 2, br = cx + bW / 2;
-  var uid = 'mc' + Math.random().toString(36).slice(2, 7);
-  var layers = cfg.layers.slice().reverse();
-  var yB = cBot, polyStr = '';
-  for (var i = 0; i < layers.length; i++) {
-    var l = layers[i], lh = (l.p / 100) * iH, yT = yB - lh;
-    var t1 = (yT - cTop) / iH, t2 = (yB - cTop) / iH;
-    var x1l = (tl + (bl - tl) * t1).toFixed(1), x1r = (tr - (tr - br) * t1).toFixed(1);
-    var x2l = (tl + (bl - tl) * t2).toFixed(1), x2r = (tr - (tr - br) * t2).toFixed(1);
-    polyStr += '<polygon points="' + x1l + ',' + yT.toFixed(1) + ' ' + x1r + ',' + yT.toFixed(1) + ' ' + x2r + ',' + yB.toFixed(1) + ' ' + x2l + ',' + yB.toFixed(1) + '" fill="' + l.c + '" clip-path="url(#' + uid + ')"/>';
-    yB = yT;
-  }
-  var spW = Math.round(tW * 0.38), spX = (cx - spW / 2).toFixed(1), lidY = (cTop - lH).toFixed(1);
-  var lid = '<rect x="' + (tl - 1).toFixed(1) + '" y="' + lidY + '" width="' + (tW + 2) + '" height="' + lH + '" rx="2" fill="#2e2018" stroke="#1a1210" stroke-width="0.8"/>'
-          + '<rect x="' + spX + '" y="' + (cTop - lH - sH).toFixed(1) + '" width="' + spW + '" height="' + (sH + 1) + '" rx="1.5" fill="#2a1c10" stroke="#1a1210" stroke-width="0.8"/>';
-  var clip = '<clipPath id="' + uid + '"><path d="M' + tl.toFixed(1) + ',' + cTop.toFixed(1) + ' L' + tr.toFixed(1) + ',' + cTop.toFixed(1) + ' L' + br.toFixed(1) + ',' + cBot.toFixed(1) + ' L' + bl.toFixed(1) + ',' + cBot.toFixed(1) + ' Z"/></clipPath>';
-  return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" class="drink-cup-svg"><defs>' + clip + '</defs>' + polyStr + '<path d="M' + tl.toFixed(1) + ',' + cTop.toFixed(1) + ' L' + tr.toFixed(1) + ',' + cTop.toFixed(1) + ' L' + br.toFixed(1) + ',' + cBot.toFixed(1) + ' L' + bl.toFixed(1) + ',' + cBot.toFixed(1) + ' Z" fill="none" stroke="#1a1210" stroke-width="1"/>' + lid + '</svg>';
-}
+// Drink visuals are drawn by buildDrinkPanelSVG (public/js/drink-panel.js),
+// loaded on every page that renders the order modal.
 
 // ── Flavour lists ─────────────────────────────────────────────────
 const LATTE_FLAVOURS     = ['Plain','Vanilla','Hazelnut','Chocolate','Cinnamon','American Fudge','Caramel','Popcorn'];
@@ -282,7 +232,7 @@ function openDrinkModal(drink) {
   // Image
   document.getElementById('modalImgWrap').innerHTML = drink.image
     ? '<img src="' + drink.image + '" alt="' + drink.name + '" class="modal-img" />'
-    : '<div class="modal-cup-modal-wrap">' + buildCupSvg(drink.name, drink.subcategory) + '</div>';
+    : '<div class="modal-panel-modal-wrap">' + buildDrinkPanelSVG(drink.layers, CL.textures) + '</div>';
 
   // Title + subtitle
   document.getElementById('modalTitle').textContent    = drink.name;
